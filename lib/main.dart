@@ -37,7 +37,15 @@ class _SplashScreenState extends State<SplashScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainPage()),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const MainPage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+            transitionDuration: const Duration(milliseconds: 600),
+          ),
         );
       }
     });
@@ -76,10 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 8),
             const Text(
               'Small reviews. Lasting memory.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.black54),
             ),
           ],
         ),
@@ -138,28 +143,58 @@ class _MainPageState extends State<MainPage> {
       body: _selectedIndex == 1
           ? const _HomeView()
           : Center(
-        child: Text(
-          _selectedIndex == 0 ? 'Halaman Berkas' : 'Halaman Statistik',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-      ),
-      floatingActionButton: SizedBox(
-        width: 56,
-        height: 56,
-        child: FloatingActionButton(
-          onPressed: () {
-            setState(() {
-              _selectedIndex = 1;
-            });
-          },
-          backgroundColor: _selectedIndex == 1 ? const Color(0xFF192A3A) : Colors.white,
-          shape: const CircleBorder(),
-          elevation: 3,
-          child: Icon(
-            Icons.home_rounded,
-            color: _selectedIndex == 1 ? Colors.white : Colors.grey.shade400,
-            size: 30,
-          ),
+              child: Text(
+                _selectedIndex == 0 ? 'Halaman Berkas' : 'Halaman Statistik',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+      floatingActionButton: Transform.translate(
+        offset: const Offset(0, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 56,
+              height: 56,
+              child: FloatingActionButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedIndex = 1;
+                  });
+                },
+                backgroundColor: _selectedIndex == 1
+                    ? const Color(0xFF192A3A)
+                    : Colors.white,
+                shape: const CircleBorder(),
+                elevation: 3,
+                child: Icon(
+                  Icons.home_rounded,
+                  color: _selectedIndex == 1
+                      ? Colors.white
+                      : Colors.grey.shade400,
+                  size: 30,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              'Beranda',
+              style: TextStyle(
+                fontSize: 12,
+                color: _selectedIndex == 1
+                    ? const Color(0xFF192A3A)
+                    : Colors.grey.shade400,
+                fontWeight: _selectedIndex == 1
+                    ? FontWeight.bold
+                    : FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -200,7 +235,7 @@ class _HomeView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
-                      'TUESDAY 15 SEP',
+                      'TUESDAY, 15 SEP 2026',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey,
@@ -268,14 +303,14 @@ class _HomeView extends StatelessWidget {
                   const SizedBox(height: 8),
                   const Text(
                     '8 cards are waiting for you',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 32),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3C279),
                       borderRadius: BorderRadius.circular(30),
