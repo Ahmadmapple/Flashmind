@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'statistic_page.dart';
+
 void main() {
   runApp(const FlashMindApp());
 }
@@ -142,9 +144,11 @@ class _MainPageState extends State<MainPage> {
       backgroundColor: const Color(0xFFFBF9F6),
       body: _selectedIndex == 1
           ? const _HomeView()
-          : Center(
+          : _selectedIndex == 2
+          ? const StatisticPage()
+          : const Center(
               child: Text(
-                _selectedIndex == 0 ? 'Halaman Berkas' : 'Halaman Statistik',
+                'Halaman Berkas',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
