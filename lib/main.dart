@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pages/berkas_page.dart';
 
 void main() {
   runApp(const FlashMindApp());
@@ -140,15 +141,14 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F6),
-      body: _selectedIndex == 1
+      body: _selectedIndex == 0
+          ? const BerkasPage()
+          : _selectedIndex == 1
           ? const _HomeView()
-          : Center(
+          : const Center(
               child: Text(
-                _selectedIndex == 0 ? 'Halaman Berkas' : 'Halaman Statistik',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Halaman Statistik',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
       floatingActionButton: Transform.translate(
