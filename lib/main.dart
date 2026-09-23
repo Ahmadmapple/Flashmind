@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'pages/berkas_page.dart';
 
+import 'statistic_page.dart';
+
 void main() {
   runApp(const FlashMindApp());
 }
@@ -145,11 +147,14 @@ class _MainPageState extends State<MainPage> {
           ? const BerkasPage()
           : _selectedIndex == 1
           ? const _HomeView()
+          : _selectedIndex == 2
+          ? const StatisticPage()
           : const Center(
               child: Text(
-                'Halaman Statistik',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
+                'Halaman Tidak Ditemukan',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
+                   ),
+                ),
             ),
       floatingActionButton: Transform.translate(
         offset: const Offset(0, 12),
