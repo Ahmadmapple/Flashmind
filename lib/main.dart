@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'pages/berkas_page.dart';
 
-import 'statistic_page.dart';
+import 'pages/berkas_page.dart';
+import 'pages/statistic_page.dart';
 
 void main() {
   runApp(const FlashMindApp());
@@ -152,9 +152,8 @@ class _MainPageState extends State<MainPage> {
           : const Center(
               child: Text(
                 'Halaman Tidak Ditemukan',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
-                   ),
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             ),
       floatingActionButton: Transform.translate(
         offset: const Offset(0, 12),
