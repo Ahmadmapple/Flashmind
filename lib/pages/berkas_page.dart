@@ -67,7 +67,7 @@ class BerkasPage extends StatelessWidget {
               'Berkas',
               style: TextStyle(
                 color: _primaryColor,
-                fontSize: 22,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'serif',
               ),
@@ -81,16 +81,16 @@ class BerkasPage extends StatelessWidget {
               foregroundColor: const WidgetStatePropertyAll(Colors.white),
               elevation: const WidgetStatePropertyAll(0),
               padding: const WidgetStatePropertyAll(
-                EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               ),
               minimumSize: const WidgetStatePropertyAll(Size(0, 0)),
               shape: WidgetStatePropertyAll(
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
             ),
             child: const Text(
               'Tambah Set',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -102,7 +102,7 @@ class BerkasPage extends StatelessWidget {
     return Row(
       children: [
         _FilterChip(label: 'Semua Set', selected: true, onPressed: () {}),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         _FilterChip(label: 'Perlu Diulas', selected: false, onPressed: () {}),
       ],
     );
@@ -138,7 +138,7 @@ class _FlashcardSetCard extends StatelessWidget {
                   set.title,
                   style: const TextStyle(
                     color: _primaryColor,
-                    fontSize: 20,
+                    fontSize: 23,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'serif',
                   ),
@@ -146,14 +146,14 @@ class _FlashcardSetCard extends StatelessWidget {
               ),
               Text(
                 '${set.cardCount} kartu',
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 2),
           Text(
             set.description,
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
           ),
           const SizedBox(height: 16),
           Row(
@@ -201,9 +201,9 @@ class _CardActionButton extends StatelessWidget {
         foregroundColor: foregroundColor,
         elevation: 0,
         minimumSize: const Size(0, 30),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
       ),
       child: Text(label),
     );
@@ -234,9 +234,9 @@ class _FilterChip extends StatelessWidget {
         side: BorderSide(color: selected ? _primaryColor : Colors.black26),
         elevation: 0,
         minimumSize: const Size(0, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
       ),
       child: Text(label),
     );
