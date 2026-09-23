@@ -1,17 +1,39 @@
-# flashmind
+# Flash Mind
 
-A new Flutter project.
+Aplikasi pembelajaran berbasis flashcard yang dapat digunakan sebagai media bantu untuk melatih daya ingat pengguna secara aktif.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## Tujuan
+Tujuan utama dari aplikasi ini, yaitu
+- Membantu pengguna dalam memahami suatu topik pembelajaran dengan mensimulasikan kegiatan tanya-jawab melalui flashcard, tanpa harus bergantung pada keberadaan pihak lain sehingga pengguna dapat melakukan pembelajaran secara mandiri.
+- Meningkatkan kemampuan pengguna dalam mengorganisasikan informasi melalui pembentuk set-set flashcard dengan topik yang berhubungan.
+- Membantu pengguna menilai pemahamannya terhadap suatu topik pembelajaran dengan adanya data hasil sesi belajar.
+- Memberikan rekomendasi belajar yang andal bagi pengguna berdasarkan performa pengguna selama melakukan pembelajaran.
+- Mendorong terbentuknya kebiasaan belajar yang konsisten bagi pengguna.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Fitur Utama
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Fitur utama dari aplikasi ini, yaitu
+- **Pengelolaan Set Flashcard**
+  
+  Pengguna dapat membuat suatu set flashcard yang terdiri atas beberapa flashcard. Selain itu, pengguna dapat mengedit atau menghapus flashcard dari satu set atau keseluruhan flashcard dalam satu set.
+  
+- **Kegiatan Belajar**
+
+  Pengguna dapat memulai suatu sesi belajar dengan memilih satu set yang hendak dipelajari. Kegiatan pembelajaran akan dilakukan sebagaimana penggunaan flashcard pada umumnya, yaitu penampilan pertanyaan di sisi depan kartu terlebih dahulu. Kemudian, pengguna dapat membalik kartu untuk melihat jawaban di sisi belakang.
+
+  Terdapat pilihan yang diberikan untuk setiap penyelesaian flashcard untuk menilai tingkat kesulitannya, yaitu benar, salah, atau ragu.
+  
+- **Statistik dan Riwayat Pembelajaran**
+
+  Aplikasi akan menyediakan data statistik yang disusun berdasarkan riwayat pembelajaran pengguna yang meliputi, set terakhir yang dipelajari, jumlah flashcard yang dipelajari, jumlah set yang dipelajari, jumlah benar dan salah, serta durasi pembelajaran.
+
+  
+- **Rekomendasi Belajar**
+  
+  Dengan menggunakan data statistik serta riwayat pembelajaran, aplikasi dapat menyusun rekomendasi set yang perlu dipelajari berdasarkan kriteria, seperti set mana yang sudah lama tidak dipelajari, set dengan persentase salah yang besar, set dengan durasi rata-rata penyelesaian yang relatif lama, dan kriteria lainnya.
+ 
+
