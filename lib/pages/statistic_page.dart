@@ -4,16 +4,16 @@ class StatisticPage extends StatelessWidget {
   const StatisticPage({super.key});
 
   // GANTI KE 'null' JIKA INGIN DUMMY DATA KOSONG:
-  static const _RecentSession? _latestSession = null;
+  //static const _RecentSession? _latestSession = null;
 
-  // static const _RecentSession? _latestSession = _RecentSession(
-  //   title: 'Cell Biology',
-  //   durationText: 'Today - 8s',
-  //   scoreText: '5/5',
-  //   accuracyText: '100%',
-  //   totalDuration: '8s',
-  //   avgPerCard: '2s',
-  // );
+  static const _RecentSession? _latestSession = _RecentSession(
+    title: 'Cell Biology',
+    durationText: 'Today - 8s',
+    scoreText: '5/5',
+    accuracyText: '100%',
+    totalDuration: '8s',
+    avgPerCard: '2s',
+  );
 
   @override
   Widget build(BuildContext context) {
