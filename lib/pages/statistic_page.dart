@@ -3,6 +3,18 @@ import 'package:flutter/material.dart';
 class StatisticPage extends StatelessWidget {
   const StatisticPage({super.key});
 
+  // GANTI KE 'null' JIKA INGIN DUMMY DATA KOSONG:
+  static const _RecentSession? _latestSession = null;
+
+  // static const _RecentSession? _latestSession = _RecentSession(
+  //   title: 'Cell Biology',
+  //   durationText: 'Today - 8s',
+  //   scoreText: '5/5',
+  //   accuracyText: '100%',
+  //   totalDuration: '8s',
+  //   avgPerCard: '2s',
+  // );
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -147,137 +159,10 @@ class StatisticPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                color: Colors.white,
-                border: Border.all(color: const Color(0xFFE8E4DB), width: 2),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDECE7),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          '✓',
-                          style: TextStyle(color: Color(0xFF2F776F)),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'Cell Biology',
-                              style: TextStyle(
-                                color: Color(0xFF192A3A),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            Text(
-                              'Today - 8s',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        children: const [
-                          Text(
-                            '5/5',
-                            style: TextStyle(
-                              color: Color(0xFF2F776F),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          Text(
-                            '100%',
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFBF9F6),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'Total duration',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF8A9A9E),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '8s',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF192A3A),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'Avg. per card',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF8A9A9E),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '2s',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF192A3A),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+
+            // WIDGET KARTU RECENT SESSION (Mengecek otomatis apakah null atau ada data)
+            const _RecentSessionCard(session: _latestSession),
+
             const SizedBox(height: 22),
 
             const Text(
@@ -375,6 +260,188 @@ class StatisticPage extends StatelessWidget {
                 ),
               ],
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentSession {
+  final String title;
+  final String durationText;
+  final String scoreText;
+  final String accuracyText;
+  final String totalDuration;
+  final String avgPerCard;
+
+  const _RecentSession({
+    required this.title,
+    required this.durationText,
+    required this.scoreText,
+    required this.accuracyText,
+    required this.totalDuration,
+    required this.avgPerCard,
+  });
+}
+
+class _RecentSessionCard extends StatelessWidget {
+  final _RecentSession? session;
+
+  const _RecentSessionCard({this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    if (session == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE8E4DB), width: 2),
+        ),
+        child: const Center(
+          child: Text(
+            'No study sessions. Start studying to see your history here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 2. TAMPILAN JIKA ADA SESI BELAJAR
+    return Container(
+      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E4DB), width: 2),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDDECE7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '✓',
+                  style: TextStyle(color: Color(0xFF2F776F)),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      session!.title,
+                      style: const TextStyle(
+                        color: Color(0xFF192A3A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      session!.durationText,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  Text(
+                    session!.scoreText,
+                    style: const TextStyle(
+                      color: Color(0xFF2F776F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    session!.accuracyText,
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 16,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFBF9F6),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Total duration',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF8A9A9E),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        session!.totalDuration,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF192A3A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Avg. per card',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF8A9A9E),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        session!.avgPerCard,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF192A3A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
