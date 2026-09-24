@@ -293,12 +293,6 @@ class StatisticPage extends StatelessWidget {
 
             // Card 1: Cell Biology
             _buildSetCard(
-              iconWidget: const Icon(
-                Icons.auto_awesome,
-                color: Color(0xFF192A3A),
-                size: 22,
-              ),
-              iconBgColor: const Color(0xFFF3C279),
               title: 'Cell Biology',
               subtitle: '5 cards · 1 sessions',
               rightAction: 'Study →',
@@ -308,15 +302,6 @@ class StatisticPage extends StatelessWidget {
 
             // Card 2: Japanese Language
             _buildSetCard(
-              iconWidget: const Text(
-                'あ',
-                style: TextStyle(
-                  color: Color(0xFF192A3A),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              iconBgColor: const Color(0xFFA8D5BA),
               title: 'Japanese Language',
               subtitle: '5 cards · 0 sessions',
               rightAction: 'Study →',
@@ -325,12 +310,6 @@ class StatisticPage extends StatelessWidget {
 
             // Card 3: Organic Chemistry
             _buildSetCard(
-              iconWidget: const Icon(
-                Icons.hexagon_outlined,
-                color: Color(0xFF192A3A),
-                size: 22,
-              ),
-              iconBgColor: const Color(0xFFD5C4EB),
               title: 'Organic Chemistry',
               subtitle: '3 cards · 0 sessions',
               rightAction: 'Study →',
@@ -342,10 +321,7 @@ class StatisticPage extends StatelessWidget {
     );
   }
 
-  // Reusable Helper Widget for Set Cards
   Widget _buildSetCard({
-    required Widget iconWidget,
-    required Color iconBgColor,
     required String title,
     required String subtitle,
     required String rightAction,
@@ -360,16 +336,6 @@ class StatisticPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(child: iconWidget),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

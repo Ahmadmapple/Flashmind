@@ -371,6 +371,7 @@ class _HomeView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE8E4DB), width: 2),
               ),
               child: Column(
                 children: [
@@ -433,16 +434,12 @@ class _HomeView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildMissedCardItem(
-              iconText: 'あ',
-              iconColor: const Color(0xFFA8D5BA),
               title: 'Bahasa Jepang',
               subtitle: 'Last studied 6 days ago',
               dueText: '16 due',
             ),
             const SizedBox(height: 12),
             _buildMissedCardItem(
-              iconText: 'C',
-              iconColor: const Color(0xFFD5C4EB),
               title: 'Organic Chemistry',
               subtitle: 'Last studied 8 days ago',
               dueText: '5 due',
@@ -466,8 +463,6 @@ class _HomeView extends StatelessWidget {
   }
 
   Widget _buildMissedCardItem({
-    required String iconText,
-    required Color iconColor,
     required String title,
     required String subtitle,
     required String dueText,
@@ -477,21 +472,10 @@ class _HomeView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE8E4DB), width: 2),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: iconColor,
-            child: Text(
-              iconText,
-              style: const TextStyle(
-                color: Color(0xFF192A3A),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
