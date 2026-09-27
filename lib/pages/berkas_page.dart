@@ -65,15 +65,6 @@ class BerkasPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'YOUR COLLECTION',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFE87A5D),
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Text(
                 'Berkas',
                 style: TextStyle(
                   letterSpacing: 1.2,
@@ -81,6 +72,15 @@ class BerkasPage extends StatelessWidget {
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'serif',
+                ),
+              ),
+              Text(
+                'Daftar Set Flashcard',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFE87A5D),
+                  letterSpacing: 1.4,
                 ),
               ),
             ],
@@ -101,7 +101,7 @@ class BerkasPage extends StatelessWidget {
               ),
             ),
             child: const Text(
-              '+ New Set',
+              '+ Tambah Set',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
@@ -113,9 +113,9 @@ class BerkasPage extends StatelessWidget {
   Widget _buildFilterRow() {
     return Row(
       children: [
-        _FilterChip(label: 'All Set', selected: true, onPressed: () {}),
+        _FilterChip(label: 'Semuat Set', selected: true, onPressed: () {}),
         const SizedBox(width: 10),
-        _FilterChip(label: 'Need Review', selected: false, onPressed: () {}),
+        _FilterChip(label: 'Perlu Diulas', selected: false, onPressed: () {}),
       ],
     );
   }
@@ -127,10 +127,35 @@ class _FlashcardSetCard extends StatelessWidget {
   final _FlashcardSet set;
 
   static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
+
+  static const int _titleMaxLength = 35;
+  static const int _descriptionMaxLength = 80;
+
+  static String _truncateByWords(String text, int maxLength) {
+    if (text.length <= maxLength) return text;
+
+    final words = text.split(' ');
+    final buffer = StringBuffer();
+    for (final word in words) {
+      final candidate = buffer.isEmpty ? word : '${buffer.toString()} $word';
+      if (candidate.length > maxLength) break;
+      buffer
+        ..clear()
+        ..write(candidate);
+    }
+
+    final trimmed = buffer.toString();
+    return trimmed.isEmpty ? text.substring(0, maxLength) : '$trimmed...';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final String title = _truncateByWords(set.title, _titleMaxLength);
+    final String description = _truncateByWords(
+      set.description,
+      _descriptionMaxLength,
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -147,50 +172,47 @@ class _FlashcardSetCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  set.title,
+                  title,
+                  textAlign: TextAlign.justify,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: _primaryColor,
-                    fontSize: 23,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
-                '${set.cardCount} card',
+                '${set.cardCount} Kartu',
                 style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
-            set.description,
-            style: const TextStyle(color: Colors.grey, fontSize: 13),
+            description,
+            textAlign: TextAlign.justify,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _CardActionButton(
-                label: 'Edit Set',
-                backgroundColor: _accentColor,
-                foregroundColor: _primaryColor,
-                onPressed: () {},
-              ),
-
               TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.only(
-                    left: 12,
-                    right: 0,
-                  ),
+                  padding: const EdgeInsets.only(left: 12, right: 0),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: const Text(
-                  'Study →',
+                  'Lihat Detail →',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFE87A5D),
                   ),
@@ -200,37 +222,6 @@ class _FlashcardSetCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _CardActionButton extends StatelessWidget {
-  const _CardActionButton({
-    required this.label,
-    required this.backgroundColor,
-    required this.foregroundColor,
-    required this.onPressed,
-  });
-
-  final String label;
-  final Color backgroundColor;
-  final Color foregroundColor;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor,
-        foregroundColor: foregroundColor,
-        elevation: 0,
-        minimumSize: const Size(0, 30),
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      child: Text(label),
     );
   }
 }
@@ -255,7 +246,10 @@ class _FilterChip extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         backgroundColor: selected ? _primaryColor : Colors.white,
         foregroundColor: selected ? Colors.white : _primaryColor,
-        side: BorderSide(color: selected ? _primaryColor : const Color(0xFFE8E4DB), width: 1.5),
+        side: BorderSide(
+          color: selected ? _primaryColor : const Color(0xFFE8E4DB),
+          width: 1.5,
+        ),
         elevation: 0,
         minimumSize: const Size(0, 32),
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
