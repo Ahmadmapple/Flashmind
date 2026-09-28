@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../repositories/flash_mind_repository.dart';
+import 'detail_set_page.dart';
+
 class AddSetPage extends StatefulWidget {
   const AddSetPage({super.key});
 
@@ -19,9 +22,6 @@ class _AddSetPageState extends State<AddSetPage> {
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-
-  final GlobalKey<ScaffoldMessengerState> _messengerKey =
-      GlobalKey<ScaffoldMessengerState>();
 
   int _currentStep = 0;
   bool _titleValidationRequested = false;
@@ -60,22 +60,7 @@ class _AddSetPageState extends State<AddSetPage> {
       _titleValidationRequested = false;
     });
   }
-
-  void _showNotification(String message) {
-    final messenger = _messengerKey.currentState;
-    if (messenger == null) return;
-
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-        ),
-      );
-  }
-
+  
   Future<void> _createSet() async {
     if (_isSaving) return;
     FocusScope.of(context).unfocus();
@@ -83,7 +68,10 @@ class _AddSetPageState extends State<AddSetPage> {
       _isSaving = true;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 350));
+    final set = await FlashMindRepository.instance.createSet(
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
+    );
 
     if (!mounted) return;
 
@@ -91,7 +79,14 @@ class _AddSetPageState extends State<AddSetPage> {
       _isSaving = false;
     });
 
-    _showNotification('Layar pembuatan set sudah siap.');
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => DetailSetPage(
+          setId: set.id,
+          showCreatedNotification: true,
+        ),
+      ),
+    );
   }
 
   @override
@@ -107,18 +102,11 @@ class _AddSetPageState extends State<AddSetPage> {
       appBar: _buildAppBar(),
       body: SafeArea(
         bottom: false,
-        child: ScaffoldMessenger(
-          key: _messengerKey,
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            resizeToAvoidBottomInset: false,
-            body: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: _currentStep == 0
-                  ? _buildTitleStep(extraBottomPadding)
-                  : _buildDescriptionStep(extraBottomPadding),
-            ),
-          ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: _currentStep == 0
+              ? _buildTitleStep(extraBottomPadding)
+              : _buildDescriptionStep(extraBottomPadding),
         ),
       ),
       floatingActionButton: Transform.translate(

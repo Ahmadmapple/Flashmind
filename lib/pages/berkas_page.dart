@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../models/flashcard_set.dart';
+import '../repositories/flash_mind_repository.dart';
 import 'add_set_page.dart';
+import 'detail_set_page.dart';
 
 class BerkasPage extends StatelessWidget {
   const BerkasPage({super.key});
@@ -8,23 +11,7 @@ class BerkasPage extends StatelessWidget {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
 
-  static const List<_FlashcardSet> _sets = [
-    _FlashcardSet(
-      title: 'Nama Set',
-      description: 'Deskripsi set',
-      cardCount: 0,
-    ),
-    _FlashcardSet(
-      title: 'Bahasa Jepang',
-      description: 'Kosakata bahasa Jepang',
-      cardCount: 30,
-    ),
-    _FlashcardSet(
-      title: 'Biologi',
-      description: 'Definisi dari istilah-istilah ilmiah',
-      cardCount: 15,
-    ),
-  ];
+  static final FlashMindRepository _repository = FlashMindRepository.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -34,26 +21,58 @@ class BerkasPage extends StatelessWidget {
         Expanded(
           child: SafeArea(
             top: false,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildFilterRow(),
-                  const SizedBox(height: 18),
-                  ..._sets.map(
-                    (set) => Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: _FlashcardSetCard(set: set),
-                    ),
+            child: AnimatedBuilder(
+              animation: _repository,
+              builder: (context, _) {
+                final sets = _repository.sets;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFilterRow(),
+                      const SizedBox(height: 18),
+                      ...sets.map(
+                        (set) => Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: _FlashcardSetCard(
+                            set: set,
+                            onViewDetail: () => _openDetail(context, set.id),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),
       ],
     );
+  }
+  
+  Future<void> _openDetail(BuildContext context, String setId) async {
+    // PERUBAHAN TAHAP 2: tombol Lihat Detail sekarang membuka Detail Set
+    // menggunakan identitas set dari repository.
+    final deleted = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => DetailSetPage(setId: setId),
+      ),
+    );
+
+    // PERUBAHAN TAHAP 2: tampilkan notifikasi setelah set benar-benar
+    // dihapus dari repository.
+    if (deleted == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Set berhasil dihapus.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 20),
+        ),
+      );
+    }
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -89,14 +108,13 @@ class BerkasPage extends StatelessWidget {
             ],
           ),
           ElevatedButton(
-            // To do: hubungkan ke alur "Tambah Set" saat sudah tersedia.
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const AddSetPage()),
               );
             },
             style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(_accentColor),
+              backgroundColor: const WidgetStatePropertyAll(_accentColor),
               foregroundColor: const WidgetStatePropertyAll(_primaryColor),
               elevation: const WidgetStatePropertyAll(0),
               padding: const WidgetStatePropertyAll(
@@ -129,9 +147,13 @@ class BerkasPage extends StatelessWidget {
 }
 
 class _FlashcardSetCard extends StatelessWidget {
-  const _FlashcardSetCard({required this.set});
+  const _FlashcardSetCard({
+    required this.set,
+    required this.onViewDetail,
+  });
 
-  final _FlashcardSet set;
+  final FlashcardSet set;
+  final VoidCallback onViewDetail;
 
   static const Color _primaryColor = Color(0xFF192A3A);
 
@@ -210,7 +232,7 @@ class _FlashcardSetCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                onPressed: () {},
+                onPressed: onViewDetail,
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.only(left: 12, right: 0),
                   minimumSize: Size.zero,
@@ -266,16 +288,4 @@ class _FilterChip extends StatelessWidget {
       child: Text(label),
     );
   }
-}
-
-class _FlashcardSet {
-  const _FlashcardSet({
-    required this.title,
-    required this.description,
-    required this.cardCount,
-  });
-
-  final String title;
-  final String description;
-  final int cardCount;
 }
