@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 
 class FlashMindRepository extends ChangeNotifier {
@@ -29,6 +30,7 @@ class FlashMindRepository extends ChangeNotifier {
 
   final List<FlashcardSet> _sets;
   int _nextSetNumber = 4;
+  int _nextCardNumber = 1;
 
   List<FlashcardSet> get sets => List.unmodifiable(_sets);
 
@@ -72,6 +74,32 @@ class FlashMindRepository extends ChangeNotifier {
       description: description,
     );
     notifyListeners();
+  }
+  
+  Future<Flashcard?> addFlashcard({
+    required String setId,
+    required String frontText,
+    required String backText,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    final index = _sets.indexWhere((set) => set.id == setId);
+    if (index == -1) return null;
+
+    final card = Flashcard(
+      id: 'card-${_nextCardNumber++}',
+      setId: setId,
+      frontText: frontText,
+      backText: backText,
+      createdAt: DateTime.now(),
+    );
+
+    final set = _sets[index];
+    _sets[index] = set.copyWith(
+      cards: [...set.cards, card],
+    );
+    notifyListeners();
+    return card;
   }
 
   Future<void> deleteSet(String id) async {

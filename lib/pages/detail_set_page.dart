@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
 import 'add_card_page.dart';
@@ -26,10 +27,54 @@ class _DetailSetPageState extends State<DetailSetPage> {
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _dangerColor = Color(0xFFEF5350);
 
+  static const TextStyle _cardBodyStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: _primaryColor,
+    height: 1.25,
+  );
+
+  static const String _ellipsis = ' ...';
+
+  static const double _cardHeight = 136;
+  static const double _bodyToActionsGap = 12;
+
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
   bool _isDeleting = false;
   bool _notificationShown = false;
+
+  final Set<String> _backVisibleCardIds = <String>{};
+
+  static String _truncateToFitWords(
+    String text,
+    TextStyle style,
+    double maxWidth,
+    TextScaler textScaler, {
+    int maxLines = 1,
+  }) {
+    bool fits(String value) {
+      final painter = TextPainter(
+        text: TextSpan(text: value, style: style),
+        maxLines: maxLines,
+        textDirection: TextDirection.ltr,
+        textScaler: textScaler,
+      )..layout(maxWidth: maxWidth);
+      final bool exceeded = painter.didExceedMaxLines;
+      painter.dispose();
+      return !exceeded;
+    }
+
+    if (fits(text)) return text;
+
+    final words = text.trim().split(RegExp(r'\s+'));
+    for (int count = words.length - 1; count >= 1; count--) {
+      final candidate = '${words.sublist(0, count).join(' ')}$_ellipsis';
+      if (fits(candidate)) return candidate;
+    }
+
+    return text;
+  }
 
   @override
   void initState() {
@@ -101,6 +146,24 @@ class _DetailSetPageState extends State<DetailSetPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Set berhasil diperbarui.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openAddCard() async {
+    if (_isDeleting) return;
+
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => AddCardPage(setId: widget.setId)),
+    );
+
+    if (created == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kartu berhasil dibuat.'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
         ),
@@ -242,12 +305,159 @@ class _DetailSetPageState extends State<DetailSetPage> {
                     ],
                   ),
                   const SizedBox(height: 32),
-                  if (isEmpty) _buildEmptyState(),
+                  if (isEmpty)
+                    _buildEmptyState()
+                  else ...[
+                    _buildCardList(set.cards),
+                    const SizedBox(height: 18),
+                    Center(child: _buildAddCardButton()),
+                  ],
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCardList(List<Flashcard> cards) {
+    return Column(
+      children: [
+        for (int index = 0; index < cards.length; index++) ...[
+          _buildFlashcardCard(cards[index]),
+          if (index < cards.length - 1) const SizedBox(height: 14),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFlashcardCard(Flashcard card) {
+    final bool isBackVisible = _backVisibleCardIds.contains(card.id);
+    final String text = isBackVisible ? card.backText : card.frontText;
+    final String sideLabel = isBackVisible ? 'Sisi Belakang' : 'Sisi Depan';
+    final String flipTooltip = isBackVisible
+        ? 'Tampilkan sisi depan'
+        : 'Balikkan kartu';
+
+    final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style
+        .merge(_cardBodyStyle);
+    final TextScaler textScaler = MediaQuery.textScalerOf(context);
+
+    return Container(
+      width: double.infinity,
+      height: _cardHeight,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sideLabel,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'serif',
+              color: Color(0xFF9A9894),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double lineHeight =
+                    effectiveBodyStyle.fontSize! *
+                    (effectiveBodyStyle.height ?? 1.0);
+
+                final int availableLines = (constraints.maxHeight / lineHeight)
+                    .floor()
+                    .clamp(1, 10);
+
+                final String displayText = _truncateToFitWords(
+                  text,
+                  effectiveBodyStyle,
+                  constraints.maxWidth,
+                  textScaler,
+                  maxLines: availableLines,
+                );
+
+                return Text(
+                  displayText,
+                  maxLines: availableLines,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.justify,
+                  style: _cardBodyStyle,
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: _bodyToActionsGap),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Tooltip(
+                message: flipTooltip,
+                child: TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      if (isBackVisible) {
+                        _backVisibleCardIds.remove(card.id);
+                      } else {
+                        _backVisibleCardIds.add(card.id);
+                      }
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF9A9894),
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: const Icon(Icons.swap_horiz, size: 23),
+                  label: const Text(
+                    'Balikkan Kartu',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _showNextStageMessage('Detail Kartu'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFD97745),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Lihat Detail →',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddCardButton() {
+    return Material(
+      color: _accentColor,
+      elevation: 3,
+      shadowColor: Colors.black26,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: _isDeleting ? null : _openAddCard,
+        child: const SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(Icons.add, color: _primaryColor, size: 28),
+        ),
       ),
     );
   }
@@ -346,29 +556,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
             ),
           ),
           const SizedBox(height: 10),
-          Material(
-            color: _accentColor,
-            elevation: 3,
-            shadowColor: Colors.black26,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: _isDeleting
-                  ? null
-                  : () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => AddCardPage(setId: widget.setId),
-                        ),
-                      );
-                    },
-              child: const SizedBox(
-                width: 44,
-                height: 44,
-                child: Icon(Icons.add, color: _primaryColor, size: 28),
-              ),
-            ),
-          ),
+          _buildAddCardButton(),
         ],
       ),
     );

@@ -61,7 +61,7 @@ class _AddSetPageState extends State<AddSetPage> {
       _titleValidationRequested = false;
     });
   }
-  
+
   Future<void> _createSet() async {
     if (_isSaving) return;
     FocusScope.of(context).unfocus();
@@ -82,10 +82,8 @@ class _AddSetPageState extends State<AddSetPage> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => DetailSetPage(
-          setId: set.id,
-          showCreatedNotification: true,
-        ),
+        builder: (_) =>
+            DetailSetPage(setId: set.id, showCreatedNotification: true),
       ),
     );
   }
@@ -239,9 +237,9 @@ class _AddSetPageState extends State<AddSetPage> {
             maxLines: 8,
           ),
           _buildFieldFooter(
-            controller: _descriptionController, 
+            controller: _descriptionController,
             maxLength: FlashcardSet.descriptionMaxLength,
-            ),
+          ),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
