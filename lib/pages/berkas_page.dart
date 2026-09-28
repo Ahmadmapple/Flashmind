@@ -52,24 +52,20 @@ class BerkasPage extends StatelessWidget {
       ],
     );
   }
-  
+
   Future<void> _openDetail(BuildContext context, String setId) async {
     // PERUBAHAN TAHAP 2: tombol Lihat Detail sekarang membuka Detail Set
     // menggunakan identitas set dari repository.
     final deleted = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => DetailSetPage(setId: setId),
-      ),
+      MaterialPageRoute<bool>(builder: (_) => DetailSetPage(setId: setId)),
     );
 
-    // PERUBAHAN TAHAP 2: tampilkan notifikasi setelah set benar-benar
-    // dihapus dari repository.
     if (deleted == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Set berhasil dihapus.'),
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(20, 0, 20, 20),
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
         ),
       );
     }
@@ -147,18 +143,54 @@ class BerkasPage extends StatelessWidget {
 }
 
 class _FlashcardSetCard extends StatelessWidget {
-  const _FlashcardSetCard({
-    required this.set,
-    required this.onViewDetail,
-  });
+  const _FlashcardSetCard({required this.set, required this.onViewDetail});
 
   final FlashcardSet set;
   final VoidCallback onViewDetail;
 
   static const Color _primaryColor = Color(0xFF192A3A);
 
-  static const int _titleMaxLength = 30;
-  static const int _descriptionMaxLength = 80;
+  static const TextStyle _titleStyle = TextStyle(
+    color: _primaryColor,
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const String _ellipsis = ' ...';
+
+  static const int _descriptionMaxLength = FlashcardSet.descriptionMaxLength;
+
+  static String _truncateToFitWords(
+    String text,
+    TextStyle style,
+    double maxWidth,
+    TextScaler textScaler, {
+    int maxLines = 1,
+  }) {
+    bool fits(String value) {
+      final painter = TextPainter(
+        text: TextSpan(text: value, style: style),
+        maxLines: maxLines,
+        textDirection: TextDirection.ltr,
+        textScaler: textScaler,
+      )..layout(maxWidth: maxWidth);
+      final bool exceeded = painter.didExceedMaxLines;
+      painter.dispose();
+      return !exceeded;
+    }
+
+    if (fits(text)) return text;
+
+    final words = text.trim().split(RegExp(r'\s+'));
+    for (int count = words.length - 1; count >= 1; count--) {
+      final candidate = '${words.sublist(0, count).join(' ')}$_ellipsis';
+      if (fits(candidate)) return candidate;
+    }
+
+    // Satu kata pertama saja sudah tidak muat: biarkan ellipsis bawaan Text
+    // yang menangani (satu-satunya kasus pemotongan per huruf).
+    return text;
+  }
 
   static String _truncateByWords(String text, int maxLength) {
     if (text.length <= maxLength) return text;
@@ -179,11 +211,14 @@ class _FlashcardSetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String title = _truncateByWords(set.title, _titleMaxLength);
     final String description = _truncateByWords(
       set.description,
       _descriptionMaxLength,
     );
+
+    final TextStyle effectiveTitleStyle = DefaultTextStyle.of(context).style
+        .merge(_titleStyle);
+    final TextScaler textScaler = MediaQuery.textScalerOf(context);
 
     return Container(
       width: double.infinity,
@@ -200,16 +235,22 @@ class _FlashcardSetCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  title,
-                  textAlign: TextAlign.justify,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _primaryColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final String title = _truncateToFitWords(
+                      set.title,
+                      effectiveTitleStyle,
+                      constraints.maxWidth,
+                      textScaler,
+                    );
+
+                    return Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: effectiveTitleStyle,
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 8),

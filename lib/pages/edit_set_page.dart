@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../repositories/flash_mind_repository.dart';
-import 'detail_set_page.dart';
 import '../models/flashcard_set.dart';
+import '../repositories/flash_mind_repository.dart';
 
-class AddSetPage extends StatefulWidget {
-  const AddSetPage({super.key});
+class EditSetPage extends StatefulWidget {
+  const EditSetPage({super.key, required this.set});
+
+  final FlashcardSet set;
 
   @override
-  State<AddSetPage> createState() => _AddSetPageState();
+  State<EditSetPage> createState() => _EditSetPageState();
 }
 
-class _AddSetPageState extends State<AddSetPage> {
+class _EditSetPageState extends State<EditSetPage> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
@@ -21,12 +22,22 @@ class _AddSetPageState extends State<AddSetPage> {
   static const double _bottomBarHeight = 65;
   static const double _fieldFooterHeight = 22;
 
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  final FlashMindRepository _repository = FlashMindRepository.instance;
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
 
   int _currentStep = 0;
   bool _titleValidationRequested = false;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.set.title);
+    _descriptionController = TextEditingController(
+      text: widget.set.description,
+    );
+  }
 
   @override
   void dispose() {
@@ -36,6 +47,8 @@ class _AddSetPageState extends State<AddSetPage> {
   }
 
   void _goBack() {
+    if (_isSaving) return;
+
     if (_currentStep == 1) {
       setState(() {
         _currentStep = 0;
@@ -61,16 +74,27 @@ class _AddSetPageState extends State<AddSetPage> {
       _titleValidationRequested = false;
     });
   }
-  
-  Future<void> _createSet() async {
+
+  Future<void> _saveChanges() async {
     if (_isSaving) return;
+
+    final title = _titleController.text.trim();
+    if (title.length < 3) {
+      setState(() {
+        _currentStep = 0;
+        _titleValidationRequested = true;
+      });
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     setState(() {
       _isSaving = true;
     });
 
-    final set = await FlashMindRepository.instance.createSet(
-      title: _titleController.text.trim(),
+    await _repository.updateSet(
+      id: widget.set.id,
+      title: title,
       description: _descriptionController.text.trim(),
     );
 
@@ -80,14 +104,7 @@ class _AddSetPageState extends State<AddSetPage> {
       _isSaving = false;
     });
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => DetailSetPage(
-          setId: set.id,
-          showCreatedNotification: true,
-        ),
-      ),
-    );
+    Navigator.of(context).pop(true);
   }
 
   @override
@@ -157,7 +174,7 @@ class _AddSetPageState extends State<AddSetPage> {
         tooltip: 'Kembali',
       ),
       title: const Text(
-        'Tambah Set',
+        'Edit Set',
         style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
@@ -171,7 +188,7 @@ class _AddSetPageState extends State<AddSetPage> {
 
   Widget _buildTitleStep(double extraBottomPadding) {
     return SingleChildScrollView(
-      key: const ValueKey('title-step'),
+      key: const ValueKey('edit-title-step'),
       padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +205,6 @@ class _AddSetPageState extends State<AddSetPage> {
           const SizedBox(height: 15),
           _buildInputField(
             controller: _titleController,
-            hintText: 'Masukkan nama set dengan jumlah minimal 3 karakter.',
             maxLength: FlashcardSet.titleMaxLength,
             minLines: 8,
             maxLines: 8,
@@ -216,7 +232,7 @@ class _AddSetPageState extends State<AddSetPage> {
 
   Widget _buildDescriptionStep(double extraBottomPadding) {
     return SingleChildScrollView(
-      key: const ValueKey('description-step'),
+      key: const ValueKey('edit-description-step'),
       padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +249,6 @@ class _AddSetPageState extends State<AddSetPage> {
           const SizedBox(height: 15),
           _buildInputField(
             controller: _descriptionController,
-            hintText: 'Masukkan deskripsi set jika dibutuhkan.',
             maxLength: FlashcardSet.descriptionMaxLength,
             minLines: 8,
             maxLines: 8,
@@ -241,13 +256,13 @@ class _AddSetPageState extends State<AddSetPage> {
           _buildFieldFooter(
             controller: _descriptionController, 
             maxLength: FlashcardSet.descriptionMaxLength,
-            ),
+          ),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
             child: _buildActionButton(
-              label: 'Buat Set',
-              onPressed: _isSaving ? null : _createSet,
+              label: 'Selesai',
+              onPressed: _isSaving ? null : _saveChanges,
               isLoading: _isSaving,
             ),
           ),
@@ -258,7 +273,6 @@ class _AddSetPageState extends State<AddSetPage> {
 
   Widget _buildInputField({
     required TextEditingController controller,
-    required String hintText,
     required int maxLength,
     required int minLines,
     required int maxLines,
@@ -273,12 +287,6 @@ class _AddSetPageState extends State<AddSetPage> {
       textCapitalization: TextCapitalization.sentences,
       style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
       decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFFB4B1AC),
-          height: 1.25,
-        ),
         contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         counterText: '',
         filled: true,
@@ -316,7 +324,6 @@ class _AddSetPageState extends State<AddSetPage> {
               children: [
                 Expanded(
                   child: Padding(
-                    // Sejajar dengan teks di dalam kotak (contentPadding = 12).
                     padding: const EdgeInsets.only(left: 12, right: 8),
                     child: hasError
                         ? Text(
@@ -398,7 +405,7 @@ class _AddSetPageState extends State<AddSetPage> {
     return BottomAppBar(
       color: Colors.white,
       elevation: 2,
-      height: _bottomBarHeight,
+      height: 65,
       padding: const EdgeInsets.symmetric(horizontal: 36),
       shape: const CircularNotchedRectangle(),
       notchMargin: 6,
@@ -433,7 +440,7 @@ class _AddSetPageState extends State<AddSetPage> {
       onTap: onTap,
       child: SizedBox(
         width: 64,
-        height: _bottomBarHeight,
+        height: 65,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

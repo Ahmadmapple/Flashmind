@@ -57,6 +57,23 @@ class FlashMindRepository extends ChangeNotifier {
     return set;
   }
 
+  Future<void> updateSet({
+    required String id,
+    required String title,
+    required String description,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    final index = _sets.indexWhere((set) => set.id == id);
+    if (index == -1) return;
+
+    _sets[index] = _sets[index].copyWith(
+      title: title,
+      description: description,
+    );
+    notifyListeners();
+  }
+
   Future<void> deleteSet(String id) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
 
