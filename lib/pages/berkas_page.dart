@@ -109,7 +109,7 @@ class BerkasPage extends StatelessWidget {
             ),
             child: const Text(
               '+ Tambah Set',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             ),
           ),
         ],

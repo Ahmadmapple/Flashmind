@@ -14,29 +14,18 @@ class _AddSetPageState extends State<AddSetPage> {
   static const Color _borderColor = Color(0xFFB8B5AF);
   static const Color _errorColor = Color(0xFFD32F2F);
 
+  static const double _bottomBarHeight = 65;
+  static const double _fieldFooterHeight = 22;
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+
+  final GlobalKey<ScaffoldMessengerState> _messengerKey =
+      GlobalKey<ScaffoldMessengerState>();
 
   int _currentStep = 0;
   bool _titleValidationRequested = false;
   bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController.addListener(_onTitleChanged);
-    _descriptionController.addListener(_onDescriptionChanged);
-  }
-
-  void _onTitleChanged() {
-    if (!_titleValidationRequested || !mounted) return;
-    setState(() {});
-  }
-
-  void _onDescriptionChanged() {
-    if (!mounted) return;
-    setState(() {});
-  }
 
   @override
   void dispose() {
@@ -72,13 +61,27 @@ class _AddSetPageState extends State<AddSetPage> {
     });
   }
 
+  void _showNotification(String message) {
+    final messenger = _messengerKey.currentState;
+    if (messenger == null) return;
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+        ),
+      );
+  }
+
   Future<void> _createSet() async {
     if (_isSaving) return;
-
+    FocusScope.of(context).unfocus();
     setState(() {
       _isSaving = true;
     });
-
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
 
@@ -88,23 +91,34 @@ class _AddSetPageState extends State<AddSetPage> {
       _isSaving = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Layar pembuatan set sudah siap.')),
-    );
+    _showNotification('Layar pembuatan set sudah siap.');
   }
 
   @override
   Widget build(BuildContext context) {
+    final double keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+    final double extraBottomPadding = (keyboardInset - _bottomBarHeight)
+        .clamp(0.0, double.infinity)
+        .toDouble();
+
     return Scaffold(
       backgroundColor: _backgroundColor,
+      resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(),
       body: SafeArea(
         bottom: false,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: _currentStep == 0
-              ? _buildTitleStep()
-              : _buildDescriptionStep(),
+        child: ScaffoldMessenger(
+          key: _messengerKey,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            resizeToAvoidBottomInset: false,
+            body: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: _currentStep == 0
+                  ? _buildTitleStep(extraBottomPadding)
+                  : _buildDescriptionStep(extraBottomPadding),
+            ),
+          ),
         ),
       ),
       floatingActionButton: Transform.translate(
@@ -116,9 +130,7 @@ class _AddSetPageState extends State<AddSetPage> {
               width: 56,
               height: 56,
               child: FloatingActionButton(
-                onPressed: _isSaving
-                    ? null
-                    : () => Navigator.of(context).pop(),
+                onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
                 backgroundColor: _primaryColor,
                 foregroundColor: Colors.white,
                 shape: const CircleBorder(),
@@ -168,14 +180,10 @@ class _AddSetPageState extends State<AddSetPage> {
     );
   }
 
-  Widget _buildTitleStep() {
-    final titleLength = _titleController.text.length;
-    final showTitleError =
-        _titleValidationRequested && _titleController.text.trim().length < 3;
-
+  Widget _buildTitleStep(double extraBottomPadding) {
     return SingleChildScrollView(
       key: const ValueKey('title-step'),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -193,22 +201,18 @@ class _AddSetPageState extends State<AddSetPage> {
             controller: _titleController,
             hintText: 'Masukkan nama set dengan jumlah minimal 3 karakter.',
             maxLength: 30,
-            minLines: 5,
-            maxLines: 5,
+            minLines: 8,
+            maxLines: 8,
             textInputAction: TextInputAction.next,
           ),
-          _buildCounter(titleLength, 30),
-          if (showTitleError) ...[
-            const SizedBox(height: 3),
-            const Text(
-              'Nama set minimal 3 karakter.',
-              style: TextStyle(
-                color: _errorColor,
-                fontSize: 12,
-              ),
-            ),
-          ],
-          const SizedBox(height: 18),
+          _buildFieldFooter(
+            controller: _titleController,
+            maxLength: 30,
+            errorText: 'Nama set minimal 3 karakter.',
+            showError: (text) =>
+                _titleValidationRequested && text.trim().length < 3,
+          ),
+          const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
             child: _buildActionButton(
@@ -221,12 +225,10 @@ class _AddSetPageState extends State<AddSetPage> {
     );
   }
 
-  Widget _buildDescriptionStep() {
-    final descriptionLength = _descriptionController.text.length;
-
+  Widget _buildDescriptionStep(double extraBottomPadding) {
     return SingleChildScrollView(
       key: const ValueKey('description-step'),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -239,16 +241,16 @@ class _AddSetPageState extends State<AddSetPage> {
               color: _primaryColor,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 15),
           _buildInputField(
             controller: _descriptionController,
             hintText: 'Masukkan deskripsi set jika dibutuhkan.',
             maxLength: 80,
-            minLines: 5,
-            maxLines: 5,
+            minLines: 8,
+            maxLines: 8,
           ),
-          _buildCounter(descriptionLength, 80),
-          const SizedBox(height: 18),
+          _buildFieldFooter(controller: _descriptionController, maxLength: 80),
+          const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
             child: _buildActionButton(
@@ -277,15 +279,11 @@ class _AddSetPageState extends State<AddSetPage> {
       maxLines: maxLines,
       textInputAction: textInputAction,
       textCapitalization: TextCapitalization.sentences,
-      style: const TextStyle(
-        fontSize: 11,
-        color: Colors.black87,
-        height: 1.25,
-      ),
+      style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(
-          fontSize: 11,
+          fontSize: 14,
           color: Color(0xFFB4B1AC),
           height: 1.25,
         ),
@@ -305,18 +303,58 @@ class _AddSetPageState extends State<AddSetPage> {
     );
   }
 
-  Widget _buildCounter(int currentLength, int maxLength) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 6, right: 4),
-        child: Text(
-          '$currentLength/$maxLength',
-          style: const TextStyle(
-            fontSize: 10,
-            color: Color(0xFF9A9894),
-          ),
-        ),
+  Widget _buildFieldFooter({
+    required TextEditingController controller,
+    required int maxLength,
+    String? errorText,
+    bool Function(String text)? showError,
+  }) {
+    return SizedBox(
+      height: _fieldFooterHeight,
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, _) {
+          final bool hasError =
+              errorText != null && (showError?.call(value.text) ?? false);
+
+          return Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Padding(
+                    // Sejajar dengan teks di dalam kotak (contentPadding = 12).
+                    padding: const EdgeInsets.only(left: 12, right: 8),
+                    child: hasError
+                        ? Text(
+                            errorText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _errorColor,
+                              fontSize: 12,
+                              height: 1.2,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Text(
+                    '${value.text.length}/$maxLength',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF9A9894),
+                      height: 1.6,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -342,7 +380,7 @@ class _AddSetPageState extends State<AddSetPage> {
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 18),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+          minimumSize: const WidgetStatePropertyAll(Size(90, 32)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
@@ -350,7 +388,7 @@ class _AddSetPageState extends State<AddSetPage> {
             ),
           ),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           ),
         ),
         child: isLoading
@@ -368,7 +406,7 @@ class _AddSetPageState extends State<AddSetPage> {
     return BottomAppBar(
       color: Colors.white,
       elevation: 2,
-      height: 65,
+      height: _bottomBarHeight,
       padding: const EdgeInsets.symmetric(horizontal: 36),
       shape: const CircularNotchedRectangle(),
       notchMargin: 6,
@@ -403,7 +441,7 @@ class _AddSetPageState extends State<AddSetPage> {
       onTap: onTap,
       child: SizedBox(
         width: 64,
-        height: 65,
+        height: _bottomBarHeight,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
