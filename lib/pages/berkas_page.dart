@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'add_set_page.dart';
+
 class BerkasPage extends StatelessWidget {
   const BerkasPage({super.key});
 
   static const Color _primaryColor = Color(0xFF192A3A);
+  static const Color _accentColor = Color(0xFFF3C279);
 
   static const List<_FlashcardSet> _sets = [
     _FlashcardSet(
@@ -87,10 +90,14 @@ class BerkasPage extends StatelessWidget {
           ),
           ElevatedButton(
             // To do: hubungkan ke alur "Tambah Set" saat sudah tersedia.
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const AddSetPage()),
+              );
+            },
             style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(_primaryColor),
-              foregroundColor: const WidgetStatePropertyAll(Colors.white),
+              backgroundColor: WidgetStatePropertyAll(_accentColor),
+              foregroundColor: const WidgetStatePropertyAll(_primaryColor),
               elevation: const WidgetStatePropertyAll(0),
               padding: const WidgetStatePropertyAll(
                 EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -102,7 +109,7 @@ class BerkasPage extends StatelessWidget {
             ),
             child: const Text(
               '+ Tambah Set',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -128,7 +135,7 @@ class _FlashcardSetCard extends StatelessWidget {
 
   static const Color _primaryColor = Color(0xFF192A3A);
 
-  static const int _titleMaxLength = 35;
+  static const int _titleMaxLength = 30;
   static const int _descriptionMaxLength = 80;
 
   static String _truncateByWords(String text, int maxLength) {
