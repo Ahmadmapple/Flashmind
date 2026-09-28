@@ -5,6 +5,7 @@ import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
 import 'add_card_page.dart';
 import 'edit_set_page.dart';
+import 'detail_card_page.dart';
 
 class DetailSetPage extends StatefulWidget {
   const DetailSetPage({
@@ -169,6 +170,19 @@ class _DetailSetPageState extends State<DetailSetPage> {
         ),
       );
     }
+  }
+
+  Future<void> _openDetailCard(Flashcard card) async {
+    if (_isDeleting) return;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => DetailCardPage(
+          setId: card.setId,
+          cardId: card.id,
+        ),
+      ),
+    );
   }
 
   void _showNextStageMessage(String feature) {
@@ -425,7 +439,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
                 ),
               ),
               TextButton(
-                onPressed: () => _showNextStageMessage('Detail Kartu'),
+                onPressed: () => _openDetailCard(card),
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFFD97745),
                   padding: const EdgeInsets.symmetric(horizontal: 2),
