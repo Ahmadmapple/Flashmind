@@ -285,6 +285,7 @@ class _EditSetPageState extends State<EditSetPage> {
       maxLines: maxLines,
       textInputAction: textInputAction,
       textCapitalization: TextCapitalization.sentences,
+      textAlign: TextAlign.justify,
       style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
