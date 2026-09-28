@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
+import 'add_card_page.dart';
 import 'edit_set_page.dart';
 
 class DetailSetPage extends StatefulWidget {
@@ -354,7 +355,13 @@ class _DetailSetPageState extends State<DetailSetPage> {
               customBorder: const CircleBorder(),
               onTap: _isDeleting
                   ? null
-                  : () => _showNextStageMessage('Tambah Kartu'),
+                  : () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => AddCardPage(setId: widget.setId),
+                        ),
+                      );
+                    },
               child: const SizedBox(
                 width: 44,
                 height: 44,
