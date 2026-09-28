@@ -102,6 +102,24 @@ class FlashMindRepository extends ChangeNotifier {
     return card;
   }
 
+  Future<bool> deleteFlashcard(String cardId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+
+    for (int index = 0; index < _sets.length; index++) {
+      final set = _sets[index];
+      final cardIndex = set.cards.indexWhere((card) => card.id == cardId);
+
+      if (cardIndex == -1) continue;
+
+      final updatedCards = List<Flashcard>.from(set.cards)..removeAt(cardIndex);
+      _sets[index] = set.copyWith(cards: updatedCards);
+      notifyListeners();
+      return true;
+    }
+
+    return false;
+  }
+
   Future<void> deleteSet(String id) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
 
