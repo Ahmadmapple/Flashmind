@@ -1,0 +1,425 @@
+import 'package:flutter/material.dart';
+
+class AddSetPage extends StatefulWidget {
+  const AddSetPage({super.key});
+
+  @override
+  State<AddSetPage> createState() => _AddSetPageState();
+}
+
+class _AddSetPageState extends State<AddSetPage> {
+  static const Color _primaryColor = Color(0xFF192A3A);
+  static const Color _accentColor = Color(0xFFF3C279);
+  static const Color _backgroundColor = Color(0xFFFBF9F6);
+  static const Color _borderColor = Color(0xFFB8B5AF);
+  static const Color _errorColor = Color(0xFFD32F2F);
+
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+
+  int _currentStep = 0;
+  bool _titleValidationRequested = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(_onTitleChanged);
+    _descriptionController.addListener(_onDescriptionChanged);
+  }
+
+  void _onTitleChanged() {
+    if (!_titleValidationRequested || !mounted) return;
+    setState(() {});
+  }
+
+  void _onDescriptionChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  void _goBack() {
+    if (_currentStep == 1) {
+      setState(() {
+        _currentStep = 0;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop();
+  }
+
+  void _continueFromTitle() {
+    final title = _titleController.text.trim();
+
+    if (title.length < 3) {
+      setState(() {
+        _titleValidationRequested = true;
+      });
+      return;
+    }
+
+    setState(() {
+      _currentStep = 1;
+      _titleValidationRequested = false;
+    });
+  }
+
+  Future<void> _createSet() async {
+    if (_isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSaving = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Layar pembuatan set sudah siap.')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      appBar: _buildAppBar(),
+      body: SafeArea(
+        bottom: false,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: _currentStep == 0
+              ? _buildTitleStep()
+              : _buildDescriptionStep(),
+        ),
+      ),
+      floatingActionButton: Transform.translate(
+        offset: const Offset(0, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 56,
+              height: 56,
+              child: FloatingActionButton(
+                onPressed: _isSaving
+                    ? null
+                    : () => Navigator.of(context).pop(),
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+                shape: const CircleBorder(),
+                elevation: 3,
+                child: const Icon(Icons.home_rounded, size: 30),
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Beranda',
+              style: TextStyle(
+                fontSize: 9,
+                color: _primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: _backgroundColor,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        onPressed: _isSaving ? null : _goBack,
+        icon: const Icon(Icons.arrow_back, size: 28),
+        color: _primaryColor,
+        tooltip: 'Kembali',
+      ),
+      title: const Text(
+        'Tambah Set',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'serif',
+          color: _primaryColor,
+        ),
+      ),
+      centerTitle: true,
+    );
+  }
+
+  Widget _buildTitleStep() {
+    final titleLength = _titleController.text.length;
+    final showTitleError =
+        _titleValidationRequested && _titleController.text.trim().length < 3;
+
+    return SingleChildScrollView(
+      key: const ValueKey('title-step'),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Nama Set',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'serif',
+              color: _primaryColor,
+            ),
+          ),
+          const SizedBox(height: 15),
+          _buildInputField(
+            controller: _titleController,
+            hintText: 'Masukkan nama set dengan jumlah minimal 3 karakter.',
+            maxLength: 30,
+            minLines: 5,
+            maxLines: 5,
+            textInputAction: TextInputAction.next,
+          ),
+          _buildCounter(titleLength, 30),
+          if (showTitleError) ...[
+            const SizedBox(height: 3),
+            const Text(
+              'Nama set minimal 3 karakter.',
+              style: TextStyle(
+                color: _errorColor,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildActionButton(
+              label: 'Lanjut',
+              onPressed: _isSaving ? null : _continueFromTitle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescriptionStep() {
+    final descriptionLength = _descriptionController.text.length;
+
+    return SingleChildScrollView(
+      key: const ValueKey('description-step'),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Deskripsi Set',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'serif',
+              color: _primaryColor,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildInputField(
+            controller: _descriptionController,
+            hintText: 'Masukkan deskripsi set jika dibutuhkan.',
+            maxLength: 80,
+            minLines: 5,
+            maxLines: 5,
+          ),
+          _buildCounter(descriptionLength, 80),
+          const SizedBox(height: 18),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildActionButton(
+              label: 'Buat Set',
+              onPressed: _isSaving ? null : _createSet,
+              isLoading: _isSaving,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String hintText,
+    required int maxLength,
+    required int minLines,
+    required int maxLines,
+    TextInputAction? textInputAction,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLength: maxLength,
+      minLines: minLines,
+      maxLines: maxLines,
+      textInputAction: textInputAction,
+      textCapitalization: TextCapitalization.sentences,
+      style: const TextStyle(
+        fontSize: 11,
+        color: Colors.black87,
+        height: 1.25,
+      ),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          fontSize: 11,
+          color: Color(0xFFB4B1AC),
+          height: 1.25,
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        counterText: '',
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _borderColor, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _primaryColor, width: 1.2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCounter(int currentLength, int maxLength) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 6, right: 4),
+        child: Text(
+          '$currentLength/$maxLength',
+          style: const TextStyle(
+            fontSize: 10,
+            color: Color(0xFF9A9894),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required VoidCallback? onPressed,
+    bool isLoading = false,
+  }) {
+    return SizedBox(
+      height: 32,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return _accentColor.withValues(alpha: 0.55);
+            }
+            return _accentColor;
+          }),
+          foregroundColor: const WidgetStatePropertyAll(_primaryColor),
+          elevation: const WidgetStatePropertyAll(0),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 18),
+          ),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: const BorderSide(color: Color(0xFFD7A957), width: 0.7),
+            ),
+          ),
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          ),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              )
+            : Text(label),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return BottomAppBar(
+      color: Colors.white,
+      elevation: 2,
+      height: 65,
+      padding: const EdgeInsets.symmetric(horizontal: 36),
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 6,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildBottomNavItem(
+            icon: Icons.article_outlined,
+            label: 'Berkas',
+            onTap: _isSaving ? null : () => Navigator.of(context).pop(),
+          ),
+          const SizedBox(width: 72),
+          _buildBottomNavItem(
+            icon: Icons.timer_outlined,
+            label: 'Statistik',
+            onTap: null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+  }) {
+    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 64,
+        height: 65,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
