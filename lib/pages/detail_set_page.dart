@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
+import 'edit_set_page.dart';
 
 class DetailSetPage extends StatefulWidget {
   const DetailSetPage({
@@ -88,6 +89,24 @@ class _DetailSetPageState extends State<DetailSetPage> {
     Navigator.of(context).pop(true);
   }
 
+  Future<void> _openEditSet(FlashcardSet set) async {
+    if (_isDeleting) return;
+
+    final edited = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => EditSetPage(set: set)),
+    );
+
+    if (edited == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Set berhasil diperbarui.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+        ),
+      );
+    }
+  }
+
   void _showNextStageMessage(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -149,7 +168,12 @@ class _DetailSetPageState extends State<DetailSetPage> {
           child: TextButton(
             onPressed: _isDeleting
                 ? null
-                : () => _showNextStageMessage('Edit Set'),
+                : () {
+                    final set = _repository.getSetById(widget.setId);
+                    if (set != null) {
+                      _openEditSet(set);
+                    }
+                  },
             style: TextButton.styleFrom(
               backgroundColor: _primaryColor,
               foregroundColor: Colors.white,
@@ -189,13 +213,13 @@ class _DetailSetPageState extends State<DetailSetPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'serif',
                       color: _primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     set.description.isEmpty
                         ? 'Tidak ada deskripsi set.'

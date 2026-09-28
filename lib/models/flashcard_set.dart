@@ -17,6 +17,9 @@ class FlashcardSet {
   final DateTime createdAt;
   final DateTime? lastStudiedAt;
   final List<Flashcard> cards;
+  static const int titleMinLength = 3;
+  static const int titleMaxLength = 40; 
+  static const int descriptionMaxLength = 100; 
 
   int get cardCount => cards.length;
 
