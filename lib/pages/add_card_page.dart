@@ -1,6 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
+
+import '../repositories/flash_mind_repository.dart';
 
 class AddCardPage extends StatefulWidget {
   const AddCardPage({super.key, required this.setId});
@@ -27,6 +27,9 @@ class _AddCardPageState extends State<AddCardPage> {
   bool _showFrontError = false;
   bool _showBackError = false;
   bool _isBackSide = false;
+  bool _isSaving = false;
+
+  final FlashMindRepository _repository = FlashMindRepository.instance;
 
   TextEditingController get _activeController =>
       _isBackSide ? _backController : _frontController;
@@ -72,24 +75,11 @@ class _AddCardPageState extends State<AddCardPage> {
     });
   }
 
-  void _tryCreateCard() {
+  Future<void> _tryCreateCard() async {
     FocusScope.of(context).unfocus();
 
     final frontEmpty = _frontController.text.trim().isEmpty;
     final backEmpty = _backController.text.trim().isEmpty;
-
-    if (!frontEmpty && !backEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Penyimpanan kartu akan dihubungkan pada tahap berikutnya.',
-          ),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
-        ),
-      );
-      return;
-    }
 
     if (frontEmpty && backEmpty) {
       setState(() {
@@ -108,10 +98,45 @@ class _AddCardPageState extends State<AddCardPage> {
       return;
     }
 
+    if (backEmpty) {
+      setState(() {
+        _isBackSide = true;
+        _showBackError = true;
+      });
+      return;
+    }
+
+    if (_isSaving) return;
+
     setState(() {
-      _isBackSide = true;
-      _showBackError = true;
+      _isSaving = true;
     });
+
+    final card = await _repository.addFlashcard(
+      setId: widget.setId,
+      frontText: _frontController.text.trim(),
+      backText: _backController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (card == null) {
+      setState(() {
+        _isSaving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Set tidak ditemukan sehingga kartu tidak dapat dibuat.',
+          ),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pop(true);
   }
 
   @override
@@ -194,7 +219,7 @@ class _AddCardPageState extends State<AddCardPage> {
               alignment: Alignment.centerRight,
               child: _buildActionButton(
                 label: 'Buat Kartu',
-                onPressed: _tryCreateCard,
+                onPressed: _isSaving ? null : _tryCreateCard,
               ),
             ),
           ],
@@ -235,16 +260,12 @@ class _AddCardPageState extends State<AddCardPage> {
           maxLines: null,
           textCapitalization: TextCapitalization.sentences,
           textAlignVertical: TextAlignVertical.top,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.black87,
-            height: 1.25,
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
           decoration: InputDecoration(
             hintText: isBack
                 ? 'Masukkan isi dari sisi belakang kartu.\nMinimal 1 karakter.'
                 : 'Masukkan isi dari sisi depan kartu.\nMinimal 1 karakter.',
-            hintStyle: TextStyle(
+            hintStyle: const TextStyle(
               fontSize: 14,
               color: Color(0xFFB4B1AC),
               height: 1.25,
@@ -329,7 +350,7 @@ class _AddCardPageState extends State<AddCardPage> {
 
   Widget _buildActionButton({
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   }) {
     return SizedBox(
       height: 32,
@@ -353,7 +374,16 @@ class _AddCardPageState extends State<AddCardPage> {
             TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           ),
         ),
-        child: Text(label),
+        child: _isSaving
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: _primaryColor,
+                ),
+              )
+            : Text(label),
       ),
     );
   }

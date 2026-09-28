@@ -187,8 +187,6 @@ class _FlashcardSetCard extends StatelessWidget {
       if (fits(candidate)) return candidate;
     }
 
-    // Satu kata pertama saja sudah tidak muat: biarkan ellipsis bawaan Text
-    // yang menangani (satu-satunya kasus pemotongan per huruf).
     return text;
   }
 
