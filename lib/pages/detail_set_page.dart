@@ -41,7 +41,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
           const SnackBar(
             content: Text('Set berhasil dibuat.'),
             behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.fromLTRB(20, 0, 20, 78),
+            margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
           ),
         );
       });
