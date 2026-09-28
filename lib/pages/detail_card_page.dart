@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/flashcard.dart';
 import '../repositories/flash_mind_repository.dart';
+import 'edit_card_page.dart';
 
 class DetailCardPage extends StatefulWidget {
   const DetailCardPage({super.key, required this.setId, required this.cardId});
@@ -16,7 +17,6 @@ class DetailCardPage extends StatefulWidget {
 class _DetailCardPageState extends State<DetailCardPage> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
-  static const Color _headerColor = Color(0xFFFFE5B4);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _dangerColor = Color(0xFFEF5350);
 
@@ -91,14 +91,31 @@ class _DetailCardPageState extends State<DetailCardPage> {
     Navigator.of(context).pop(true);
   }
 
-  void _openEditCard() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit Kartu akan dikembangkan pada tahap berikutnya.'),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+  Future<void> _openEditCard(Flashcard card) async {
+    if (_isDeleting) return;
+
+    final result = await Navigator.of(context).push<EditCardResult>(
+      MaterialPageRoute<EditCardResult>(
+        builder: (_) => EditCardPage(setId: widget.setId, card: card),
       ),
     );
+
+    if (!mounted) return;
+
+    if (result == EditCardResult.deleted) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    if (result == EditCardResult.saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kartu berhasil diperbarui.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+        ),
+      );
+    }
   }
 
   @override
@@ -229,12 +246,12 @@ class _DetailCardPageState extends State<DetailCardPage> {
               child: Scrollbar(
                 thumbVisibility: true,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.only(right: 13),
                   child: Text(
                     text,
-                    textAlign: TextAlign.left,
+                    textAlign: TextAlign.justify,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       color: _primaryColor,
                       height: 1.45,
                     ),
@@ -244,7 +261,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
             ),
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 35),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -296,7 +313,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
     return SizedBox(
       height: 32,
       child: ElevatedButton(
-        onPressed: _isDeleting ? null : _openEditCard,
+        onPressed: _isDeleting ? null : () => _openEditCard(card),
         style: ButtonStyle(
           backgroundColor: const WidgetStatePropertyAll(_accentColor),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),

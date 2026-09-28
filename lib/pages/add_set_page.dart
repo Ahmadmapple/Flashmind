@@ -269,6 +269,7 @@ class _AddSetPageState extends State<AddSetPage> {
       maxLines: maxLines,
       textInputAction: textInputAction,
       textCapitalization: TextCapitalization.sentences,
+      textAlign: TextAlign.justify,
       style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
       decoration: InputDecoration(
         hintText: hintText,
