@@ -559,7 +559,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
           ),
         ),
         child: Text(
-          hasInProgressSession ? 'Lanjutkan Sesi Belajar' : 'Mulai Sesi Belajar',
+          hasInProgressSession ? 'Lanjut Belajar' : 'Mulai Belajar',
         ),
       ),
     );

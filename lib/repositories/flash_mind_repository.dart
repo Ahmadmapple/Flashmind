@@ -36,7 +36,7 @@ class FlashMindRepository extends ChangeNotifier {
   int _nextSessionNumber = 1;
 
   List<FlashcardSet> get sets => List.unmodifiable(_sets);
-  
+
   List<StudySession> getStudySessionsForSet(String setId) {
     return List.unmodifiable(
       _studySessions.where((session) => session.setId == setId),
@@ -111,7 +111,7 @@ class FlashMindRepository extends ChangeNotifier {
     );
     notifyListeners();
   }
-  
+
   Future<Flashcard?> addFlashcard({
     required String setId,
     required String frontText,
@@ -235,10 +235,51 @@ class FlashMindRepository extends ChangeNotifier {
       return false;
     }
 
+    final now = DateTime.now();
     _studySessions[index] = session.copyWith(
-      currentCardFrontShownAt: DateTime.now(),
+      currentCardFrontShownAt: now,
+      currentCardRunningSince: now,
+      currentCardAccumulatedDuration: Duration.zero,
     );
     notifyListeners();
+    return true;
+  }
+
+  bool pauseCurrentCard(String sessionId) {
+    final index = _studySessions.indexWhere((session) => session.id == sessionId);
+    if (index == -1) return false;
+
+    final session = _studySessions[index];
+    final runningSince = session.currentCardRunningSince;
+    if (session.status != StudySessionStatus.inProgress ||
+        runningSince == null) {
+      return false;
+    }
+
+    final segment = DateTime.now().difference(runningSince);
+    _studySessions[index] = session.copyWith(
+      currentCardAccumulatedDuration:
+          session.currentCardAccumulatedDuration +
+          (segment.isNegative ? Duration.zero : segment),
+      clearCurrentCardRunningSince: true,
+    );
+    return true;
+  }
+
+  bool resumeCurrentCard(String sessionId) {
+    final index = _studySessions.indexWhere((session) => session.id == sessionId);
+    if (index == -1) return false;
+
+    final session = _studySessions[index];
+    if (session.status != StudySessionStatus.inProgress ||
+        session.currentCardFrontShownAt == null ||
+        session.currentCardRunningSince != null) {
+      return false;
+    }
+
+    _studySessions[index] = session.copyWith(
+      currentCardRunningSince: DateTime.now(),
+    );
     return true;
   }
 
@@ -276,8 +317,14 @@ class FlashMindRepository extends ChangeNotifier {
     }
 
     final evaluatedAt = DateTime.now();
-    final rawDuration = evaluatedAt.difference(session.currentCardFrontShownAt!);
-    final duration = rawDuration.isNegative ? Duration.zero : rawDuration;
+
+    var duration = session.currentCardAccumulatedDuration;
+    final runningSince = session.currentCardRunningSince;
+    if (runningSince != null) {
+      final segment = evaluatedAt.difference(runningSince);
+      if (!segment.isNegative) duration += segment;
+    }
+
     final result = StudyCardResult(
       cardId: cardId,
       frontShownAt: session.currentCardFrontShownAt!,
@@ -315,6 +362,8 @@ class FlashMindRepository extends ChangeNotifier {
       currentCardFrontShownAt: null,
       clearCurrentCardFrontShownAt: true,
       clearCurrentCardAnswerRevealedAt: true,
+      clearCurrentCardRunningSince: true,
+      currentCardAccumulatedDuration: Duration.zero,
       totalDuration: totalDuration,
       correctCount: correctCount,
       wrongCount: wrongCount,
