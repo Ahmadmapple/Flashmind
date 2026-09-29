@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-
 import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
+import 'dart:math';
 
 class FlashMindRepository extends ChangeNotifier {
   FlashMindRepository._internal()
@@ -33,6 +33,7 @@ class FlashMindRepository extends ChangeNotifier {
   final List<StudySession> _studySessions = [];
   int _nextSetNumber = 4;
   int _nextCardNumber = 1;
+  int _nextSessionNumber = 1;
 
   List<FlashcardSet> get sets => List.unmodifiable(_sets);
   
@@ -53,11 +54,18 @@ class FlashMindRepository extends ChangeNotifier {
   }
 
   StudySession? getInProgressStudySessionForSet(String setId) {
-    for (final session in _studySessions) {
+    for (final session in _studySessions.reversed) {
       if (session.setId == setId &&
           session.status == StudySessionStatus.inProgress) {
         return session;
       }
+    }
+    return null;
+  }
+
+  StudySession? getStudySessionById(String sessionId) {
+    for (final session in _studySessions) {
+      if (session.id == sessionId) return session;
     }
     return null;
   }
@@ -187,6 +195,145 @@ class FlashMindRepository extends ChangeNotifier {
     if (index == -1) return;
 
     _sets.removeAt(index);
+    _studySessions.removeWhere((session) => session.setId == id);
     notifyListeners();
+  }
+
+  Future<StudySession?> startStudySession(String setId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    final set = getSetById(setId);
+    if (set == null || set.cards.isEmpty) return null;
+
+    final existingSession = getInProgressStudySessionForSet(setId);
+    if (existingSession != null) return existingSession;
+
+    final cardOrder = set.cards.map((card) => card.id).toList()..shuffle(Random());
+    final now = DateTime.now();
+    final session = StudySession(
+      id: 'session-${_nextSessionNumber++}',
+      setId: setId,
+      startedAt: now,
+      status: StudySessionStatus.inProgress,
+      cardOrder: cardOrder,
+      currentCardFrontShownAt: null,
+    );
+
+    _studySessions.add(session);
+    notifyListeners();
+    return session;
+  }
+
+  bool markCurrentCardFrontShown(String sessionId) {
+    final index = _studySessions.indexWhere((session) => session.id == sessionId);
+    if (index == -1) return false;
+
+    final session = _studySessions[index];
+    if (session.status != StudySessionStatus.inProgress ||
+        session.nextCardIndex >= session.cardOrder.length ||
+        session.currentCardFrontShownAt != null) {
+      return false;
+    }
+
+    _studySessions[index] = session.copyWith(
+      currentCardFrontShownAt: DateTime.now(),
+    );
+    notifyListeners();
+    return true;
+  }
+
+  bool markAnswerRevealed(String sessionId) {
+    final index = _studySessions.indexWhere((session) => session.id == sessionId);
+    if (index == -1) return false;
+
+    final session = _studySessions[index];
+    if (session.status != StudySessionStatus.inProgress ||
+        session.currentCardFrontShownAt == null) {
+      return false;
+    }
+
+    _studySessions[index] = session.copyWith(
+      currentCardAnswerRevealedAt: DateTime.now(),
+    );
+    notifyListeners();
+    return true;
+  }
+
+  StudySession? evaluateCurrentCard({
+    required String sessionId,
+    required String cardId,
+    required bool isCorrect,
+  }) {
+    final index = _studySessions.indexWhere((session) => session.id == sessionId);
+    if (index == -1) return null;
+
+    final session = _studySessions[index];
+    if (session.status != StudySessionStatus.inProgress ||
+        session.nextCardIndex >= session.cardOrder.length ||
+        session.cardOrder[session.nextCardIndex] != cardId ||
+        session.currentCardFrontShownAt == null) {
+      return null;
+    }
+
+    final evaluatedAt = DateTime.now();
+    final rawDuration = evaluatedAt.difference(session.currentCardFrontShownAt!);
+    final duration = rawDuration.isNegative ? Duration.zero : rawDuration;
+    final result = StudyCardResult(
+      cardId: cardId,
+      frontShownAt: session.currentCardFrontShownAt!,
+      answerRevealedAt: session.currentCardAnswerRevealedAt,
+      evaluatedAt: evaluatedAt,
+      isCorrect: isCorrect,
+      duration: duration,
+    );
+    final updatedResults = [...session.cardResults, result];
+    final nextCardIndex = session.nextCardIndex + 1;
+    final isCompleted = nextCardIndex >= session.cardOrder.length;
+
+    final totalDuration = updatedResults.fold<Duration>(
+      Duration.zero,
+      (sum, item) => sum + item.duration,
+    );
+    final correctCount = updatedResults.where((item) => item.isCorrect).length;
+    final wrongCount = updatedResults.length - correctCount;
+    final accuracy = updatedResults.isEmpty
+        ? 0.0
+        : correctCount / updatedResults.length * 100;
+    final averageCardDuration = updatedResults.isEmpty
+        ? Duration.zero
+        : Duration(
+            microseconds:
+                totalDuration.inMicroseconds ~/ updatedResults.length,
+          );
+
+    final updatedSession = session.copyWith(
+      status: isCompleted ? StudySessionStatus.completed : StudySessionStatus.inProgress,
+      finishedAt: isCompleted ? evaluatedAt : null,
+      clearFinishedAt: !isCompleted,
+      nextCardIndex: nextCardIndex,
+      cardResults: updatedResults,
+      currentCardFrontShownAt: null,
+      clearCurrentCardFrontShownAt: true,
+      clearCurrentCardAnswerRevealedAt: true,
+      totalDuration: totalDuration,
+      correctCount: correctCount,
+      wrongCount: wrongCount,
+      accuracy: accuracy,
+      averageCardDuration: averageCardDuration,
+    );
+
+    _studySessions[index] = updatedSession;
+
+    if (isCompleted) {
+      final setIndex = _sets.indexWhere((set) => set.id == session.setId);
+      if (setIndex != -1) {
+        _sets[setIndex] = _sets[setIndex].copyWith(
+          lastStudiedAt: evaluatedAt,
+        );
+      }
+    }
+
+    notifyListeners();
+    return updatedSession;
   }
 }

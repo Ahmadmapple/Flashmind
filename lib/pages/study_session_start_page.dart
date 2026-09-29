@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+import 'study_session_page.dart';
 
 /// Layar awal sebelum pengguna menjalankan sesi belajar.
 class StudySessionStartPage extends StatelessWidget {
@@ -87,12 +88,14 @@ class StudySessionStartPage extends StatelessWidget {
   static Duration _averageDuration(List<StudySession> sessions) {
     if (sessions.isEmpty) return Duration.zero;
 
-    final totalSeconds = sessions.fold<int>(
+    final totalMicroseconds = sessions.fold<int>(
       0,
-      (sum, session) => sum + session.totalDuration.inSeconds,
+      (sum, session) => sum + session.totalDuration.inMicroseconds,
     );
 
-    return Duration(seconds: totalSeconds ~/ sessions.length);
+    return Duration(
+      microseconds: totalMicroseconds ~/ sessions.length,
+    );
   }
 
   static double _averageAccuracy(List<StudySession> sessions) {
@@ -110,7 +113,8 @@ class StudySessionStartPage extends StatelessWidget {
     if (sessions.isEmpty) return null;
 
     return sessions.reduce(
-      (current, next) => next.accuracy > current.accuracy ? next : current,
+      (current, next) =>
+          next.accuracy > current.accuracy ? next : current,
     );
   }
 
@@ -118,8 +122,9 @@ class StudySessionStartPage extends StatelessWidget {
     if (sessions.isEmpty) return null;
 
     return sessions.reduce(
-      (current, next) =>
-          next.totalDuration < current.totalDuration ? next : current,
+      (current, next) => next.totalDuration < current.totalDuration 
+        ? next 
+        : current,
     );
   }
 
@@ -139,17 +144,15 @@ class StudySessionStartPage extends StatelessWidget {
           );
         }
 
-        final completedSessions = repository.getCompletedStudySessionsForSet(
-          set.id,
-        );
+        final completedSessions = 
+          repository.getCompletedStudySessionsForSet(set.id);
 
         return Scaffold(
           backgroundColor: _backgroundColor,
           appBar: _buildAppBar(context),
           body: _buildBody(context, set, completedSessions),
           floatingActionButton: _buildHomeButton(context),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           bottomNavigationBar: _buildBottomNavigationBar(context),
         );
       },
@@ -199,9 +202,7 @@ class StudySessionStartPage extends StatelessWidget {
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 34, 20, 88),
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 34,
-              ),
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 34),
               child: Column(
                 children: [
                   _buildSummaryCard(
@@ -300,7 +301,7 @@ class StudySessionStartPage extends StatelessWidget {
           _buildStatRow('Rata-rata jawaban benar', averageAccuracy),
           const SizedBox(height: 10),
           _buildStatRow('Waktu terakhir dipelajari', lastStudied),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
           const Text(
             'Rekor Belajar',
             style: TextStyle(
@@ -316,13 +317,13 @@ class StudySessionStartPage extends StatelessWidget {
             accuracy: highestAccuracy,
             duration: highestAccuracyDuration,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           _buildRecordRow(
             label: 'Durasi pengerjaan tercepat',
             accuracy: fastestAccuracy,
             duration: fastestDuration,
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 30),
           Align(
             alignment: Alignment.centerRight,
             child: Text('${set.cardCount} kartu', style: _valueStyle),
@@ -385,21 +386,38 @@ class StudySessionStartPage extends StatelessWidget {
     );
   }
 
+  Future<void> _startSession(BuildContext context) async {
+    final repository = FlashMindRepository.instance;
+    final session = await repository.startStudySession(setId);
+
+    if (!context.mounted) return;
+
+    if (session == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sesi belajar tidak dapat dimulai.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+        ),
+      );
+      return;
+    }
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => StudySessionPage(
+          setId: setId,
+          sessionId: session.id,
+        ),
+      ),
+    );
+  }
+
   Widget _buildStartButton(BuildContext context) {
     return SizedBox(
       height: 32,
       child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Sesi belajar akan dikembangkan pada tahap berikutnya.',
-              ),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
-            ),
-          );
-        },
+        onPressed: () => _startSession(context),
         style: ButtonStyle(
           backgroundColor: const WidgetStatePropertyAll(_accentColor),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
@@ -430,8 +448,8 @@ class StudySessionStartPage extends StatelessWidget {
             width: 56,
             height: 56,
             child: FloatingActionButton(
-              onPressed: () =>
-                  Navigator.of(context).popUntil((route) => route.isFirst),
+              onPressed: () => Navigator.of(context)
+              .popUntil((route) => route.isFirst),
               backgroundColor: _primaryColor,
               foregroundColor: Colors.white,
               shape: const CircleBorder(),
@@ -467,8 +485,9 @@ class StudySessionStartPage extends StatelessWidget {
           _buildBottomNavItem(
             icon: Icons.article_outlined,
             label: 'Berkas',
-            onTap: () =>
-                Navigator.of(context).popUntil((route) => route.isFirst),
+            onTap: () => Navigator.of(context).popUntil(
+              (route) => route.isFirst,
+              ),
           ),
           const SizedBox(width: 72),
           _buildBottomNavItem(
