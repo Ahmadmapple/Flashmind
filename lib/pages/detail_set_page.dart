@@ -6,6 +6,7 @@ import '../repositories/flash_mind_repository.dart';
 import 'add_card_page.dart';
 import 'edit_set_page.dart';
 import 'detail_card_page.dart';
+import 'study_session_page.dart';
 import 'study_session_start_page.dart';
 
 class DetailSetPage extends StatefulWidget {
@@ -178,7 +179,10 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => DetailCardPage(setId: card.setId, cardId: card.id),
+        builder: (_) => DetailCardPage(
+          setId: card.setId,
+          cardId: card.id,
+        ),
       ),
     );
   }
@@ -303,7 +307,12 @@ class _DetailSetPageState extends State<DetailSetPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildDeleteButton(set),
-                      _buildStudyButton(enabled: !isEmpty),
+                      _buildStudyButton(
+                        enabled: !isEmpty,
+                        hasInProgressSession: _repository
+                            .getInProgressStudySessionForSet(set.id) !=
+                            null,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 32),
@@ -501,14 +510,25 @@ class _DetailSetPageState extends State<DetailSetPage> {
   Future<void> _openStudySessionStart() async {
     if (_isDeleting) return;
 
+    final inProgressSession =
+        _repository.getInProgressStudySessionForSet(widget.setId);
+
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => StudySessionStartPage(setId: widget.setId),
+        builder: (_) => inProgressSession == null
+            ? StudySessionStartPage(setId: widget.setId)
+            : StudySessionPage(
+                setId: widget.setId,
+                sessionId: inProgressSession.id,
+              ),
       ),
     );
   }
 
-  Widget _buildStudyButton({required bool enabled}) {
+  Widget _buildStudyButton({
+    required bool enabled,
+    required bool hasInProgressSession,
+  }) {
     return SizedBox(
       height: 32,
       child: ElevatedButton(
@@ -538,7 +558,9 @@ class _DetailSetPageState extends State<DetailSetPage> {
             TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
           ),
         ),
-        child: const Text('Mulai Sesi Belajar'),
+        child: Text(
+          hasInProgressSession ? 'Lanjutkan Sesi Belajar' : 'Mulai Sesi Belajar',
+        ),
       ),
     );
   }
