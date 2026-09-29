@@ -4,6 +4,7 @@ import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+import 'study_session_end_page.dart';
 
 /// Layar pelaksanaan sesi belajar.
 class StudySessionPage extends StatefulWidget {
@@ -16,7 +17,9 @@ class StudySessionPage extends StatefulWidget {
   State<StudySessionPage> createState() => _StudySessionPageState();
 }
 
-class _StudySessionPageState extends State<StudySessionPage> {
+// PERUBAHAN: WidgetsBindingObserver agar timer kartu dapat dijeda
+// ketika aplikasi masuk ke background.
+class _StudySessionPageState extends State<StudySessionPage> with WidgetsBindingObserver {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _headerColor = Color(0xFFFFE5B4);
@@ -41,7 +44,36 @@ class _StudySessionPageState extends State<StudySessionPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeSession();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    final sessionId = _sessionId;
+    if (sessionId != null) {
+      _repository.pauseCurrentCard(sessionId);
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final sessionId = _sessionId;
+    if (sessionId == null || _isInitializing) return;
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _repository.resumeCurrentCard(sessionId);
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _repository.pauseCurrentCard(sessionId);
+        break;
+    }
   }
 
   Future<void> _initializeSession() async {
@@ -95,9 +127,13 @@ class _StudySessionPageState extends State<StudySessionPage> {
 
   void _ensureFrontTimestamp() {
     final session = _session;
-    if (session == null || session.currentCardFrontShownAt != null) return;
+    if (session == null) return;
 
-    _repository.markCurrentCardFrontShown(session.id);
+    if (session.currentCardFrontShownAt == null) {
+      _repository.markCurrentCardFrontShown(session.id);
+    } else {
+      _repository.resumeCurrentCard(session.id);
+    }
   }
 
   void _showAnswer() {
@@ -112,7 +148,7 @@ class _StudySessionPageState extends State<StudySessionPage> {
     });
   }
 
-  void _evaluateCard(bool isCorrect) {
+  Future<void> _evaluateCard(bool isCorrect) async {
     final session = _session;
     final card = _currentCard;
     if (session == null || card == null || _isEvaluating) return;
@@ -137,7 +173,16 @@ class _StudySessionPageState extends State<StudySessionPage> {
     }
 
     if (updatedSession.status == StudySessionStatus.completed) {
-      Navigator.of(context).pop();
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement<void, void>(
+        MaterialPageRoute<void>(
+          builder: (_) => StudySessionEndPage(
+            setId: updatedSession.setId,
+            sessionId: updatedSession.id,
+          ),
+        ),
+      );
+
       return;
     }
 
