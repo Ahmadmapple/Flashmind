@@ -6,6 +6,7 @@ import '../repositories/flash_mind_repository.dart';
 import 'add_card_page.dart';
 import 'edit_set_page.dart';
 import 'detail_card_page.dart';
+import 'study_session_start_page.dart';
 
 class DetailSetPage extends StatefulWidget {
   const DetailSetPage({
@@ -177,20 +178,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => DetailCardPage(
-          setId: card.setId,
-          cardId: card.id,
-        ),
-      ),
-    );
-  }
-
-  void _showNextStageMessage(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature akan dikembangkan pada tahap berikutnya.'),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+        builder: (_) => DetailCardPage(setId: card.setId, cardId: card.id),
       ),
     );
   }
@@ -510,13 +498,21 @@ class _DetailSetPageState extends State<DetailSetPage> {
     );
   }
 
+  Future<void> _openStudySessionStart() async {
+    if (_isDeleting) return;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => StudySessionStartPage(setId: widget.setId),
+      ),
+    );
+  }
+
   Widget _buildStudyButton({required bool enabled}) {
     return SizedBox(
       height: 32,
       child: ElevatedButton(
-        onPressed: enabled && !_isDeleting
-            ? () => _showNextStageMessage('Mulai Sesi Belajar')
-            : null,
+        onPressed: enabled && !_isDeleting ? _openStudySessionStart : null,
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (!enabled || states.contains(WidgetState.disabled)) {
