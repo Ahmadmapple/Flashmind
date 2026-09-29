@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
+import '../models/study_session.dart';
 
 class FlashMindRepository extends ChangeNotifier {
   FlashMindRepository._internal()
@@ -29,10 +30,37 @@ class FlashMindRepository extends ChangeNotifier {
   static final FlashMindRepository instance = FlashMindRepository._internal();
 
   final List<FlashcardSet> _sets;
+  final List<StudySession> _studySessions = [];
   int _nextSetNumber = 4;
   int _nextCardNumber = 1;
 
   List<FlashcardSet> get sets => List.unmodifiable(_sets);
+  
+  List<StudySession> getStudySessionsForSet(String setId) {
+    return List.unmodifiable(
+      _studySessions.where((session) => session.setId == setId),
+    );
+  }
+
+  List<StudySession> getCompletedStudySessionsForSet(String setId) {
+    return List.unmodifiable(
+      _studySessions.where(
+        (session) =>
+            session.setId == setId &&
+            session.status == StudySessionStatus.completed,
+      ),
+    );
+  }
+
+  StudySession? getInProgressStudySessionForSet(String setId) {
+    for (final session in _studySessions) {
+      if (session.setId == setId &&
+          session.status == StudySessionStatus.inProgress) {
+        return session;
+      }
+    }
+    return null;
+  }
 
   FlashcardSet? getSetById(String id) {
     for (final set in _sets) {
