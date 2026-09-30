@@ -490,7 +490,6 @@ class _HomeView extends StatelessWidget {
     );
   }
 
-  // NOTE: Fungsi-fungsi ini sekarang diletakkan dengan benar di dalam _HomeView
   Widget _buildChartBar(double height, Color color) {
     return Container(
       width: 32,
