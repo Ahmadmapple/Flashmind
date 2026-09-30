@@ -75,4 +75,19 @@ class AuthProvider extends ChangeNotifier {
     _currentUser = null;
     notifyListeners();
   }
+
+  Future<void> updateProfile(String newName) async {
+    if (_currentUser != null && newName.isNotEmpty) {
+      _currentUser = User(
+        id: _currentUser!.id,
+        nama: newName,
+        email: _currentUser!.email,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_nama', newName);
+
+      notifyListeners();
+    }
+  }
 }
