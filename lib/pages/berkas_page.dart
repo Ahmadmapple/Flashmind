@@ -122,7 +122,7 @@ class _BerkasPageState extends State<BerkasPage> {
         const SnackBar(
           content: Text('Set berhasil dihapus.'),
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 80),
         ),
       );
     }

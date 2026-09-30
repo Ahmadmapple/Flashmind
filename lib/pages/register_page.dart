@@ -15,6 +15,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool _passwordVisible = false;
+
   @override
   void dispose() {
     _namaController.dispose();
@@ -34,12 +36,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pendaftaran berhasil! Silakan masuk.')),
+          const SnackBar(
+            content: Text('Pendaftaran berhasil! Silakan masuk.'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+          ),
         );
-        Navigator.pop(context); // Kembali ke halaman login
+        Navigator.pop(context);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pendaftaran gagal, coba lagi')),
+          const SnackBar(
+            content: Text('Pendaftaran gagal, coba lagi'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+          ),
         );
       }
     }
@@ -69,6 +79,26 @@ class _RegisterPageState extends State<RegisterPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Logo
+                  Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF192A3A),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome,
+                        color: Color(0xFFF3C279),
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Judul
                   const Text(
                     'Daftar Akun',
                     style: TextStyle(
@@ -85,7 +115,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: TextStyle(fontSize: 14, color: Colors.black54),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 40),
 
                   // Kolom Nama
                   TextFormField(
@@ -155,7 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   // Kolom Password
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_passwordVisible,
                     cursorColor: const Color(0xFF192A3A),
                     decoration: InputDecoration(
                       labelText: 'Kata Sandi',
@@ -175,6 +205,17 @@ class _RegisterPageState extends State<RegisterPage> {
                         borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
                       ),
                       prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.black45,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _passwordVisible = !_passwordVisible;
+                          });
+                        },
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.length < 6) {
@@ -199,17 +240,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     child: isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFFF3C279),
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFFF3C279),
+                            ),
+                          )
                         : const Text(
-                      'Daftar Sekarang',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                            'Daftar Sekarang',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ],
               ),

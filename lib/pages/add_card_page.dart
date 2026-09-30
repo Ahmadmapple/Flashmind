@@ -142,18 +142,13 @@ class _AddCardPageState extends State<AddCardPage> {
   @override
   Widget build(BuildContext context) {
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final extraBottomPadding = (keyboardInset - _bottomBarHeight)
-        .clamp(0.0, double.infinity)
-        .toDouble();
+    final extraBottomPadding = keyboardInset.clamp(0.0, double.infinity).toDouble();
 
     return Scaffold(
       backgroundColor: _backgroundColor,
       resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(),
       body: SafeArea(bottom: false, child: _buildContent(extraBottomPadding)),
-      floatingActionButton: _buildHomeButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 

@@ -19,14 +19,12 @@ class _EditSetPageState extends State<EditSetPage> {
   static const Color _borderColor = Color(0xFFB8B5AF);
   static const Color _errorColor = Color(0xFFD32F2F);
 
-  static const double _bottomBarHeight = 65;
   static const double _fieldFooterHeight = 22;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
 
-  int _currentStep = 0;
   bool _titleValidationRequested = false;
   bool _isSaving = false;
 
@@ -46,47 +44,17 @@ class _EditSetPageState extends State<EditSetPage> {
     super.dispose();
   }
 
-  void _goBack() {
-    if (_isSaving) return;
-
-    if (_currentStep == 1) {
-      setState(() {
-        _currentStep = 0;
-      });
-      return;
-    }
-
-    Navigator.of(context).pop();
-  }
-
-  void _continueFromTitle() {
-    final title = _titleController.text.trim();
-
-    if (title.length < 3) {
-      setState(() {
-        _titleValidationRequested = true;
-      });
-      return;
-    }
-
-    setState(() {
-      _currentStep = 1;
-      _titleValidationRequested = false;
-    });
-  }
-
   Future<void> _saveChanges() async {
-    if (_isSaving) return;
-
     final title = _titleController.text.trim();
+
     if (title.length < 3) {
       setState(() {
-        _currentStep = 0;
         _titleValidationRequested = true;
       });
       return;
     }
 
+    if (_isSaving) return;
     FocusScope.of(context).unfocus();
     setState(() {
       _isSaving = true;
@@ -110,9 +78,8 @@ class _EditSetPageState extends State<EditSetPage> {
   @override
   Widget build(BuildContext context) {
     final double keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final double extraBottomPadding = (keyboardInset - _bottomBarHeight)
-        .clamp(0.0, double.infinity)
-        .toDouble();
+    final double extraBottomPadding =
+        keyboardInset.clamp(0.0, double.infinity).toDouble();
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -120,44 +87,76 @@ class _EditSetPageState extends State<EditSetPage> {
       appBar: _buildAppBar(),
       body: SafeArea(
         bottom: false,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: _currentStep == 0
-              ? _buildTitleStep(extraBottomPadding)
-              : _buildDescriptionStep(extraBottomPadding),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // -- Nama Set --
+              const Text(
+                'Nama Set',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'serif',
+                  color: _primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                controller: _titleController,
+                hintText: 'Masukkan nama set (minimal 3 karakter).',
+                maxLength: FlashcardSet.titleMaxLength,
+                minLines: 4,
+                maxLines: 4,
+                textInputAction: TextInputAction.next,
+              ),
+              _buildFieldFooter(
+                controller: _titleController,
+                maxLength: FlashcardSet.titleMaxLength,
+                errorText: 'Nama set minimal 3 karakter.',
+                showError: (text) =>
+                    _titleValidationRequested && text.trim().length < 3,
+              ),
+              const SizedBox(height: 24),
+
+              // -- Deskripsi Set --
+              const Text(
+                'Deskripsi Set',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'serif',
+                  color: _primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                controller: _descriptionController,
+                hintText: 'Masukkan deskripsi set jika dibutuhkan.',
+                maxLength: FlashcardSet.descriptionMaxLength,
+                minLines: 4,
+                maxLines: 4,
+              ),
+              _buildFieldFooter(
+                controller: _descriptionController,
+                maxLength: FlashcardSet.descriptionMaxLength,
+              ),
+              const SizedBox(height: 20),
+
+              // -- Tombol Simpan --
+              Align(
+                alignment: Alignment.centerRight,
+                child: _buildActionButton(
+                  label: 'Simpan',
+                  onPressed: _isSaving ? null : _saveChanges,
+                  isLoading: _isSaving,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 56,
-              height: 56,
-              child: FloatingActionButton(
-                onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-                backgroundColor: _primaryColor,
-                foregroundColor: Colors.white,
-                shape: const CircleBorder(),
-                elevation: 3,
-                child: const Icon(Icons.home_rounded, size: 30),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Beranda',
-              style: TextStyle(
-                fontSize: 9,
-                color: _primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -168,7 +167,7 @@ class _EditSetPageState extends State<EditSetPage> {
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
       leading: IconButton(
-        onPressed: _isSaving ? null : _goBack,
+        onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
         icon: const Icon(Icons.arrow_back, size: 28),
         color: _primaryColor,
         tooltip: 'Kembali',
@@ -186,93 +185,9 @@ class _EditSetPageState extends State<EditSetPage> {
     );
   }
 
-  Widget _buildTitleStep(double extraBottomPadding) {
-    return SingleChildScrollView(
-      key: const ValueKey('edit-title-step'),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Nama Set',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
-          const SizedBox(height: 15),
-          _buildInputField(
-            controller: _titleController,
-            maxLength: FlashcardSet.titleMaxLength,
-            minLines: 8,
-            maxLines: 8,
-            textInputAction: TextInputAction.next,
-          ),
-          _buildFieldFooter(
-            controller: _titleController,
-            maxLength: FlashcardSet.titleMaxLength,
-            errorText: 'Nama set minimal 3 karakter.',
-            showError: (text) =>
-                _titleValidationRequested && text.trim().length < 3,
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: _buildActionButton(
-              label: 'Lanjut',
-              onPressed: _isSaving ? null : _continueFromTitle,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDescriptionStep(double extraBottomPadding) {
-    return SingleChildScrollView(
-      key: const ValueKey('edit-description-step'),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Deskripsi Set',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
-          const SizedBox(height: 15),
-          _buildInputField(
-            controller: _descriptionController,
-            maxLength: FlashcardSet.descriptionMaxLength,
-            minLines: 8,
-            maxLines: 8,
-          ),
-          _buildFieldFooter(
-            controller: _descriptionController, 
-            maxLength: FlashcardSet.descriptionMaxLength,
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: _buildActionButton(
-              label: 'Selesai',
-              onPressed: _isSaving ? null : _saveChanges,
-              isLoading: _isSaving,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildInputField({
     required TextEditingController controller,
+    required String hintText,
     required int maxLength,
     required int minLines,
     required int maxLines,
@@ -288,6 +203,12 @@ class _EditSetPageState extends State<EditSetPage> {
       textAlign: TextAlign.justify,
       style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
       decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFFB4B1AC),
+          height: 1.25,
+        ),
         contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         counterText: '',
         filled: true,
@@ -398,65 +319,6 @@ class _EditSetPageState extends State<EditSetPage> {
                 child: CircularProgressIndicator(strokeWidth: 1.5),
               )
             : Text(label),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 2,
-      height: 65,
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.article_outlined,
-            label: 'Berkas',
-            onTap: _isSaving ? null : () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 72),
-          _buildBottomNavItem(
-            icon: Icons.timer_outlined,
-            label: 'Statistik',
-            onTap: null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        width: 64,
-        height: 65,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

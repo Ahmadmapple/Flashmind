@@ -18,13 +18,11 @@ class _AddSetPageState extends State<AddSetPage> {
   static const Color _borderColor = Color(0xFFB8B5AF);
   static const Color _errorColor = Color(0xFFD32F2F);
 
-  static const double _bottomBarHeight = 65;
   static const double _fieldFooterHeight = 22;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  int _currentStep = 0;
   bool _titleValidationRequested = false;
   bool _isSaving = false;
 
@@ -35,18 +33,7 @@ class _AddSetPageState extends State<AddSetPage> {
     super.dispose();
   }
 
-  void _goBack() {
-    if (_currentStep == 1) {
-      setState(() {
-        _currentStep = 0;
-      });
-      return;
-    }
-
-    Navigator.of(context).pop();
-  }
-
-  void _continueFromTitle() {
+  Future<void> _createSet() async {
     final title = _titleController.text.trim();
 
     if (title.length < 3) {
@@ -56,13 +43,6 @@ class _AddSetPageState extends State<AddSetPage> {
       return;
     }
 
-    setState(() {
-      _currentStep = 1;
-      _titleValidationRequested = false;
-    });
-  }
-
-  Future<void> _createSet() async {
     if (_isSaving) return;
     FocusScope.of(context).unfocus();
     setState(() {
@@ -70,7 +50,7 @@ class _AddSetPageState extends State<AddSetPage> {
     });
 
     final set = await FlashMindRepository.instance.createSet(
-      title: _titleController.text.trim(),
+      title: title,
       description: _descriptionController.text.trim(),
     );
 
@@ -91,9 +71,8 @@ class _AddSetPageState extends State<AddSetPage> {
   @override
   Widget build(BuildContext context) {
     final double keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final double extraBottomPadding = (keyboardInset - _bottomBarHeight)
-        .clamp(0.0, double.infinity)
-        .toDouble();
+    final double extraBottomPadding =
+        keyboardInset.clamp(0.0, double.infinity).toDouble();
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -101,43 +80,76 @@ class _AddSetPageState extends State<AddSetPage> {
       appBar: _buildAppBar(),
       body: SafeArea(
         bottom: false,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: _currentStep == 0
-              ? _buildTitleStep(extraBottomPadding)
-              : _buildDescriptionStep(extraBottomPadding),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // -- Nama Set --
+              const Text(
+                'Nama Set',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'serif',
+                  color: _primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                controller: _titleController,
+                hintText: 'Masukkan nama set (minimal 3 karakter).',
+                maxLength: FlashcardSet.titleMaxLength,
+                minLines: 4,
+                maxLines: 4,
+                textInputAction: TextInputAction.next,
+              ),
+              _buildFieldFooter(
+                controller: _titleController,
+                maxLength: FlashcardSet.titleMaxLength,
+                errorText: 'Nama set minimal 3 karakter.',
+                showError: (text) =>
+                    _titleValidationRequested && text.trim().length < 3,
+              ),
+              const SizedBox(height: 24),
+
+              // -- Deskripsi Set --
+              const Text(
+                'Deskripsi Set',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'serif',
+                  color: _primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                controller: _descriptionController,
+                hintText: 'Masukkan deskripsi set jika dibutuhkan.',
+                maxLength: FlashcardSet.descriptionMaxLength,
+                minLines: 4,
+                maxLines: 4,
+              ),
+              _buildFieldFooter(
+                controller: _descriptionController,
+                maxLength: FlashcardSet.descriptionMaxLength,
+              ),
+              const SizedBox(height: 20),
+
+              // -- Tombol Buat Set --
+              Align(
+                alignment: Alignment.centerRight,
+                child: _buildActionButton(
+                  label: 'Buat Set',
+                  onPressed: _isSaving ? null : _createSet,
+                  isLoading: _isSaving,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 56,
-              height: 56,
-              child: FloatingActionButton(
-                onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-                backgroundColor: _primaryColor,
-                foregroundColor: Colors.white,
-                shape: const CircleBorder(),
-                elevation: 3,
-                child: const Icon(Icons.home_rounded, size: 30),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Beranda',
-              style: TextStyle(
-                fontSize: 9,
-                color: _primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -148,7 +160,7 @@ class _AddSetPageState extends State<AddSetPage> {
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
       leading: IconButton(
-        onPressed: _isSaving ? null : _goBack,
+        onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
         icon: const Icon(Icons.arrow_back, size: 28),
         color: _primaryColor,
         tooltip: 'Kembali',
@@ -163,93 +175,6 @@ class _AddSetPageState extends State<AddSetPage> {
         ),
       ),
       centerTitle: true,
-    );
-  }
-
-  Widget _buildTitleStep(double extraBottomPadding) {
-    return SingleChildScrollView(
-      key: const ValueKey('title-step'),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Nama Set',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
-          const SizedBox(height: 15),
-          _buildInputField(
-            controller: _titleController,
-            hintText: 'Masukkan nama set dengan jumlah minimal 3 karakter.',
-            maxLength: FlashcardSet.titleMaxLength,
-            minLines: 8,
-            maxLines: 8,
-            textInputAction: TextInputAction.next,
-          ),
-          _buildFieldFooter(
-            controller: _titleController,
-            maxLength: FlashcardSet.titleMaxLength,
-            errorText: 'Nama set minimal 3 karakter.',
-            showError: (text) =>
-                _titleValidationRequested && text.trim().length < 3,
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: _buildActionButton(
-              label: 'Lanjut',
-              onPressed: _isSaving ? null : _continueFromTitle,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDescriptionStep(double extraBottomPadding) {
-    return SingleChildScrollView(
-      key: const ValueKey('description-step'),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Deskripsi Set',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
-          const SizedBox(height: 15),
-          _buildInputField(
-            controller: _descriptionController,
-            hintText: 'Masukkan deskripsi set jika dibutuhkan.',
-            maxLength: FlashcardSet.descriptionMaxLength,
-            minLines: 8,
-            maxLines: 8,
-          ),
-          _buildFieldFooter(
-            controller: _descriptionController,
-            maxLength: FlashcardSet.descriptionMaxLength,
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: _buildActionButton(
-              label: 'Buat Set',
-              onPressed: _isSaving ? null : _createSet,
-              isLoading: _isSaving,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -387,65 +312,6 @@ class _AddSetPageState extends State<AddSetPage> {
                 child: CircularProgressIndicator(strokeWidth: 1.5),
               )
             : Text(label),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 2,
-      height: _bottomBarHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.article_outlined,
-            label: 'Berkas',
-            onTap: _isSaving ? null : () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 72),
-          _buildBottomNavItem(
-            icon: Icons.timer_outlined,
-            label: 'Statistik',
-            onTap: null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        width: 64,
-        height: _bottomBarHeight,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

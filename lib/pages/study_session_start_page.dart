@@ -148,9 +148,6 @@ class StudySessionStartPage extends StatelessWidget {
           backgroundColor: _backgroundColor,
           appBar: _buildAppBar(context),
           body: _buildBody(context, set, completedSessions),
-          floatingActionButton: _buildHomeButton(context),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerFloat,
         );
       },
     );

@@ -162,7 +162,7 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
             highestAccuracy,
             fastestSession,
           ),
-          floatingActionButton: _buildHomeButton(context),
+          floatingActionButton: null,
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
         );

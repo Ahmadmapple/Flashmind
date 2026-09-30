@@ -67,6 +67,51 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
+  /// Mengecek apakah email terdaftar di penyimpanan lokal.
+  Future<bool> checkEmailExists(String email) async {
+    _isLoading = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    final prefs = await SharedPreferences.getInstance();
+    final storedEmail = prefs.getString('user_email');
+
+    _isLoading = false;
+    notifyListeners();
+
+    return storedEmail != null &&
+        storedEmail.toLowerCase() == email.toLowerCase();
+  }
+
+  /// Mengubah kata sandi pengguna berdasarkan email yang cocok.
+  Future<bool> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    final prefs = await SharedPreferences.getInstance();
+    final storedEmail = prefs.getString('user_email');
+
+    if (storedEmail == null ||
+        storedEmail.toLowerCase() != email.toLowerCase()) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+
+    // Simpan password baru (disimpan hashed sederhana untuk demo lokal)
+    await prefs.setString('user_password', newPassword);
+
+    _isLoading = false;
+    notifyListeners();
+    return true;
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_nama');

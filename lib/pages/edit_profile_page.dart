@@ -36,9 +36,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berhasil diperbarui')),
+          const SnackBar(
+            content: Text('Profil berhasil diperbarui'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+          ),
         );
-        Navigator.pop(context); // Kembali ke halaman profil
+        Navigator.pop(context);
       }
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:math' show pi;
+
 import 'package:flutter/material.dart';
 
 import '../models/flashcard.dart';
@@ -17,34 +19,51 @@ class StudySessionPage extends StatefulWidget {
   State<StudySessionPage> createState() => _StudySessionPageState();
 }
 
-class _StudySessionPageState extends State<StudySessionPage> {
-  static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
-  static const Color _headerColor = Color(0xFFFFE5B4);
+class _StudySessionPageState extends State<StudySessionPage>
+    with SingleTickerProviderStateMixin {
+  // ── Warna ──────────────────────────────────────────────────────────────────
+  static const Color _primaryColor   = Color(0xFF192A3A);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _dangerColor = Color(0xFFEF5350);
-  static const Color _successColor = Color(0xFF4CAF50);
+  static const Color _cardFrontColor  = Color(0xFF192A3A);   // biru gelap
+  static const Color _cardBackColor   = Color(0xFFF3C279);   // kuning emas
+  static const Color _dangerColor     = Color(0xFFEF5350);
+  static const Color _successColor    = Color(0xFF2D6A4F);
 
-  static const TextStyle _cardBodyStyle = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w600,
-    color: _primaryColor,
-    height: 1.35,
-  );
-
+  // ── Repository & state ────────────────────────────────────────────────────
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
-  String? _sessionId;
-  bool _isInitializing = true;
-  bool _isEvaluating = false;
-  bool _answerVisible = false;
+  String?  _sessionId;
+  bool     _isInitializing = true;
+  bool     _isEvaluating   = false;
+  bool     _answerVisible  = false;
+
+  // ── Animasi flip ─────────────────────────────────────────────────────────
+  late final AnimationController _flipController;
+  late final Animation<double>   _flipAnimation;
+  bool _isFrontFacing = true;
 
   @override
   void initState() {
     super.initState();
+
+    _flipController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _flipAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _flipController, curve: Curves.easeInOut),
+    );
+
     _initializeSession();
   }
 
+  @override
+  void dispose() {
+    _flipController.dispose();
+    super.dispose();
+  }
+
+  // ── Init sesi ─────────────────────────────────────────────────────────────
   Future<void> _initializeSession() async {
     final existingSession = widget.sessionId == null
         ? _repository.getInProgressStudySessionForSet(widget.setId)
@@ -55,11 +74,17 @@ class _StudySessionPageState extends State<StudySessionPage> {
 
     if (!mounted) return;
 
+    final alreadyRevealed = session?.currentCardAnswerRevealedAt != null;
     setState(() {
-      _sessionId = session?.id;
-      _isInitializing = false;
-      _answerVisible = session?.currentCardAnswerRevealedAt != null;
+      _sessionId       = session?.id;
+      _isInitializing  = false;
+      _answerVisible   = alreadyRevealed;
+      _isFrontFacing   = !alreadyRevealed;
     });
+
+    if (alreadyRevealed) {
+      _flipController.value = 1.0;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -67,10 +92,11 @@ class _StudySessionPageState extends State<StudySessionPage> {
     });
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
   StudySession? get _session {
-    final sessionId = _sessionId;
-    if (sessionId == null) return null;
-    return _repository.getStudySessionById(sessionId);
+    final id = _sessionId;
+    if (id == null) return null;
+    return _repository.getStudySessionById(id);
   }
 
   FlashcardSet? get _set {
@@ -81,10 +107,9 @@ class _StudySessionPageState extends State<StudySessionPage> {
 
   Flashcard? get _currentCard {
     final session = _session;
-    final set = _set;
+    final set     = _set;
     if (session == null || set == null) return null;
     if (session.nextCardIndex >= session.cardOrder.length) return null;
-
     final cardId = session.cardOrder[session.nextCardIndex];
     for (final card in set.cards) {
       if (card.id == cardId) return card;
@@ -95,43 +120,50 @@ class _StudySessionPageState extends State<StudySessionPage> {
   void _ensureFrontTimestamp() {
     final session = _session;
     if (session == null || session.currentCardFrontShownAt != null) return;
-
     _repository.markCurrentCardFrontShown(session.id);
   }
 
-  void _showAnswer() {
+  // ── Flip kartu ────────────────────────────────────────────────────────────
+  void _flipCard() {
     final session = _session;
-    if (session == null || _isEvaluating || _answerVisible) return;
+    if (session == null || _isEvaluating) return;
 
-    _repository.markAnswerRevealed(session.id);
-    if (!mounted) return;
-
-    setState(() {
-      _answerVisible = true;
-    });
+    if (_isFrontFacing) {
+      // Depan → belakang: tandai jawaban terlihat
+      _repository.markAnswerRevealed(session.id);
+      _flipController.forward();
+      setState(() {
+        _isFrontFacing  = false;
+        _answerVisible  = true;
+      });
+    } else {
+      // Belakang → depan
+      _flipController.reverse();
+      setState(() {
+        _isFrontFacing = true;
+        _answerVisible = false;
+      });
+    }
   }
 
+  // ── Evaluasi ──────────────────────────────────────────────────────────────
   Future<void> _evaluateCard(bool isCorrect) async {
     final session = _session;
-    final card = _currentCard;
+    final card    = _currentCard;
     if (session == null || card == null || _isEvaluating) return;
 
-    setState(() {
-      _isEvaluating = true;
-    });
+    setState(() => _isEvaluating = true);
 
     final updatedSession = _repository.evaluateCurrentCard(
       sessionId: session.id,
-      cardId: card.id,
+      cardId:    card.id,
       isCorrect: isCorrect,
     );
 
     if (!mounted) return;
 
     if (updatedSession == null) {
-      setState(() {
-        _isEvaluating = false;
-      });
+      setState(() => _isEvaluating = false);
       return;
     }
 
@@ -139,18 +171,20 @@ class _StudySessionPageState extends State<StudySessionPage> {
       await Navigator.of(context).pushReplacement<void, void>(
         MaterialPageRoute<void>(
           builder: (_) => StudySessionEndPage(
-            setId: updatedSession.setId,
+            setId:     updatedSession.setId,
             sessionId: updatedSession.id,
           ),
         ),
       );
-
       return;
     }
 
+    // Reset ke depan untuk kartu berikutnya
+    _flipController.value = 0.0;
     setState(() {
       _answerVisible = false;
-      _isEvaluating = false;
+      _isFrontFacing = true;
+      _isEvaluating  = false;
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -159,6 +193,7 @@ class _StudySessionPageState extends State<StudySessionPage> {
     });
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     if (_isInitializing) {
@@ -169,8 +204,8 @@ class _StudySessionPageState extends State<StudySessionPage> {
     }
 
     final session = _session;
-    final set = _set;
-    final card = _currentCard;
+    final set     = _set;
+    final card    = _currentCard;
 
     if (session == null || set == null || card == null) {
       return Scaffold(
@@ -184,173 +219,238 @@ class _StudySessionPageState extends State<StudySessionPage> {
 
     return PopScope<bool>(
       canPop: !_isEvaluating,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (didPop, _) {
         if (didPop) {
-          final sessionId = _sessionId;
-          if (sessionId != null) {
-            _repository.pauseStudySession(sessionId);
-          }
+          final sid = _sessionId;
+          if (sid != null) _repository.pauseStudySession(sid);
         }
       },
       child: Scaffold(
         backgroundColor: _backgroundColor,
         appBar: _buildAppBar(context),
-        body: _buildBody(context, session, card),
-        floatingActionButton: _buildHomeButton(context),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        body: _buildBody(context, session, set, card),
       ),
     );
   }
 
+  // ── AppBar ────────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: _headerColor,
+      backgroundColor: _backgroundColor,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
       leading: IconButton(
         onPressed: _isEvaluating ? null : () => Navigator.of(context).pop(),
-        icon: const Icon(Icons.arrow_back, size: 28),
+        icon: const Icon(Icons.arrow_back_ios_new, size: 22),
         color: _primaryColor,
         tooltip: 'Kembali',
       ),
-      title: const Text(
-        'Sesi Belajar',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'serif',
-          color: _primaryColor,
-        ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: const Color(0xFFE8E4DB)),
       ),
-      centerTitle: false,
     );
   }
 
+  // ── Body ──────────────────────────────────────────────────────────────────
   Widget _buildBody(
     BuildContext context,
     StudySession session,
+    FlashcardSet set,
     Flashcard card,
   ) {
-    final totalCards = session.cardOrder.length;
+    final totalCards    = session.cardOrder.length;
     final currentNumber = session.nextCardIndex + 1;
-    final sideLabel = _answerVisible ? 'Sisi Belakang' : 'Sisi Depan';
-    final text = _answerVisible ? card.backText : card.frontText;
 
     return SafeArea(
       top: false,
-      bottom: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 30, 20, 88),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    sideLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'serif',
-                      color: _primaryColor,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 8),
-                  child: Text(
-                    '$currentNumber/$totalCards',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 20),
+
+            // Label: NAMA SET · KARTU N
+            Text(
+              '${set.title.toUpperCase()} · KARTU $currentNumber',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                color: Color(0xFFE87A5D),
+              ),
             ),
-            const SizedBox(height: 8),
-            _buildStudyCard(text: text),
-            const SizedBox(height: 24),
-            if (!_answerVisible)
-              Center(child: _buildShowAnswerButton())
-            else
-              _buildEvaluationButtons(),
+
+            // Progress bar tipis
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: currentNumber / totalCards,
+                minHeight: 3,
+                backgroundColor: const Color(0xFFE8E4DB),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFFE87A5D),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Kartu flip
+            Expanded(
+              child: _buildFlipCard(card),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Hint / tombol evaluasi
+            _buildBottomSection(),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStudyCard({required String text}) {
+  // ── Kartu flip 3D ────────────────────────────────────────────────────────
+  Widget _buildFlipCard(Flashcard card) {
+    return GestureDetector(
+      onTap: _isEvaluating ? null : _flipCard,
+      child: AnimatedBuilder(
+        animation: _flipAnimation,
+        builder: (context, _) {
+          final angle = _flipAnimation.value * pi;
+          final isFront = angle <= pi / 2;
+
+          // Saat sudut > 90° tampilkan sisi belakang (diputar 180° lagi)
+          Widget face;
+          if (isFront) {
+            face = _buildCardFace(
+              text:      card.frontText,
+              color:     _cardFrontColor,
+              textColor: Colors.white,
+              hint:      'KETUK UNTUK LIHAT JAWABAN',
+              hintColor: Colors.white38,
+              isBack:    false,
+            );
+          } else {
+            face = Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.rotationY(pi),
+              child: _buildCardFace(
+                text:      card.backText,
+                color:     _cardBackColor,
+                textColor: _primaryColor,
+                hint:      'KETUK UNTUK LIHAT PERTANYAAN',
+                hintColor: const Color(0xFF192A3A66),
+                isBack:    true,
+              ),
+            );
+          }
+
+          return Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.001)
+              ..rotateY(angle),
+            child: face,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCardFace({
+    required String text,
+    required Color color,
+    required Color textColor,
+    required String hint,
+    required Color hintColor,
+    required bool isBack,
+  }) {
     return Container(
       width: double.infinity,
-      height: 400,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
-        borderRadius: BorderRadius.circular(20),
+        color: color,
+        borderRadius: BorderRadius.circular(28),
       ),
-      child: SingleChildScrollView(
-        child: SizedBox(
-          width: double.infinity,
-          child: Text(
-            text,
-            textAlign: TextAlign.justify,
-            style: _cardBodyStyle,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'serif',
+                color: textColor,
+                height: 1.35,
+              ),
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShowAnswerButton() {
-    return SizedBox(
-      height: 32,
-      child: ElevatedButton(
-        onPressed: _isEvaluating ? null : _showAnswer,
-        style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_accentColor),
-          foregroundColor: const WidgetStatePropertyAll(_primaryColor),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 18),
+          const SizedBox(height: 28),
+          Text(
+            hint,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: hintColor,
+            ),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(95, 35)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-          textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          ),
-        ),
-        child: const Text('Lihat Jawaban'),
+        ],
       ),
     );
   }
 
-  Widget _buildEvaluationButtons() {
+  // ── Bagian bawah ─────────────────────────────────────────────────────────
+  Widget _buildBottomSection() {
+    if (!_answerVisible) {
+      // Sebelum flip: teks panduan
+      return Center(
+        child: RichText(
+          text: const TextSpan(
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+            children: [
+              TextSpan(text: 'Pikirkan jawabannya, lalu ketuk kartu untuk '),
+              TextSpan(
+                text: 'balik.',
+                style: TextStyle(
+                  color: Color(0xFFE87A5D),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Setelah flip: tombol evaluasi
     return Row(
       children: [
         Expanded(
           child: _buildEvaluationButton(
-            label: 'Salah',
-            backgroundColor: _dangerColor,
-            onPressed: _isEvaluating ? null : () => _evaluateCard(false),
+            label:           'Tidak Tahu',
+            backgroundColor: const Color(0xFFFDE8E8),
+            textColor:       _dangerColor,
+            onPressed:       _isEvaluating ? null : () => _evaluateCard(false),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 14),
         Expanded(
           child: _buildEvaluationButton(
-            label: 'Benar',
+            label:           'Sudah Tahu',
             backgroundColor: _successColor,
-            onPressed: _isEvaluating ? null : () => _evaluateCard(true),
+            textColor:       Colors.white,
+            onPressed:       _isEvaluating ? null : () => _evaluateCard(true),
           ),
         ),
       ],
@@ -360,135 +460,39 @@ class _StudySessionPageState extends State<StudySessionPage> {
   Widget _buildEvaluationButton({
     required String label,
     required Color backgroundColor,
+    required Color textColor,
     required VoidCallback? onPressed,
   }) {
     return SizedBox(
-      height: 32,
+      height: 52,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(backgroundColor),
-          foregroundColor: const WidgetStatePropertyAll(Colors.white),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
+          foregroundColor: WidgetStatePropertyAll(textColor),
+          elevation:        const WidgetStatePropertyAll(0),
+          padding:          const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 14),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(26)),
+            ),
           ),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
         ),
         child: _isEvaluating
-            ? const SizedBox(
-                width: 14,
-                height: 14,
+            ? SizedBox(
+                width: 18,
+                height: 18,
                 child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: Colors.white,
+                  strokeWidth: 2,
+                  color: textColor,
                 ),
               )
             : Text(label),
-      ),
-    );
-  }
-
-  Widget _buildHomeButton(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(0, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: FloatingActionButton(
-              onPressed: _isEvaluating
-                  ? null
-                  : () =>
-                        Navigator.of(context)
-                            .popUntil((route) => route.isFirst),
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              elevation: 3,
-              child: const Icon(Icons.home_rounded, size: 30),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Beranda',
-            style: TextStyle(
-              fontSize: 9,
-              color: _primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 2,
-      height: 65,
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.article_outlined,
-            label: 'Berkas',
-            onTap: _isEvaluating
-                ? null
-                : () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst),
-          ),
-          const SizedBox(width: 72),
-          _buildBottomNavItem(
-            icon: Icons.timer_outlined,
-            label: 'Statistik',
-            onTap: null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        width: 64,
-        height: 65,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

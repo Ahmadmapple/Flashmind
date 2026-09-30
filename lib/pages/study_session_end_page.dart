@@ -108,7 +108,6 @@ class StudySessionEndPage extends StatelessWidget {
             highestAccuracy,
             fastestSession,
           ),
-          floatingActionButton: _buildHomeButton(context),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
         );

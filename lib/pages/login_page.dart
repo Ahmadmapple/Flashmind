@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'register_page.dart';
+import 'forgot_password_page.dart';
 import '../main.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,6 +16,8 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _passwordVisible = false;
 
   @override
   void dispose() {
@@ -35,17 +38,23 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushAndRemoveUntil(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const MainPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const MainPage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
             transitionDuration: const Duration(milliseconds: 600),
           ),
-              (route) => false,
+          (route) => false,
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email atau kata sandi salah')),
+          const SnackBar(
+            content: Text('Email atau kata sandi salah'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+          ),
         );
       }
     }
@@ -67,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo / Ikon Bintang
+                  // Logo
                   Center(
                     child: Container(
                       width: 80,
@@ -115,20 +124,26 @@ class _LoginPageState extends State<LoginPage> {
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF192A3A), width: 2),
                       ),
-                      prefixIcon: const Icon(Icons.email_outlined, color: Colors.black54),
+                      prefixIcon:
+                          const Icon(Icons.email_outlined, color: Colors.black54),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty || !value.contains('@')) {
+                      if (value == null ||
+                          value.isEmpty ||
+                          !value.contains('@')) {
                         return 'Masukkan alamat email yang valid';
                       }
                       return null;
@@ -139,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Kolom Password
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_passwordVisible,
                     cursorColor: const Color(0xFF192A3A),
                     decoration: InputDecoration(
                       labelText: 'Kata Sandi',
@@ -148,17 +163,34 @@ class _LoginPageState extends State<LoginPage> {
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF192A3A), width: 2),
                       ),
-                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54),
+                      prefixIcon:
+                          const Icon(Icons.lock_outline, color: Colors.black54),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.black45,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _passwordVisible = !_passwordVisible;
+                          });
+                        },
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.length < 6) {
@@ -167,7 +199,35 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
+
+                  // Link lupa kata sandi
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordPage(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFE87A5D),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 0, vertical: 8),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'Lupa Kata Sandi?',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   // Tombol Masuk
                   ElevatedButton(
@@ -183,21 +243,22 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     child: isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFFF3C279),
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFFF3C279),
+                            ),
+                          )
                         : const Text(
-                      'Masuk',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                            'Masuk',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Navigasi ke Halaman Daftar
+                  // Navigasi ke halaman daftar
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -209,7 +270,9 @@ class _LoginPageState extends State<LoginPage> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const RegisterPage()),
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterPage(),
+                            ),
                           );
                         },
                         child: const Text(

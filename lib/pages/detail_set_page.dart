@@ -8,6 +8,7 @@ import 'edit_set_page.dart';
 import 'detail_card_page.dart';
 import 'study_session_continue_page.dart';
 import 'study_session_start_page.dart';
+import 'ai_card_review_page.dart';
 
 class DetailSetPage extends StatefulWidget {
   const DetailSetPage({
@@ -204,8 +205,6 @@ class _DetailSetPageState extends State<DetailSetPage> {
           return _buildContent(set);
         },
       ),
-      floatingActionButton: _buildHomeButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -263,6 +262,129 @@ class _DetailSetPageState extends State<DetailSetPage> {
     );
   }
 
+  /// Simulasi pemilihan file PDF lalu navigasi ke halaman review kartu AI.
+  Future<void> _openPdfUpload() async {
+    if (_isDeleting) return;
+
+    // Tampilkan dialog konfirmasi pilih PDF (dummy — tanpa file picker nyata)
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8E4DB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Unggah Dokumen PDF',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'serif',
+                color: Color(0xFF192A3A),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'AI akan membaca dokumen PDF kamu dan membuat flashcard secara otomatis. '
+              'Kamu bisa meninjau dan memilih kartu mana yang ingin disimpan.',
+              style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.45),
+            ),
+            const SizedBox(height: 28),
+            // Ilustrasi area pilih file
+            GestureDetector(
+              onTap: () => Navigator.of(ctx).pop(true),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBF9F6),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFE8E4DB),
+                    width: 2,
+                    strokeAlign: BorderSide.strokeAlignInside,
+                  ),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.picture_as_pdf,
+                      size: 40,
+                      color: Color(0xFFE87A5D),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Ketuk untuk pilih file PDF',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF192A3A),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Maksimal 10 MB',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF192A3A),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: const Text(
+                  'Pilih File PDF',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    // Navigasi ke halaman review kartu AI dengan nama file dummy
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => AiCardReviewPage(
+          setId:    widget.setId,
+          fileName: 'dokumen.pdf',
+        ),
+      ),
+    );
+  }
+
   Widget _buildContent(FlashcardSet set) {
     final bool isEmpty = set.cardCount == 0;
 
@@ -314,6 +436,9 @@ class _DetailSetPageState extends State<DetailSetPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  // Tombol Unggah PDF
+                  _buildUploadPdfButton(),
                   const SizedBox(height: 32),
                   if (isEmpty)
                     _buildEmptyState()
@@ -467,6 +592,29 @@ class _DetailSetPageState extends State<DetailSetPage> {
           width: 44,
           height: 44,
           child: Icon(Icons.add, color: _primaryColor, size: 28),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadPdfButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: OutlinedButton.icon(
+        onPressed: _isDeleting ? null : _openPdfUpload,
+        icon: const Icon(Icons.picture_as_pdf, size: 18),
+        label: const Text('Buat Kartu dari PDF dengan AI'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF192A3A),
+          side: const BorderSide(color: Color(0xFFB8B5AF), width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
