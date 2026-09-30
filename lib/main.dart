@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 
 import 'pages/berkas_page.dart';
 import 'pages/statistic_page.dart';
 
 void main() {
-  runApp(const FlashMindApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: const FlashMindApp(),
+    ),
+  );
 }
+
+// ... class FlashMindApp extends StatelessWidget { ...
+// (KODE KE BAWAHNYA JANGAN ADA YANG DIUBAH SAMA SEKALI)
 
 class FlashMindApp extends StatelessWidget {
   const FlashMindApp({super.key});
