@@ -16,30 +16,28 @@ class EditCardPage extends StatefulWidget {
 }
 
 class _EditCardPageState extends State<EditCardPage> {
-  static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
+  static const Color _primaryColor   = Color(0xFF192A3A);
+  static const Color _accentColor    = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _borderColor = Color(0xFFB8B5AF);
-  static const Color _errorColor = Color(0xFFD32F2F);
-  static const Color _dangerColor = Color(0xFFEF5350);
+  static const Color _borderColor    = Color(0xFFB8B5AF);
+  static const Color _errorColor     = Color(0xFFD32F2F);
+  static const Color _dangerColor    = Color(0xFFEF5350);
 
-  static const double _bottomBarHeight = 65;
-  static const double _fieldFooterHeight = 22;
-  static const int _cardMaxLength = 999;
-
-  static const double _inputBoxHeight = 420;
-  static const double _contentToActionsGap = 35;
-  static const double _actionsHorizontalPadding = 12;
+  static const double _fieldFooterHeight       = 22;
+  static const int    _cardMaxLength           = 999;
+  static const double _inputBoxHeight          = 360;
+  static const double _contentToActionsGap     = 28;
+  static const double _actionsHorizontalPadding = 0;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
   late final TextEditingController _frontController;
   late final TextEditingController _backController;
 
-  bool _isBackSide = false;
+  bool _isBackSide    = false;
   bool _showFrontError = false;
-  bool _showBackError = false;
-  bool _isSaving = false;
-  bool _isDeleting = false;
+  bool _showBackError  = false;
+  bool _isSaving      = false;
+  bool _isDeleting    = false;
 
   TextEditingController get _activeController =>
       _isBackSide ? _backController : _frontController;
@@ -48,7 +46,7 @@ class _EditCardPageState extends State<EditCardPage> {
   void initState() {
     super.initState();
     _frontController = TextEditingController(text: widget.card.frontText);
-    _backController = TextEditingController(text: widget.card.backText);
+    _backController  = TextEditingController(text: widget.card.backText);
     _frontController.addListener(_handleTextChanged);
     _backController.addListener(_handleTextChanged);
   }
@@ -64,14 +62,12 @@ class _EditCardPageState extends State<EditCardPage> {
 
   void _handleTextChanged() {
     if (!mounted) return;
-
     final frontValid = _frontController.text.trim().isNotEmpty;
-    final backValid = _backController.text.trim().isNotEmpty;
-
+    final backValid  = _backController.text.trim().isNotEmpty;
     if ((_showFrontError && frontValid) || (_showBackError && backValid)) {
       setState(() {
         if (frontValid) _showFrontError = false;
-        if (backValid) _showBackError = false;
+        if (backValid)  _showBackError  = false;
       });
     }
   }
@@ -85,9 +81,7 @@ class _EditCardPageState extends State<EditCardPage> {
   void _toggleCardSide() {
     if (_isSaving || _isDeleting) return;
     FocusScope.of(context).unfocus();
-    setState(() {
-      _isBackSide = !_isBackSide;
-    });
+    setState(() => _isBackSide = !_isBackSide);
   }
 
   Future<void> _saveChanges() async {
@@ -96,39 +90,29 @@ class _EditCardPageState extends State<EditCardPage> {
     FocusScope.of(context).unfocus();
 
     final frontEmpty = _frontController.text.trim().isEmpty;
-    final backEmpty = _backController.text.trim().isEmpty;
+    final backEmpty  = _backController.text.trim().isEmpty;
 
     if (frontEmpty || backEmpty) {
       setState(() {
         _showFrontError = frontEmpty;
-        _showBackError = backEmpty;
-
-        if (frontEmpty && !backEmpty) {
-          _isBackSide = false;
-        } else if (!frontEmpty && backEmpty) {
-          _isBackSide = true;
-        }
+        _showBackError  = backEmpty;
+        if (frontEmpty && !backEmpty) _isBackSide = false;
+        else if (!frontEmpty && backEmpty) _isBackSide = true;
       });
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
+    setState(() => _isSaving = true);
 
     await _repository.updateFlashcard(
-      id: widget.card.id,
-      setId: widget.setId,
+      id:        widget.card.id,
+      setId:     widget.setId,
       frontText: _frontController.text,
-      backText: _backController.text,
+      backText:  _backController.text,
     );
 
     if (!mounted) return;
-
-    setState(() {
-      _isSaving = false;
-    });
-
+    setState(() => _isSaving = false);
     Navigator.of(context).pop(EditCardResult.saved);
   }
 
@@ -137,45 +121,39 @@ class _EditCardPageState extends State<EditCardPage> {
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Hapus Kartu'),
-          content: const Text('Apakah Anda yakin ingin menghapus kartu ini?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              style: TextButton.styleFrom(foregroundColor: Colors.grey),
-              child: const Text('Batal'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: TextButton.styleFrom(foregroundColor: _dangerColor),
-              child: const Text('Hapus'),
-            ),
-          ],
-        );
-      },
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Kartu'),
+        content: const Text('Apakah Anda yakin ingin menghapus kartu ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: _dangerColor),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true || !mounted) return;
 
-    setState(() {
-      _isDeleting = true;
-    });
+    setState(() => _isDeleting = true);
 
     final deleted = await _repository.deleteFlashcard(widget.card.id);
 
     if (!mounted) return;
 
     if (!deleted) {
-      setState(() {
-        _isDeleting = false;
-      });
+      setState(() => _isDeleting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Kartu tidak ditemukan.'),
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
         ),
       );
       return;
@@ -186,10 +164,8 @@ class _EditCardPageState extends State<EditCardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final extraBottomPadding = (keyboardInset - _bottomBarHeight)
-        .clamp(0.0, double.infinity)
-        .toDouble();
+    final keyboardInset      = MediaQuery.of(context).viewInsets.bottom;
+    final extraBottomPadding = keyboardInset.clamp(0.0, double.infinity);
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -205,23 +181,17 @@ class _EditCardPageState extends State<EditCardPage> {
               _buildHeadingRow(),
               const SizedBox(height: 8),
               SizedBox(height: _inputBoxHeight, child: _buildInputArea()),
-
               _buildFieldFooter(),
-
               const SizedBox(height: _contentToActionsGap - _fieldFooterHeight),
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: _actionsHorizontalPadding,
-                ),
+                    horizontal: _actionsHorizontalPadding),
                 child: _buildActionRow(),
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: _buildHomeButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -258,9 +228,8 @@ class _EditCardPageState extends State<EditCardPage> {
           child: Text(
             _isBackSide ? 'Sisi Belakang' : 'Sisi Depan',
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
               color: _primaryColor,
             ),
           ),
@@ -280,7 +249,8 @@ class _EditCardPageState extends State<EditCardPage> {
           padding: const EdgeInsets.symmetric(horizontal: 2),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          textStyle:
+              const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         ),
         icon: const Icon(Icons.swap_horiz, size: 23),
         label: const Text('Balikkan Kartu'),
@@ -289,24 +259,19 @@ class _EditCardPageState extends State<EditCardPage> {
   }
 
   Widget _buildInputArea() {
-    final controller = _activeController;
-
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: _borderColor, width: 1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x18000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
+              color: Color(0x18000000), blurRadius: 2, offset: Offset(0, 1)),
         ],
       ),
       child: TextField(
-        controller: controller,
+        controller: _activeController,
         maxLength: _cardMaxLength,
         minLines: null,
         maxLines: null,
@@ -315,10 +280,7 @@ class _EditCardPageState extends State<EditCardPage> {
         textAlignVertical: TextAlignVertical.top,
         textAlign: TextAlign.justify,
         style: const TextStyle(
-          fontSize: 14,
-          color: _primaryColor,
-          height: 1.45,
-        ),
+            fontSize: 14, color: _primaryColor, height: 1.45),
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           counterText: '',
@@ -327,31 +289,26 @@ class _EditCardPageState extends State<EditCardPage> {
               ? 'Masukkan isi dari sisi belakang kartu.'
               : 'Masukkan isi dari sisi depan kartu.',
           hintStyle: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFFB4B1AC),
-            height: 1.45,
-          ),
+              fontSize: 14, color: Color(0xFFB4B1AC), height: 1.45),
         ),
       ),
     );
   }
 
   Widget _buildFieldFooter() {
-    final controller = _activeController;
-
     return SizedBox(
       height: _fieldFooterHeight,
       child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
+        valueListenable: _activeController,
         builder: (context, value, _) {
           final frontEmpty = _frontController.text.trim().isEmpty;
-          final backEmpty = _backController.text.trim().isEmpty;
-          final showError = _isBackSide ? _showBackError : _showFrontError;
-          final errorText = frontEmpty && backEmpty
+          final backEmpty  = _backController.text.trim().isEmpty;
+          final showError  = _isBackSide ? _showBackError : _showFrontError;
+          final errorText  = frontEmpty && backEmpty
               ? 'Sisi depan dan belakang perlu diisi.'
               : _isBackSide
-              ? 'Sisi belakang perlu diisi.'
-              : 'Sisi depan perlu diisi.';
+                  ? 'Sisi belakang perlu diisi.'
+                  : 'Sisi depan perlu diisi.';
 
           return Padding(
             padding: const EdgeInsets.only(top: 6),
@@ -362,16 +319,13 @@ class _EditCardPageState extends State<EditCardPage> {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12, right: 8),
                     child: showError
-                        ? Text(
-                            errorText,
+                        ? Text(errorText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: _errorColor,
-                              fontSize: 12,
-                              height: 1.2,
-                            ),
-                          )
+                                color: _errorColor,
+                                fontSize: 12,
+                                height: 1.2))
                         : const SizedBox.shrink(),
                   ),
                 ),
@@ -380,10 +334,9 @@ class _EditCardPageState extends State<EditCardPage> {
                   child: Text(
                     '${value.text.length}/$_cardMaxLength',
                     style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF9A9894),
-                      height: 1.6,
-                    ),
+                        fontSize: 10,
+                        color: Color(0xFF9A9894),
+                        height: 1.6),
                   ),
                 ),
               ],
@@ -403,7 +356,7 @@ class _EditCardPageState extends State<EditCardPage> {
 
   Widget _buildDeleteButton() {
     return SizedBox(
-      height: 32,
+      height: 40,
       child: ElevatedButton(
         onPressed: (_isSaving || _isDeleting) ? null : _confirmDelete,
         style: ButtonStyle(
@@ -411,25 +364,20 @@ class _EditCardPageState extends State<EditCardPage> {
           foregroundColor: const WidgetStatePropertyAll(Colors.white),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 12),
-          ),
-          minimumSize: const WidgetStatePropertyAll(Size(95, 32)),
+              EdgeInsets.symmetric(horizontal: 16)),
+          minimumSize: const WidgetStatePropertyAll(Size(88, 40)),
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-          ),
+              TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
         ),
         child: _isDeleting
             ? const SizedBox(
-                width: 14,
-                height: 14,
+                width: 16,
+                height: 16,
                 child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: Colors.white,
-                ),
-              )
+                    strokeWidth: 1.5, color: Colors.white))
             : const Text('Hapus Kartu'),
       ),
     );
@@ -437,7 +385,7 @@ class _EditCardPageState extends State<EditCardPage> {
 
   Widget _buildFinishButton() {
     return SizedBox(
-      height: 32,
+      height: 40,
       child: ElevatedButton(
         onPressed: (_isSaving || _isDeleting) ? null : _saveChanges,
         style: ButtonStyle(
@@ -450,120 +398,24 @@ class _EditCardPageState extends State<EditCardPage> {
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 18),
-          ),
-          minimumSize: const WidgetStatePropertyAll(Size(95, 32)),
+              EdgeInsets.symmetric(horizontal: 20)),
+          minimumSize: const WidgetStatePropertyAll(Size(110, 40)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: Color(0xFFD7A957), width: 0.7),
             ),
           ),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          ),
+              TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         ),
         child: _isSaving
             ? const SizedBox(
-                width: 14,
-                height: 14,
+                width: 16,
+                height: 16,
                 child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: _primaryColor,
-                ),
-              )
-            : const Text('Selesai'),
-      ),
-    );
-  }
-
-  Widget _buildHomeButton() {
-    return Transform.translate(
-      offset: const Offset(0, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: FloatingActionButton(
-              onPressed: (_isSaving || _isDeleting) ? null : _cancelEditing,
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              elevation: 3,
-              child: const Icon(Icons.home_rounded, size: 30),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Beranda',
-            style: TextStyle(
-              fontSize: 9,
-              color: _primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 2,
-      height: _bottomBarHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.article_outlined,
-            label: 'Berkas',
-            onTap: (_isSaving || _isDeleting) ? null : _cancelEditing,
-          ),
-          const SizedBox(width: 72),
-          _buildBottomNavItem(
-            icon: Icons.timer_outlined,
-            label: 'Statistik',
-            onTap: null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        width: 64,
-        height: _bottomBarHeight,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+                    strokeWidth: 1.5, color: _primaryColor))
+            : const Text('Simpan'),
       ),
     );
   }

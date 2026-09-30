@@ -196,9 +196,8 @@ class _AddCardPageState extends State<AddCardPage> {
                   child: Text(
                     isBack ? 'Sisi Belakang' : 'Sisi Depan',
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'serif',
                       color: _primaryColor,
                     ),
                   ),
@@ -349,7 +348,7 @@ class _AddCardPageState extends State<AddCardPage> {
     required VoidCallback? onPressed,
   }) {
     return SizedBox(
-      height: 32,
+      height: 40,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ButtonStyle(
@@ -357,23 +356,23 @@ class _AddCardPageState extends State<AddCardPage> {
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 18),
+            EdgeInsets.symmetric(horizontal: 20),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(100, 32)),
+          minimumSize: const WidgetStatePropertyAll(Size(110, 40)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: Color(0xFFD7A957), width: 0.7),
             ),
           ),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
         child: _isSaving
             ? const SizedBox(
-                width: 14,
-                height: 14,
+                width: 16,
+                height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.5,
                   color: _primaryColor,

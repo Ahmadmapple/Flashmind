@@ -423,22 +423,25 @@ class _DetailSetPageState extends State<DetailSetPage> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  // Tombol aksi: Hapus & Mulai Belajar sejajar
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildDeleteButton(set),
-                      _buildStudyButton(
-                        enabled: !isEmpty,
-                        hasInProgressSession: _repository
-                            .getInProgressStudySessionForSet(set.id) !=
-                            null,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildStudyButton(
+                          enabled: !isEmpty,
+                          hasInProgressSession: _repository
+                                  .getInProgressStudySessionForSet(set.id) !=
+                              null,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  // Tombol Unggah PDF
+                  const SizedBox(height: 10),
+                  // Tombol Upload PDF (full width)
                   _buildUploadPdfButton(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                   if (isEmpty)
                     _buildEmptyState()
                   else ...[
@@ -621,7 +624,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
   Widget _buildDeleteButton(FlashcardSet set) {
     return SizedBox(
-      height: 32,
+      height: 40,
       child: ElevatedButton(
         onPressed: _isDeleting ? null : () => _confirmDelete(set),
         style: ButtonStyle(
@@ -631,7 +634,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 16),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(95, 32)),
+          minimumSize: const WidgetStatePropertyAll(Size(88, 40)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
@@ -673,19 +676,19 @@ class _DetailSetPageState extends State<DetailSetPage> {
     required bool hasInProgressSession,
   }) {
     return SizedBox(
-      height: 32,
+      height: 40,
       child: ElevatedButton(
         onPressed: enabled && !_isDeleting ? _openStudySessionStart : null,
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (!enabled || states.contains(WidgetState.disabled)) {
-              return Colors.grey.shade300;
+              return Colors.grey.shade200;
             }
             return _accentColor;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (!enabled || states.contains(WidgetState.disabled)) {
-              return Colors.grey.shade500;
+              return Colors.grey.shade400;
             }
             return _primaryColor;
           }),
@@ -693,7 +696,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 14),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(95, 32)),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
