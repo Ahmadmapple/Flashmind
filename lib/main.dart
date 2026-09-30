@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'pages/login_page.dart';
+import 'pages/profil_page.dart';
 import 'pages/berkas_page.dart';
 import 'pages/statistic_page.dart';
 
@@ -281,15 +282,25 @@ class _HomeView extends StatelessWidget {
                     ),
                   ],
                 ),
-                const CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Color(0xFFE5E5E5),
-                  child: Text(
-                    'M',
-                    style: TextStyle(
-                      color: Color(0xFF192A3A),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfilePage(),
+                      ),
+                    );
+                  },
+                  child: const CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Color(0xFFE5E5E5),
+                    child: Text(
+                      'M',
+                      style: TextStyle(
+                        color: Color(0xFF192A3A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                     ),
                   ),
                 ),
