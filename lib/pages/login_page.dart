@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'register_page.dart';
-import '../main.dart'; // Import ini dibutuhkan agar bisa memanggil MainPage()
+import '../main.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -32,7 +32,6 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (success && mounted) {
-        // PERBAIKAN NAVIGASI: Arahkan ke Halaman Utama dan bersihkan riwayat rute
         Navigator.pushAndRemoveUntil(
           context,
           PageRouteBuilder(
@@ -57,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
     final isLoading = context.watch<AuthProvider>().isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6), // Sesuai background aplikasi
+      backgroundColor: const Color(0xFFFBF9F6),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -68,19 +67,21 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo / Ikon Bintang Caesar
-                  Container(
-                    width: 80,
-                    height: 80,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF192A3A),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome,
-                      color: Color(0xFFF3C279),
-                      size: 40,
+                  // Logo / Ikon Bintang
+                  Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF192A3A),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome,
+                        color: Color(0xFFF3C279),
+                        size: 40,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -214,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: const Text(
                           'Daftar di sini',
                           style: TextStyle(
-                            color: Color(0xFFE87A5D), // Warna aksen orange dari chart Caesar
+                            color: Color(0xFFE87A5D),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
