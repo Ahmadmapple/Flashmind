@@ -172,11 +172,11 @@ class _MainPageState extends State<MainPage> {
           : _selectedIndex == 2
           ? const StatisticPage()
           : const Center(
-              child: Text(
-                'Halaman Tidak Ditemukan',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
+        child: Text(
+          'Halaman Tidak Ditemukan',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+      ),
       floatingActionButton: Transform.translate(
         offset: const Offset(0, 12),
         child: Column(
@@ -205,9 +205,7 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
               'Beranda',
               style: TextStyle(
@@ -247,6 +245,13 @@ class _HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Mengambil data user yang sedang aktif dari AuthProvider
+    final user = context.watch<AuthProvider>().currentUser;
+
+    // 2. Mengambil kata pertama dari nama untuk sapaan
+    final namaDepan = user?.nama.split(' ').first ?? 'Pengguna';
+    final inisial = namaDepan.isNotEmpty ? namaDepan[0].toUpperCase() : 'U';
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -259,8 +264,8 @@ class _HomeView extends StatelessWidget {
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'TUESDAY, 15 SEP 2026',
                       style: TextStyle(
                         fontSize: 12,
@@ -269,10 +274,11 @@ class _HomeView extends StatelessWidget {
                         letterSpacing: 1.2,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
+                    // Teks sapaan dinamis
                     Text(
-                      'Good morning,\nMaya.',
-                      style: TextStyle(
+                      'Good morning,\n$namaDepan.',
+                      style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'serif',
@@ -282,6 +288,7 @@ class _HomeView extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Tombol Profil Dinamis
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -291,12 +298,12 @@ class _HomeView extends StatelessWidget {
                       ),
                     );
                   },
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 24,
-                    backgroundColor: Color(0xFFE5E5E5),
+                    backgroundColor: const Color(0xFFE5E5E5),
                     child: Text(
-                      'M',
-                      style: TextStyle(
+                      inisial,
+                      style: const TextStyle(
                         color: Color(0xFF192A3A),
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -483,6 +490,7 @@ class _HomeView extends StatelessWidget {
     );
   }
 
+  // NOTE: Fungsi-fungsi ini sekarang diletakkan dengan benar di dalam _HomeView
   Widget _buildChartBar(double height, Color color) {
     return Container(
       width: 32,
