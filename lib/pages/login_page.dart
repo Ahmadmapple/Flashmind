@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'register_page.dart';
+import '../main.dart'; // Import ini dibutuhkan agar bisa memanggil MainPage()
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -31,9 +32,17 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (success && mounted) {
-        // Nanti akan kita hubungkan ke Home setelah routing beres
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Berhasil masuk!')),
+        // PERBAIKAN NAVIGASI: Arahkan ke Halaman Utama dan bersihkan riwayat rute
+        Navigator.pushAndRemoveUntil(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const MainPage(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 600),
+          ),
+              (route) => false,
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -48,35 +57,74 @@ class _LoginPageState extends State<LoginPage> {
     final isLoading = context.watch<AuthProvider>().isLoading;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFFBF9F6), // Sesuai background aplikasi
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Logo / Ikon Bintang Caesar
+                  Container(
+                    width: 80,
+                    height: 80,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF192A3A),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome,
+                      color: Color(0xFFF3C279),
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
                   const Text(
                     'Selamat Datang',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'serif',
+                      color: Color(0xFF192A3A),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Masuk untuk melanjutkan ke Flash Mind',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    'Masuk untuk melanjutkan belajarmu.',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 48),
+
+                  // Kolom Email
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
+                    cursorColor: const Color(0xFF192A3A),
+                    decoration: InputDecoration(
                       labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email_outlined),
+                      labelStyle: const TextStyle(color: Colors.black54),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
+                      ),
+                      prefixIcon: const Icon(Icons.email_outlined, color: Colors.black54),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty || !value.contains('@')) {
@@ -85,14 +133,31 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
+
+                  // Kolom Password
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
+                    cursorColor: const Color(0xFF192A3A),
+                    decoration: InputDecoration(
                       labelText: 'Kata Sandi',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock_outline),
+                      labelStyle: const TextStyle(color: Colors.black54),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
+                      ),
+                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54),
                     ),
                     validator: (value) {
                       if (value == null || value.length < 6) {
@@ -101,29 +166,60 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
+
+                  // Tombol Masuk
                   ElevatedButton(
                     onPressed: isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: const Color(0xFF192A3A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 0,
                     ),
                     child: isLoading
                         ? const SizedBox(
                       height: 20,
                       width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFF3C279),
+                      ),
                     )
-                        : const Text('Masuk', style: TextStyle(fontSize: 16)),
+                        : const Text(
+                      'Masuk',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RegisterPage()),
-                      );
-                    },
-                    child: const Text('Belum punya akun? Daftar di sini'),
+                  const SizedBox(height: 24),
+
+                  // Navigasi ke Halaman Daftar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Belum punya akun? ',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const RegisterPage()),
+                          );
+                        },
+                        child: const Text(
+                          'Daftar di sini',
+                          style: TextStyle(
+                            color: Color(0xFFE87A5D), // Warna aksen orange dari chart Caesar
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
