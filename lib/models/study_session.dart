@@ -36,8 +36,8 @@ class StudySession {
     this.cardResults = const <StudyCardResult>[],
     this.currentCardFrontShownAt,
     this.currentCardAnswerRevealedAt,
-    this.currentCardAccumulatedDuration = Duration.zero,
-    this.currentCardRunningSince,
+    this.currentCardElapsedDuration = Duration.zero,
+    this.lastPausedAt,
     this.totalDuration = Duration.zero,
     this.correctCount = 0,
     this.wrongCount = 0,
@@ -55,8 +55,8 @@ class StudySession {
   final List<StudyCardResult> cardResults;
   final DateTime? currentCardFrontShownAt;
   final DateTime? currentCardAnswerRevealedAt;
-  final Duration currentCardAccumulatedDuration;
-  final DateTime? currentCardRunningSince;
+  final Duration currentCardElapsedDuration;
+  final DateTime? lastPausedAt;
   final Duration totalDuration;
   final int correctCount;
   final int wrongCount;
@@ -77,12 +77,12 @@ class StudySession {
     List<StudyCardResult>? cardResults,
     DateTime? currentCardFrontShownAt,
     DateTime? currentCardAnswerRevealedAt,
-    Duration? currentCardAccumulatedDuration,
-    DateTime? currentCardRunningSince,
+    Duration? currentCardElapsedDuration,
+    DateTime? lastPausedAt,
     bool clearFinishedAt = false,
     bool clearCurrentCardFrontShownAt = false,
     bool clearCurrentCardAnswerRevealedAt = false,
-    bool clearCurrentCardRunningSince = false,
+    bool clearLastPausedAt = false,
     Duration? totalDuration,
     int? correctCount,
     int? wrongCount,
@@ -104,11 +104,9 @@ class StudySession {
       currentCardAnswerRevealedAt: clearCurrentCardAnswerRevealedAt
           ? null
           : (currentCardAnswerRevealedAt ?? this.currentCardAnswerRevealedAt),
-      currentCardAccumulatedDuration:
-          currentCardAccumulatedDuration ?? this.currentCardAccumulatedDuration,
-      currentCardRunningSince: clearCurrentCardRunningSince
-          ? null
-          : (currentCardRunningSince ?? this.currentCardRunningSince),
+      currentCardElapsedDuration:
+          currentCardElapsedDuration ?? this.currentCardElapsedDuration,
+      lastPausedAt: clearLastPausedAt ? null : (lastPausedAt ?? this.lastPausedAt),
       totalDuration: totalDuration ?? this.totalDuration,
       correctCount: correctCount ?? this.correctCount,
       wrongCount: wrongCount ?? this.wrongCount,

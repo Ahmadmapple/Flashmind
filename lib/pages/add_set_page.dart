@@ -315,7 +315,6 @@ class _AddSetPageState extends State<AddSetPage> {
               children: [
                 Expanded(
                   child: Padding(
-                    // Sejajar dengan teks di dalam kotak (contentPadding = 12).
                     padding: const EdgeInsets.only(left: 12, right: 8),
                     child: hasError
                         ? Text(

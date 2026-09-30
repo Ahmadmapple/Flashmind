@@ -6,7 +6,7 @@ import '../repositories/flash_mind_repository.dart';
 import 'add_card_page.dart';
 import 'edit_set_page.dart';
 import 'detail_card_page.dart';
-import 'study_session_page.dart';
+import 'study_session_continue_page.dart';
 import 'study_session_start_page.dart';
 
 class DetailSetPage extends StatefulWidget {
@@ -517,10 +517,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
       MaterialPageRoute<void>(
         builder: (_) => inProgressSession == null
             ? StudySessionStartPage(setId: widget.setId)
-            : StudySessionPage(
-                setId: widget.setId,
-                sessionId: inProgressSession.id,
-              ),
+            : StudySessionContinuePage(setId: widget.setId),
       ),
     );
   }

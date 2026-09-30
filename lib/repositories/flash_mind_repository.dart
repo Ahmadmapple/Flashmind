@@ -1,8 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
-import 'dart:math';
 
 class FlashMindRepository extends ChangeNotifier {
   FlashMindRepository._internal()
@@ -235,51 +237,38 @@ class FlashMindRepository extends ChangeNotifier {
       return false;
     }
 
-    final now = DateTime.now();
     _studySessions[index] = session.copyWith(
-      currentCardFrontShownAt: now,
-      currentCardRunningSince: now,
-      currentCardAccumulatedDuration: Duration.zero,
+      currentCardFrontShownAt: DateTime.now(),
+      clearLastPausedAt: true,
     );
     notifyListeners();
     return true;
   }
 
-  bool pauseCurrentCard(String sessionId) {
+  bool pauseStudySession(String sessionId) {
     final index = _studySessions.indexWhere((session) => session.id == sessionId);
     if (index == -1) return false;
 
     final session = _studySessions[index];
-    final runningSince = session.currentCardRunningSince;
-    if (session.status != StudySessionStatus.inProgress ||
-        runningSince == null) {
-      return false;
-    }
+    if (session.status != StudySessionStatus.inProgress) return false;
 
-    final segment = DateTime.now().difference(runningSince);
-    _studySessions[index] = session.copyWith(
-      currentCardAccumulatedDuration:
-          session.currentCardAccumulatedDuration +
-          (segment.isNegative ? Duration.zero : segment),
-      clearCurrentCardRunningSince: true,
-    );
-    return true;
-  }
+    final now = DateTime.now();
+    var elapsed = session.currentCardElapsedDuration;
 
-  bool resumeCurrentCard(String sessionId) {
-    final index = _studySessions.indexWhere((session) => session.id == sessionId);
-    if (index == -1) return false;
-
-    final session = _studySessions[index];
-    if (session.status != StudySessionStatus.inProgress ||
-        session.currentCardFrontShownAt == null ||
-        session.currentCardRunningSince != null) {
-      return false;
+    if (session.currentCardFrontShownAt != null) {
+      final currentElapsed = now.difference(session.currentCardFrontShownAt!);
+      if (!currentElapsed.isNegative) {
+        elapsed += currentElapsed;
+      }
     }
 
     _studySessions[index] = session.copyWith(
-      currentCardRunningSince: DateTime.now(),
+      currentCardFrontShownAt: null,
+      currentCardElapsedDuration: elapsed,
+      lastPausedAt: now,
+      clearCurrentCardFrontShownAt: true,
     );
+    notifyListeners();
     return true;
   }
 
@@ -317,14 +306,10 @@ class FlashMindRepository extends ChangeNotifier {
     }
 
     final evaluatedAt = DateTime.now();
-
-    var duration = session.currentCardAccumulatedDuration;
-    final runningSince = session.currentCardRunningSince;
-    if (runningSince != null) {
-      final segment = evaluatedAt.difference(runningSince);
-      if (!segment.isNegative) duration += segment;
-    }
-
+    final currentSegment = evaluatedAt.difference(session.currentCardFrontShownAt!);
+    final safeCurrentSegment =
+        currentSegment.isNegative ? Duration.zero : currentSegment;
+    final duration = session.currentCardElapsedDuration + safeCurrentSegment;
     final result = StudyCardResult(
       cardId: cardId,
       frontShownAt: session.currentCardFrontShownAt!,
@@ -354,7 +339,9 @@ class FlashMindRepository extends ChangeNotifier {
           );
 
     final updatedSession = session.copyWith(
-      status: isCompleted ? StudySessionStatus.completed : StudySessionStatus.inProgress,
+      status: isCompleted
+          ? StudySessionStatus.completed
+          : StudySessionStatus.inProgress,
       finishedAt: isCompleted ? evaluatedAt : null,
       clearFinishedAt: !isCompleted,
       nextCardIndex: nextCardIndex,
@@ -362,8 +349,8 @@ class FlashMindRepository extends ChangeNotifier {
       currentCardFrontShownAt: null,
       clearCurrentCardFrontShownAt: true,
       clearCurrentCardAnswerRevealedAt: true,
-      clearCurrentCardRunningSince: true,
-      currentCardAccumulatedDuration: Duration.zero,
+      currentCardElapsedDuration: Duration.zero,
+      clearLastPausedAt: true,
       totalDuration: totalDuration,
       correctCount: correctCount,
       wrongCount: wrongCount,
