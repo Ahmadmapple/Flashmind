@@ -54,8 +54,6 @@ class BerkasPage extends StatelessWidget {
   }
 
   Future<void> _openDetail(BuildContext context, String setId) async {
-    // PERUBAHAN TAHAP 2: tombol Lihat Detail sekarang membuka Detail Set
-    // menggunakan identitas set dari repository.
     final deleted = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => DetailSetPage(setId: setId)),
     );

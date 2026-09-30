@@ -3,13 +3,21 @@ import 'package:flutter/material.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
-import 'study_session_continue_page.dart';
 import 'study_session_page.dart';
+import 'study_session_start_page.dart';
 
-/// Layar awal sebelum pengguna menjalankan sesi belajar.
-class StudySessionStartPage extends StatelessWidget {
-  const StudySessionStartPage({super.key, required this.setId});
+/// Layar informasi untuk sesi belajar yang masih berstatus inProgress karena sesi belajar sempat dihentikan.
+class StudySessionContinuePage extends StatefulWidget {
+  const StudySessionContinuePage({super.key, required this.setId});
 
+  final String setId;
+
+  @override
+  State<StudySessionContinuePage> createState() =>
+      _StudySessionContinuePageState();
+}
+
+class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _headerColor = Color(0xFFFFE5B4);
@@ -22,10 +30,11 @@ class StudySessionStartPage extends StatelessWidget {
     height: 1.2,
   );
 
-  final String setId;
-  static bool _isStarting = false;
+  final FlashMindRepository _repository = FlashMindRepository.instance;
 
-  static String _formatAverageDuration(Duration duration) {
+  bool _isReplacing = false;
+
+  static String _formatDuration(Duration duration) {
     final totalSeconds = duration.inSeconds;
     final hours = totalSeconds ~/ 3600;
     final minutes = (totalSeconds % 3600) ~/ 60;
@@ -56,15 +65,11 @@ class StudySessionStartPage extends StatelessWidget {
     return '${value.toStringAsFixed(2)}%';
   }
 
-  static String _formatLastStudied(DateTime? lastStudiedAt) {
-    if (lastStudiedAt == null) return '-';
+  static String _formatLastStudied(DateTime? lastPausedAt) {
+    if (lastPausedAt == null) return '-';
 
-    final now = DateTime.now();
-    final difference = now.difference(lastStudiedAt);
-
-    if (difference.isNegative) {
-      return _formatDate(lastStudiedAt);
-    }
+    final difference = DateTime.now().difference(lastPausedAt);
+    if (difference.isNegative) return _formatDate(lastPausedAt);
 
     if (difference < const Duration(minutes: 1)) {
       return '${difference.inSeconds} detik lalu';
@@ -76,35 +81,13 @@ class StudySessionStartPage extends StatelessWidget {
       return '${difference.inHours} jam lalu';
     }
 
-    return _formatDate(lastStudiedAt);
+    return _formatDate(lastPausedAt);
   }
 
   static String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
-  }
-
-  static Duration _averageDuration(List<StudySession> sessions) {
-    if (sessions.isEmpty) return Duration.zero;
-
-    final totalMicroseconds = sessions.fold<int>(
-      0,
-      (sum, session) => sum + session.totalDuration.inMicroseconds,
-    );
-
-    return Duration(microseconds: totalMicroseconds ~/ sessions.length);
-  }
-
-  static double _averageAccuracy(List<StudySession> sessions) {
-    if (sessions.isEmpty) return 0;
-
-    final total = sessions.fold<double>(
-      0,
-      (sum, session) => sum + session.accuracy,
-    );
-
-    return total / sessions.length;
   }
 
   static StudySession? _highestAccuracySession(List<StudySession> sessions) {
@@ -124,30 +107,61 @@ class StudySessionStartPage extends StatelessWidget {
     );
   }
 
+  static Duration _currentSessionDuration(StudySession session) {
+    return session.totalDuration + session.currentCardElapsedDuration;
+  }
+
+  void _scheduleReplaceWithStart() {
+    if (_isReplacing) return;
+    _isReplacing = true;
+
+    final route = ModalRoute.of(context);
+    final navigator = Navigator.of(context);
+    final setId = widget.setId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || route == null || !route.isActive) return;
+
+      navigator.replace<void>(
+        oldRoute: route,
+        newRoute: MaterialPageRoute<void>(
+          builder: (_) => StudySessionStartPage(setId: setId),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final repository = FlashMindRepository.instance;
-
     return AnimatedBuilder(
-      animation: repository,
+      animation: _repository,
       builder: (context, _) {
-        final set = repository.getSetById(setId);
+        final set = _repository.getSetById(widget.setId);
+        final session = _repository.getInProgressStudySessionForSet(
+          widget.setId,
+        );
 
-        if (set == null) {
-          return const Scaffold(
-            backgroundColor: _backgroundColor,
-            body: Center(child: Text('Set tidak ditemukan.')),
-          );
+        if (set == null || session == null) {
+          if (set != null) _scheduleReplaceWithStart();
+          return const Scaffold(backgroundColor: _backgroundColor);
         }
 
-        final completedSessions = repository.getCompletedStudySessionsForSet(
+        final completedSessions = _repository.getCompletedStudySessionsForSet(
           set.id,
         );
+        final highestAccuracy = _highestAccuracySession(completedSessions);
+        final fastestSession = _fastestSession(completedSessions);
 
         return Scaffold(
           backgroundColor: _backgroundColor,
           appBar: _buildAppBar(context),
-          body: _buildBody(context, set, completedSessions),
+          body: _buildBody(
+            context,
+            set,
+            session,
+            highestAccuracy,
+            fastestSession,
+          ),
           floatingActionButton: _buildHomeButton(context),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
@@ -185,13 +199,10 @@ class StudySessionStartPage extends StatelessWidget {
   Widget _buildBody(
     BuildContext context,
     FlashcardSet set,
-    List<StudySession> completedSessions,
+    StudySession session,
+    StudySession? highestAccuracy,
+    StudySession? fastestSession,
   ) {
-    final averageDuration = _averageDuration(completedSessions);
-    final averageAccuracy = _averageAccuracy(completedSessions);
-    final highestAccuracy = _highestAccuracySession(completedSessions);
-    final fastestSession = _fastestSession(completedSessions);
-
     return SafeArea(
       top: false,
       bottom: false,
@@ -207,13 +218,9 @@ class StudySessionStartPage extends StatelessWidget {
                 children: [
                   _buildSummaryCard(
                     set: set,
-                    averageDuration: completedSessions.isEmpty
-                        ? '-'
-                        : _formatAverageDuration(averageDuration),
-                    averageAccuracy: completedSessions.isEmpty
-                        ? '-'
-                        : _formatAccuracy(averageAccuracy),
-                    lastStudied: _formatLastStudied(set.lastStudiedAt),
+                    duration: _formatDuration(_currentSessionDuration(session)),
+                    accuracy: _formatAccuracy(session.accuracy),
+                    lastStudied: _formatLastStudied(session.lastPausedAt),
                     highestAccuracy: highestAccuracy == null
                         ? '-'
                         : _formatAccuracy(highestAccuracy.accuracy),
@@ -226,9 +233,11 @@ class StudySessionStartPage extends StatelessWidget {
                     fastestAccuracy: fastestSession == null
                         ? '-'
                         : _formatAccuracy(fastestSession.accuracy),
+                    cardProgress:
+                        '${session.completedCardCount}/${session.totalCardCount} kartu',
                   ),
                   const SizedBox(height: 30),
-                  _buildStartButton(context),
+                  _buildContinueButton(context, session),
                 ],
               ),
             ),
@@ -240,13 +249,14 @@ class StudySessionStartPage extends StatelessWidget {
 
   Widget _buildSummaryCard({
     required FlashcardSet set,
-    required String averageDuration,
-    required String averageAccuracy,
+    required String duration,
+    required String accuracy,
     required String lastStudied,
     required String highestAccuracy,
     required String highestAccuracyDuration,
     required String fastestDuration,
     required String fastestAccuracy,
+    required String cardProgress,
   }) {
     return Container(
       width: double.infinity,
@@ -296,9 +306,9 @@ class StudySessionStartPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          _buildStatRow('Durasi rata-rata', averageDuration),
+          _buildStatRow('Durasi pengerjaan', duration),
           const SizedBox(height: 10),
-          _buildStatRow('Rata-rata jawaban benar', averageAccuracy),
+          _buildStatRow('Persentase jawaban benar', accuracy),
           const SizedBox(height: 10),
           _buildStatRow('Waktu terakhir dipelajari', lastStudied),
           const SizedBox(height: 30),
@@ -326,7 +336,7 @@ class StudySessionStartPage extends StatelessWidget {
           const SizedBox(height: 30),
           Align(
             alignment: Alignment.centerRight,
-            child: Text('${set.cardCount} kartu', style: _valueStyle),
+            child: Text(cardProgress, style: _valueStyle),
           ),
         ],
       ),
@@ -386,51 +396,18 @@ class StudySessionStartPage extends StatelessWidget {
     );
   }
 
-  Future<void> _startSession(BuildContext context) async {
-    if (_isStarting) return;
-    _isStarting = true;
-
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-
-    try {
-      final session = await FlashMindRepository.instance.startStudySession(
-        setId,
-      );
-
-      if (!context.mounted) return;
-
-      if (session == null) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Sesi belajar tidak dapat dimulai.'),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
-          ),
-        );
-        return;
-      }
-
-      navigator.pushReplacement<void, void>(
-        MaterialPageRoute<void>(
-          builder: (_) => StudySessionContinuePage(setId: setId),
-        ),
-      );
-      navigator.push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => StudySessionPage(setId: setId, sessionId: session.id),
-        ),
-      );
-    } finally {
-      _isStarting = false;
-    }
-  }
-
-  Widget _buildStartButton(BuildContext context) {
+  Widget _buildContinueButton(BuildContext context, StudySession session) {
     return SizedBox(
       height: 32,
       child: ElevatedButton(
-        onPressed: () => _startSession(context),
+        onPressed: () async {
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  StudySessionPage(setId: widget.setId, sessionId: session.id),
+            ),
+          );
+        },
         style: ButtonStyle(
           backgroundColor: const WidgetStatePropertyAll(_accentColor),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
@@ -446,7 +423,7 @@ class StudySessionStartPage extends StatelessWidget {
             TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
-        child: const Text('Mulai'),
+        child: const Text('Lanjut'),
       ),
     );
   }

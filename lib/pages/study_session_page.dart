@@ -17,9 +17,7 @@ class StudySessionPage extends StatefulWidget {
   State<StudySessionPage> createState() => _StudySessionPageState();
 }
 
-// PERUBAHAN: WidgetsBindingObserver agar timer kartu dapat dijeda
-// ketika aplikasi masuk ke background.
-class _StudySessionPageState extends State<StudySessionPage> with WidgetsBindingObserver {
+class _StudySessionPageState extends State<StudySessionPage> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _headerColor = Color(0xFFFFE5B4);
@@ -44,36 +42,7 @@ class _StudySessionPageState extends State<StudySessionPage> with WidgetsBinding
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _initializeSession();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    final sessionId = _sessionId;
-    if (sessionId != null) {
-      _repository.pauseCurrentCard(sessionId);
-    }
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    final sessionId = _sessionId;
-    if (sessionId == null || _isInitializing) return;
-
-    switch (state) {
-      case AppLifecycleState.resumed:
-        _repository.resumeCurrentCard(sessionId);
-        break;
-      case AppLifecycleState.inactive:
-      case AppLifecycleState.hidden:
-      case AppLifecycleState.paused:
-      case AppLifecycleState.detached:
-        _repository.pauseCurrentCard(sessionId);
-        break;
-    }
   }
 
   Future<void> _initializeSession() async {
@@ -127,13 +96,9 @@ class _StudySessionPageState extends State<StudySessionPage> with WidgetsBinding
 
   void _ensureFrontTimestamp() {
     final session = _session;
-    if (session == null) return;
+    if (session == null || session.currentCardFrontShownAt != null) return;
 
-    if (session.currentCardFrontShownAt == null) {
-      _repository.markCurrentCardFrontShown(session.id);
-    } else {
-      _repository.resumeCurrentCard(session.id);
-    }
+    _repository.markCurrentCardFrontShown(session.id);
   }
 
   void _showAnswer() {
@@ -173,7 +138,6 @@ class _StudySessionPageState extends State<StudySessionPage> with WidgetsBinding
     }
 
     if (updatedSession.status == StudySessionStatus.completed) {
-      if (!mounted) return;
       await Navigator.of(context).pushReplacement<void, void>(
         MaterialPageRoute<void>(
           builder: (_) => StudySessionEndPage(
@@ -222,7 +186,14 @@ class _StudySessionPageState extends State<StudySessionPage> with WidgetsBinding
 
     return PopScope<bool>(
       canPop: !_isEvaluating,
-      onPopInvokedWithResult: (didPop, result) {},
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          final sessionId = _sessionId;
+          if (sessionId != null) {
+            _repository.pauseStudySession(sessionId);
+          }
+        }
+      },
       child: Scaffold(
         backgroundColor: _backgroundColor,
         appBar: _buildAppBar(context),
