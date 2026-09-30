@@ -27,20 +27,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  void _simpanProfil() {
+  void _simpanProfil() async {
     if (_formKey.currentState!.validate()) {
-      // Logika simulasi simpan profil
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil berhasil diperbarui')),
-      );
-      Navigator.pop(context); // Kembali ke halaman profil
+      final newName = _namaController.text.trim();
+
+      // Memanggil fungsi updateProfile dari AuthProvider
+      await context.read<AuthProvider>().updateProfile(newName);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profil berhasil diperbarui')),
+        );
+        Navigator.pop(context); // Kembali ke halaman profil
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6), // Sesuai tema aplikasi
+      backgroundColor: const Color(0xFFFBF9F6),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
