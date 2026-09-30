@@ -210,7 +210,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: _headerColor,
+      backgroundColor: _backgroundColor,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
@@ -406,7 +406,6 @@ class _DetailSetPageState extends State<DetailSetPage> {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'serif',
                       color: _primaryColor,
                     ),
                   ),
@@ -604,7 +603,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
       child: OutlinedButton.icon(
         onPressed: _isDeleting ? null : _openPdfUpload,
         icon: const Icon(Icons.picture_as_pdf, size: 18),
-        label: const Text('Buat Kartu dari PDF dengan AI'),
+        label: const Text('Upload PDF'),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF192A3A),
           side: const BorderSide(color: Color(0xFFB8B5AF), width: 1.5),

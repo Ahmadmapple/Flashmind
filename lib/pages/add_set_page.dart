@@ -91,7 +91,6 @@ class _AddSetPageState extends State<AddSetPage> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'serif',
                   color: _primaryColor,
                 ),
               ),
@@ -100,8 +99,8 @@ class _AddSetPageState extends State<AddSetPage> {
                 controller: _titleController,
                 hintText: 'Masukkan nama set (minimal 3 karakter).',
                 maxLength: FlashcardSet.titleMaxLength,
-                minLines: 4,
-                maxLines: 4,
+                minLines: 2,
+                maxLines: 2,
                 textInputAction: TextInputAction.next,
               ),
               _buildFieldFooter(
@@ -119,7 +118,6 @@ class _AddSetPageState extends State<AddSetPage> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'serif',
                   color: _primaryColor,
                 ),
               ),
@@ -128,8 +126,8 @@ class _AddSetPageState extends State<AddSetPage> {
                 controller: _descriptionController,
                 hintText: 'Masukkan deskripsi set jika dibutuhkan.',
                 maxLength: FlashcardSet.descriptionMaxLength,
-                minLines: 4,
-                maxLines: 4,
+                minLines: 6,
+                maxLines: 6,
               ),
               _buildFieldFooter(
                 controller: _descriptionController,

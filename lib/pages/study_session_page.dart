@@ -265,52 +265,55 @@ class _StudySessionPageState extends State<StudySessionPage>
 
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
 
-            // Label: NAMA SET · KARTU N
-            Text(
-              '${set.title.toUpperCase()} · KARTU $currentNumber',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                color: Color(0xFFE87A5D),
-              ),
-            ),
-
-            // Progress bar tipis
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: currentNumber / totalCards,
-                minHeight: 3,
-                backgroundColor: const Color(0xFFE8E4DB),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFFE87A5D),
+              // Label: NAMA SET · KARTU N
+              Text(
+                '${set.title.toUpperCase()} · KARTU $currentNumber',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: Color(0xFFE87A5D),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              // Progress bar tipis
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: currentNumber / totalCards,
+                  minHeight: 3,
+                  backgroundColor: const Color(0xFFE8E4DB),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFFE87A5D),
+                  ),
+                ),
+              ),
 
-            // Kartu flip
-            Expanded(
-              child: _buildFlipCard(card),
-            ),
+              const SizedBox(height: 20),
 
-            const SizedBox(height: 20),
+              // Kartu flip
+              SizedBox(
+                height: 340,
+                child: _buildFlipCard(card),
+              ),
 
-            // Hint / tombol evaluasi
-            _buildBottomSection(),
+              const SizedBox(height: 20),
 
-            const SizedBox(height: 32),
-          ],
+              // Hint / tombol evaluasi
+              _buildBottomSection(),
+
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
