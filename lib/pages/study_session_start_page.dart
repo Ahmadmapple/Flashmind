@@ -150,8 +150,7 @@ class StudySessionStartPage extends StatelessWidget {
           body: _buildBody(context, set, completedSessions),
           floatingActionButton: _buildHomeButton(context),
           floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          bottomNavigationBar: _buildBottomNavigationBar(context),
+              FloatingActionButtonLocation.centerFloat,
         );
       },
     );

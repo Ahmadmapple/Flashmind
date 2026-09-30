@@ -110,8 +110,7 @@ class StudySessionEndPage extends StatelessWidget {
           ),
           floatingActionButton: _buildHomeButton(context),
           floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          bottomNavigationBar: _buildBottomNavigationBar(context),
+              FloatingActionButtonLocation.centerFloat,
         );
       },
     );

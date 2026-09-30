@@ -266,7 +266,7 @@ class _HomeView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'TUESDAY, 15 SEP 2026',
+                      'RABU, 30 SEP 2026',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey,
@@ -277,7 +277,7 @@ class _HomeView extends StatelessWidget {
                     const SizedBox(height: 4),
                     // Teks sapaan dinamis
                     Text(
-                      'Good morning,\n$namaDepan.',
+                      'Selamat pagi,\n$namaDepan.',
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -325,7 +325,7 @@ class _HomeView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'YOUR NEXT REVIEW',
+                    'ULASAN BERIKUTNYA',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -345,7 +345,7 @@ class _HomeView extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    '8 cards are waiting for you',
+                    '8 kartu sedang menunggumu',
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 32),
@@ -359,7 +359,7 @@ class _HomeView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: const Text(
-                      'Start a 5 min session →',
+                      'Mulai sesi 5 menit →',
                       style: TextStyle(
                         color: Color(0xFF192A3A),
                         fontWeight: FontWeight.bold,
@@ -372,7 +372,7 @@ class _HomeView extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             const Text(
-              'STUDY RHYTHM',
+              'RITME BELAJAR',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey,
@@ -386,7 +386,7 @@ class _HomeView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: const [
                 Text(
-                  'Keep it gentle.',
+                  'Tetap semangat.',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -395,7 +395,7 @@ class _HomeView extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '12 day streak',
+                  'streak 12 hari',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -431,7 +431,7 @@ class _HomeView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
                       Text(
-                        'You studied 45 cards this week',
+                        'Kamu mempelajari 45 kartu minggu ini',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       Text(
@@ -453,7 +453,7 @@ class _HomeView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: const [
                 Text(
-                  'Because you missed these',
+                  'Kartu yang terlewat',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -462,7 +462,7 @@ class _HomeView extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'See all',
+                  'Lihat semua',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -474,14 +474,14 @@ class _HomeView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildMissedCardItem(
               title: 'Bahasa Jepang',
-              subtitle: 'Last studied 6 days ago',
-              dueText: '16 due',
+              subtitle: 'Terakhir dipelajari 6 hari lalu',
+              dueText: '16 tertunda',
             ),
             const SizedBox(height: 12),
             _buildMissedCardItem(
               title: 'Organic Chemistry',
-              subtitle: 'Last studied 8 days ago',
-              dueText: '5 due',
+              subtitle: 'Terakhir dipelajari 8 hari lalu',
+              dueText: '5 tertunda',
             ),
             const SizedBox(height: 40),
           ],

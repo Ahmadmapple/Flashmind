@@ -164,8 +164,7 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
           ),
           floatingActionButton: _buildHomeButton(context),
           floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          bottomNavigationBar: _buildBottomNavigationBar(context),
+              FloatingActionButtonLocation.centerFloat,
         );
       },
     );

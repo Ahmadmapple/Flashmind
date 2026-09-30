@@ -51,9 +51,7 @@ class _StudySessionPageState extends State<StudySessionPage> {
         : _repository.getStudySessionById(widget.sessionId!);
 
     StudySession? session = existingSession;
-    if (session == null) {
-      session = await _repository.startStudySession(widget.setId);
-    }
+    session ??= await _repository.startStudySession(widget.setId);
 
     if (!mounted) return;
 
@@ -199,8 +197,7 @@ class _StudySessionPageState extends State<StudySessionPage> {
         appBar: _buildAppBar(context),
         body: _buildBody(context, session, card),
         floatingActionButton: _buildHomeButton(context),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        bottomNavigationBar: _buildBottomNavigationBar(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }

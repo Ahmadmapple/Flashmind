@@ -24,22 +24,22 @@ class StatisticPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'LEARNING HISTORY',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFE87A5D),
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Statistic',
+              'Statistik',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'serif',
                 color: Color(0xFF192A3A),
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'RIWAYAT BELAJAR',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFE87A5D),
+                letterSpacing: 1.2,
               ),
             ),
             const SizedBox(height: 20),
@@ -56,7 +56,7 @@ class StatisticPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'OVERALL',
+                    'KESELURUHAN',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -78,7 +78,7 @@ class StatisticPage extends StatelessWidget {
                           ),
                         ),
                         TextSpan(
-                          text: 'recall rate',
+                          text: 'tingkat hafalan',
                           style: TextStyle(color: Colors.grey, fontSize: 16),
                         ),
                       ],
@@ -104,7 +104,7 @@ class StatisticPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Sessions',
+                            'Sesi',
                             style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                         ],
@@ -120,7 +120,7 @@ class StatisticPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Cards Studied',
+                            'Kartu Dipelajari',
                             style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                         ],
@@ -136,7 +136,7 @@ class StatisticPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Active Sets',
+                            'Set Aktif',
                             style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                         ],
@@ -150,7 +150,7 @@ class StatisticPage extends StatelessWidget {
 
             // Recent Sessions Section
             const Text(
-              'Recent Sessions',
+              'Sesi Terbaru',
               style: TextStyle(
                 fontSize: 24,
                 color: Color(0xFF192A3A),
@@ -166,7 +166,7 @@ class StatisticPage extends StatelessWidget {
             const SizedBox(height: 22),
 
             const Text(
-              'All Sets',
+              'Semua Set',
               style: TextStyle(
                 fontFamily: 'serif',
                 fontSize: 24,
@@ -179,25 +179,22 @@ class StatisticPage extends StatelessWidget {
             // Card 1: Cell Biology
             _buildSetCard(
               title: 'Cell Biology',
-              subtitle: '5 cards · 1 sessions',
-              rightAction: 'Study →',
-              rightSubtext: '100% correct',
+              subtitle: '5 kartu',
+              rightSubtext: '100% benar',
             ),
             const SizedBox(height: 12),
 
             // Card 2: Japanese Language
             _buildSetCard(
               title: 'Japanese Language',
-              subtitle: '5 cards · 0 sessions',
-              rightAction: 'Study →',
+              subtitle: '5 kartu',
             ),
             const SizedBox(height: 12),
 
             // Card 3: Organic Chemistry
             _buildSetCard(
               title: 'Organic Chemistry',
-              subtitle: '3 cards · 0 sessions',
-              rightAction: 'Study →',
+              subtitle: '3 kartu',
             ),
             const SizedBox(height: 32),
           ],
@@ -209,7 +206,6 @@ class StatisticPage extends StatelessWidget {
   Widget _buildSetCard({
     required String title,
     required String subtitle,
-    required String rightAction,
     String? rightSubtext,
   }) {
     return Container(
@@ -244,12 +240,20 @@ class StatisticPage extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                rightAction,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFE87A5D),
+              TextButton(
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFE87A5D),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Lihat Detail →',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               if (rightSubtext != null) ...[
@@ -303,7 +307,7 @@ class _RecentSessionCard extends StatelessWidget {
         ),
         child: const Center(
           child: Text(
-            'No study sessions. Start studying to see your history here.',
+            'Belum ada sesi belajar. Mulai belajar untuk melihat riwayatmu di sini.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -399,7 +403,7 @@ class _RecentSessionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Total duration',
+                        'Total durasi',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF8A9A9E),
@@ -422,7 +426,7 @@ class _RecentSessionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Avg. per card',
+                        'Rata-rata per kartu',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF8A9A9E),
