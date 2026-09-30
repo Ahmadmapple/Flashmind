@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
-
+import 'pages/login_page.dart';
 import 'pages/berkas_page.dart';
 import 'pages/statistic_page.dart';
 
@@ -15,9 +15,6 @@ void main() {
     ),
   );
 }
-
-// ... class FlashMindApp extends StatelessWidget { ...
-// (KODE KE BAWAHNYA JANGAN ADA YANG DIUBAH SAMA SEKALI)
 
 class FlashMindApp extends StatelessWidget {
   const FlashMindApp({super.key});
@@ -48,22 +45,34 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const MainPage(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-      }
-    });
+    // Memeriksa status login saat splash screen muncul
+    _checkStatusAndNavigate();
+  }
+
+  Future<void> _checkStatusAndNavigate() async {
+    // 1. Jalankan proses pengecekan ke memori lokal
+    await context.read<AuthProvider>().checkLoginStatus();
+
+    // 2. Tambahkan sedikit jeda agar animasi splash screen Caesar tetap terlihat (simulasi)
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (mounted) {
+      // 3. Tentukan halaman tujuan berdasarkan status login
+      final isLoggedIn = context.read<AuthProvider>().isLoggedIn;
+      final targetPage = isLoggedIn ? const MainPage() : const LoginPage();
+
+      // 4. Lakukan navigasi dengan animasi transisi Caesar
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => targetPage,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 600),
+        ),
+      );
+    }
   }
 
   @override
