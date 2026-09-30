@@ -5,13 +5,31 @@ import '../repositories/flash_mind_repository.dart';
 import 'add_set_page.dart';
 import 'detail_set_page.dart';
 
-class BerkasPage extends StatelessWidget {
+class BerkasPage extends StatefulWidget {
   const BerkasPage({super.key});
 
+  @override
+  State<BerkasPage> createState() => _BerkasPageState();
+}
+
+class _BerkasPageState extends State<BerkasPage> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
 
+  static const TextStyle _emptyMessageStyle = TextStyle(
+    color: Colors.grey,
+    fontSize: 12,
+  );
+
+  static const String _emptyAllSetsMessage =
+      'Tidak ada set yang dapat ditampilkan\n'
+      'Silakan buat set dengan menekan "Tambah Set"';
+  static const String _emptyInterruptedMessage =
+      'Tidak ada set dengan sesi belajar yang terhenti atau belum selesai';
+
   static final FlashMindRepository _repository = FlashMindRepository.instance;
+
+  bool _showInterruptedSessions = false;
 
   @override
   Widget build(BuildContext context) {
@@ -24,32 +42,73 @@ class BerkasPage extends StatelessWidget {
             child: AnimatedBuilder(
               animation: _repository,
               builder: (context, _) {
-                final sets = _repository.sets;
+                final allSets = _repository.sets;
+                final sets = _showInterruptedSessions
+                    ? allSets
+                          .where(
+                            (set) =>
+                                _repository.getInProgressStudySessionForSet(
+                                  set.id,
+                                ) !=
+                                null,
+                          )
+                          .toList(growable: false)
+                    : allSets;
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildFilterRow(),
-                      const SizedBox(height: 18),
-                      ...sets.map(
-                        (set) => Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: _FlashcardSetCard(
-                            set: set,
-                            onViewDetail: () => _openDetail(context, set.id),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: _buildFilterRow(),
+                    ),
+                    const SizedBox(height: 18),
+                    Expanded(
+                      child: sets.isEmpty
+                          ? _buildEmptyState()
+                          : SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ...sets.map(
+                                    (set) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 14,
+                                      ),
+                                      child: _FlashcardSetCard(
+                                        set: set,
+                                        onViewDetail: () =>
+                                            _openDetail(context, set.id),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
+                  ],
                 );
               },
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+        child: Text(
+          _showInterruptedSessions
+              ? _emptyInterruptedMessage
+              : _emptyAllSetsMessage,
+          textAlign: TextAlign.center,
+          style: _emptyMessageStyle,
+        ),
+      ),
     );
   }
 
@@ -132,9 +191,25 @@ class BerkasPage extends StatelessWidget {
   Widget _buildFilterRow() {
     return Row(
       children: [
-        _FilterChip(label: 'Semuat Set', selected: true, onPressed: () {}),
+        _FilterChip(
+          label: 'Semua Set',
+          selected: !_showInterruptedSessions,
+          onPressed: () {
+            if (_showInterruptedSessions) {
+              setState(() => _showInterruptedSessions = false);
+            }
+          },
+        ),
         const SizedBox(width: 10),
-        _FilterChip(label: 'Perlu Diulas', selected: false, onPressed: () {}),
+        _FilterChip(
+          label: 'Sesi Terhenti',
+          selected: _showInterruptedSessions,
+          onPressed: () {
+            if (!_showInterruptedSessions) {
+              setState(() => _showInterruptedSessions = true);
+            }
+          },
+        ),
       ],
     );
   }
