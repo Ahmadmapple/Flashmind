@@ -18,7 +18,6 @@ class _AddCardPageState extends State<AddCardPage> {
   static const Color _borderColor = Color(0xFFB8B5AF);
   static const Color _errorColor = Color(0xFFD32F2F);
 
-  static const double _bottomBarHeight = 65;
   static const double _fieldFooterHeight = 22;
 
   final TextEditingController _frontController = TextEditingController();
@@ -379,97 +378,6 @@ class _AddCardPageState extends State<AddCardPage> {
                 ),
               )
             : Text(label),
-      ),
-    );
-  }
-
-  Widget _buildHomeButton() {
-    return Transform.translate(
-      offset: const Offset(0, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: FloatingActionButton(
-              onPressed: _goBack,
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              elevation: 3,
-              child: const Icon(Icons.home_rounded, size: 30),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Beranda',
-            style: TextStyle(
-              fontSize: 9,
-              color: _primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 2,
-      height: _bottomBarHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.article_outlined,
-            label: 'Berkas',
-            onTap: _goBack,
-          ),
-          const SizedBox(width: 72),
-          _buildBottomNavItem(
-            icon: Icons.timer_outlined,
-            label: 'Statistik',
-            onTap: null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        width: 64,
-        height: _bottomBarHeight,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

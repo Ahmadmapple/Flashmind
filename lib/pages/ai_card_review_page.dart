@@ -3,11 +3,11 @@ import '../repositories/flash_mind_repository.dart';
 
 /// Model sementara untuk kartu yang dibuat AI dari PDF.
 class _AiCard {
-  _AiCard({required this.front, required this.back, this.accepted = true});
+  _AiCard({required this.front, required this.back});
 
   final String front;
   final String back;
-  bool accepted;
+  bool accepted = true;
 }
 
 /// Halaman untuk meninjau kartu yang dibuat AI dari dokumen PDF.
@@ -28,9 +28,7 @@ class AiCardReviewPage extends StatefulWidget {
 
 class _AiCardReviewPageState extends State<AiCardReviewPage> {
   static const Color _primaryColor   = Color(0xFF192A3A);
-  static const Color _accentColor    = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _dangerColor    = Color(0xFFEF5350);
   static const Color _successColor   = Color(0xFF2D6A4F);
 
   bool _isLoading = true;
@@ -276,7 +274,7 @@ class _AiCardReviewPageState extends State<AiCardReviewPage> {
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
             itemCount: _cards.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) =>
                 _buildCardItem(_cards[index], index),
           ),

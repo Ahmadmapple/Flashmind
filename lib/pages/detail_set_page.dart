@@ -27,8 +27,6 @@ class DetailSetPage extends StatefulWidget {
 class _DetailSetPageState extends State<DetailSetPage> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
-  static const Color _headerColor = Color(0xFFFFE5B4);
-  static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _dangerColor = Color(0xFFEF5350);
 
   static const TextStyle _cardBodyStyle = TextStyle(
@@ -191,7 +189,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: const Color(0xFFFBF9F6),
       appBar: _buildAppBar(),
       body: AnimatedBuilder(
         animation: _repository,
@@ -210,7 +208,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: _backgroundColor,
+      backgroundColor: const Color(0xFFFBF9F6),
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
@@ -736,101 +734,6 @@ class _DetailSetPageState extends State<DetailSetPage> {
           const SizedBox(height: 10),
           _buildAddCardButton(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildHomeButton() {
-    return Transform.translate(
-      offset: const Offset(0, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: FloatingActionButton(
-              onPressed: _isDeleting
-                  ? null
-                  : () =>
-                        Navigator.of(context)
-                            .popUntil((route) => route.isFirst),
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              elevation: 3,
-              child: const Icon(Icons.home_rounded, size: 30),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Beranda',
-            style: TextStyle(
-              fontSize: 9,
-              color: _primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 2,
-      height: 65,
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.article_outlined,
-            label: 'Berkas',
-            onTap: _isDeleting ? null : () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 72),
-          _buildBottomNavItem(
-            icon: Icons.timer_outlined,
-            label: 'Statistik',
-            onTap: null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        width: 64,
-        height: 65,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

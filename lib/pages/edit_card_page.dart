@@ -61,48 +61,77 @@ class _EditCardPageState extends State<EditCardPage> {
   }
 
   void _handleTextChanged() {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     final frontValid = _frontController.text.trim().isNotEmpty;
     final backValid  = _backController.text.trim().isNotEmpty;
     if ((_showFrontError && frontValid) || (_showBackError && backValid)) {
       setState(() {
-        if (frontValid) _showFrontError = false;
-        if (backValid)  _showBackError  = false;
+        if (frontValid) {
+          _showFrontError = false;
+        }
+        if (backValid) {
+          _showBackError = false;
+        }
       });
     }
   }
 
   void _cancelEditing() {
-    if (_isSaving || _isDeleting) return;
+    if (_isSaving || _isDeleting) {
+      return;
+    }
     FocusScope.of(context).unfocus();
     Navigator.of(context).pop();
   }
 
   void _toggleCardSide() {
-    if (_isSaving || _isDeleting) return;
+    if (_isSaving || _isDeleting) {
+      return;
+    }
     FocusScope.of(context).unfocus();
     setState(() => _isBackSide = !_isBackSide);
   }
 
   Future<void> _saveChanges() async {
-    if (_isSaving || _isDeleting) return;
+    if (_isSaving || _isDeleting) {
+      return;
+    }
 
     FocusScope.of(context).unfocus();
 
     final frontEmpty = _frontController.text.trim().isEmpty;
-    final backEmpty  = _backController.text.trim().isEmpty;
+    final backEmpty = _backController.text.trim().isEmpty;
 
-    if (frontEmpty || backEmpty) {
+    if (frontEmpty && backEmpty) {
       setState(() {
-        _showFrontError = frontEmpty;
-        _showBackError  = backEmpty;
-        if (frontEmpty && !backEmpty) _isBackSide = false;
-        else if (!frontEmpty && backEmpty) _isBackSide = true;
+        _isBackSide = false;
+        _showFrontError = true;
+        _showBackError = true;
       });
       return;
     }
 
-    setState(() => _isSaving = true);
+    if (frontEmpty) {
+      setState(() {
+        _isBackSide = false;
+        _showFrontError = true;
+      });
+      return;
+    }
+
+    if (backEmpty) {
+      setState(() {
+        _isBackSide = true;
+        _showBackError = true;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     await _repository.updateFlashcard(
       id:        widget.card.id,
@@ -111,13 +140,17 @@ class _EditCardPageState extends State<EditCardPage> {
       backText:  _backController.text,
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() => _isSaving = false);
     Navigator.of(context).pop(EditCardResult.saved);
   }
 
   Future<void> _confirmDelete() async {
-    if (_isSaving || _isDeleting) return;
+    if (_isSaving || _isDeleting) {
+      return;
+    }
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -139,13 +172,17 @@ class _EditCardPageState extends State<EditCardPage> {
       ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !mounted) {
+      return;
+    }
 
     setState(() => _isDeleting = true);
 
     final deleted = await _repository.deleteFlashcard(widget.card.id);
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (!deleted) {
       setState(() => _isDeleting = false);

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'pages/login_page.dart';
-import 'pages/profil_page.dart';
 import 'pages/berkas_page.dart';
 import 'pages/statistic_page.dart';
 import 'repositories/flash_mind_repository.dart';
@@ -67,8 +66,8 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => targetPage,
-          transitionsBuilder: (_, anim, __, child) =>
+          pageBuilder: (context, animation, secondaryAnimation) => targetPage,
+          transitionsBuilder: (context, anim, secondaryAnimation, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 600),
         ),
@@ -243,11 +242,6 @@ class _HomeViewState extends State<_HomeView> {
     const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     final now = DateTime.now();
     return '${days[now.weekday - 1].toUpperCase()}, ${now.day} ${months[now.month - 1].toUpperCase()} ${now.year}';
-  }
-
-  static String _fmtDate(DateTime d) {
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    return '${d.day} ${months[d.month - 1]}';
   }
 
   static String _dayShort(DateTime d) {

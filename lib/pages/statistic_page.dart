@@ -9,9 +9,7 @@ class StatisticPage extends StatelessWidget {
   const StatisticPage({super.key});
 
   static const Color _primary = Color(0xFF192A3A);
-  static const Color _accent  = Color(0xFFF3C279);
   static const Color _orange  = Color(0xFFE87A5D);
-  static const Color _bg      = Color(0xFFFBF9F6);
 
   // ── Format helpers ─────────────────────────────────────────────────────────
 

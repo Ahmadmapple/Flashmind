@@ -280,7 +280,7 @@ class _StudySessionPageState extends State<StudySessionPage>
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
-                  color: Color(0xFFE87A5D),
+                  color: const Color(0xFFE87A5D),
                 ),
               ),
 
@@ -426,7 +426,7 @@ class _StudySessionPageState extends State<StudySessionPage>
               TextSpan(
                 text: 'balik.',
                 style: TextStyle(
-                  color: Color(0xFFE87A5D),
+                  color: const Color(0xFFE87A5D),
                   fontWeight: FontWeight.bold,
                 ),
               ),

@@ -239,7 +239,7 @@ class FlashMindRepository extends ChangeNotifier {
 
     // ── Sesi belajar (dalam 7 hari terakhir) ─────────────────────────────────
     // Hari ini (idx 6) = now; hari -6 = now-6d
-    final d = (int daysAgo) => now.subtract(Duration(days: daysAgo));
+    DateTime d(int daysAgo) => now.subtract(Duration(days: daysAgo));
 
     // Set 1 – 3 sesi: 5 hari lalu, 2 hari lalu, kemarin
     _addSession(_makeSession(id: 'ses-1', setId: s1,
@@ -414,7 +414,9 @@ class FlashMindRepository extends ChangeNotifier {
     final s = _studySessions[i];
     if (s.status != StudySessionStatus.inProgress ||
         s.nextCardIndex >= s.cardOrder.length ||
-        s.currentCardFrontShownAt != null) return false;
+        s.currentCardFrontShownAt != null) {
+      return false;
+    }
     _studySessions[i] = s.copyWith(
         currentCardFrontShownAt: DateTime.now(), clearLastPausedAt: true);
     notifyListeners();
@@ -444,10 +446,14 @@ class FlashMindRepository extends ChangeNotifier {
 
   bool markAnswerRevealed(String sessionId) {
     final i = _studySessions.indexWhere((s) => s.id == sessionId);
-    if (i == -1) return false;
+    if (i == -1) {
+      return false;
+    }
     final s = _studySessions[i];
     if (s.status != StudySessionStatus.inProgress ||
-        s.currentCardFrontShownAt == null) return false;
+        s.currentCardFrontShownAt == null) {
+      return false;
+    }
     _studySessions[i] = s.copyWith(currentCardAnswerRevealedAt: DateTime.now());
     notifyListeners();
     return true;
@@ -459,12 +465,16 @@ class FlashMindRepository extends ChangeNotifier {
     required bool isCorrect,
   }) {
     final i = _studySessions.indexWhere((s) => s.id == sessionId);
-    if (i == -1) return null;
+    if (i == -1) {
+      return null;
+    }
     final s = _studySessions[i];
     if (s.status != StudySessionStatus.inProgress ||
         s.nextCardIndex >= s.cardOrder.length ||
         s.cardOrder[s.nextCardIndex] != cardId ||
-        s.currentCardFrontShownAt == null) return null;
+        s.currentCardFrontShownAt == null) {
+      return null;
+    }
 
     final now        = DateTime.now();
     final seg        = now.difference(s.currentCardFrontShownAt!);
