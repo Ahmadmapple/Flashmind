@@ -26,8 +26,8 @@ class DetailSetPage extends StatefulWidget {
 
 class _DetailSetPageState extends State<DetailSetPage> {
   static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
-  static const Color _dangerColor = Color(0xFFEF5350);
+  static const Color _accentColor  = Color(0xFFF3C279);
+  static const Color _dangerColor  = Color(0xFFEF5350);
 
   static const TextStyle _cardBodyStyle = TextStyle(
     fontSize: 14,
@@ -37,13 +37,12 @@ class _DetailSetPageState extends State<DetailSetPage> {
   );
 
   static const String _ellipsis = ' ...';
-
-  static const double _cardHeight = 136;
-  static const double _bodyToActionsGap = 12;
+  static const double _cardHeight        = 136;
+  static const double _bodyToActionsGap  = 12;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
-  bool _isDeleting = false;
+  bool _isDeleting      = false;
   bool _notificationShown = false;
 
   final Set<String> _backVisibleCardIds = <String>{};
@@ -81,7 +80,6 @@ class _DetailSetPageState extends State<DetailSetPage> {
   @override
   void initState() {
     super.initState();
-
     if (widget.showCreatedNotification) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || _notificationShown) return;
@@ -102,48 +100,37 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Hapus Set'),
-          content: Text(
-            'Apakah Anda yakin ingin menghapus set "${set.title}"?',
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Hapus Set'),
+        content: Text('Apakah Anda yakin ingin menghapus set "${set.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey),
+            child: const Text('Batal'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              style: TextButton.styleFrom(foregroundColor: Colors.grey),
-              child: const Text('Batal'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: TextButton.styleFrom(foregroundColor: _dangerColor),
-              child: const Text('Hapus'),
-            ),
-          ],
-        );
-      },
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: _dangerColor),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true || !mounted) return;
 
-    setState(() {
-      _isDeleting = true;
-    });
-
+    setState(() => _isDeleting = true);
     await _repository.deleteSet(set.id);
-
     if (!mounted) return;
-
     Navigator.of(context).pop(true);
   }
 
   Future<void> _openEditSet(FlashcardSet set) async {
     if (_isDeleting) return;
-
     final edited = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => EditSetPage(set: set)),
     );
-
     if (edited == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -157,11 +144,9 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
   Future<void> _openAddCard() async {
     if (_isDeleting) return;
-
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => AddCardPage(setId: widget.setId)),
     );
-
     if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -175,13 +160,136 @@ class _DetailSetPageState extends State<DetailSetPage> {
 
   Future<void> _openDetailCard(Flashcard card) async {
     if (_isDeleting) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => DetailCardPage(setId: card.setId, cardId: card.id),
+      ),
+    );
+  }
+
+  Future<void> _openPdfUpload() async {
+    if (_isDeleting) return;
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final bottomPadding = MediaQuery.of(ctx).viewPadding.bottom;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, 36 + bottomPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8E4DB),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Unggah Dokumen PDF',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'serif',
+                  color: Color(0xFF192A3A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'AI akan membaca dokumen PDF kamu dan membuat flashcard secara otomatis. '
+                'Kamu bisa meninjau dan memilih kartu mana yang ingin disimpan.',
+                style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.45),
+              ),
+              const SizedBox(height: 28),
+              GestureDetector(
+                onTap: () => Navigator.of(ctx).pop(true),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFBF9F6),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFE8E4DB),
+                      width: 2,
+                      strokeAlign: BorderSide.strokeAlignInside,
+                    ),
+                  ),
+                  child: const Column(
+                    children: [
+                      Icon(Icons.picture_as_pdf, size: 40, color: Color(0xFFE87A5D)),
+                      SizedBox(height: 12),
+                      Text(
+                        'Ketuk untuk pilih file PDF',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF192A3A),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Maksimal 10 MB',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF192A3A),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: const Text(
+                    'Pilih File PDF',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
 
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => DetailCardPage(
-          setId: card.setId,
-          cardId: card.id,
-        ),
+        builder: (_) => AiCardReviewPage(setId: widget.setId, fileName: 'dokumen.pdf'),
+      ),
+    );
+  }
+
+  Future<void> _openStudySessionStart() async {
+    if (_isDeleting) return;
+    final inProgressSession = _repository.getInProgressStudySessionForSet(widget.setId);
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => inProgressSession == null
+            ? StudySessionStartPage(setId: widget.setId)
+            : StudySessionContinuePage(setId: widget.setId),
       ),
     );
   }
@@ -195,14 +303,16 @@ class _DetailSetPageState extends State<DetailSetPage> {
         animation: _repository,
         builder: (context, _) {
           final set = _repository.getSetById(widget.setId);
-
           if (set == null) {
             return const Center(child: Text('Set tidak ditemukan.'));
           }
-
           return _buildContent(set);
         },
       ),
+      floatingActionButton: _AddCardFab(
+        onTap: _isDeleting ? null : _openAddCard,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -236,9 +346,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
                 ? null
                 : () {
                     final set = _repository.getSetById(widget.setId);
-                    if (set != null) {
-                      _openEditSet(set);
-                    }
+                    if (set != null) _openEditSet(set);
                   },
             style: TextButton.styleFrom(
               backgroundColor: _primaryColor,
@@ -260,198 +368,57 @@ class _DetailSetPageState extends State<DetailSetPage> {
     );
   }
 
-  /// Simulasi pemilihan file PDF lalu navigasi ke halaman review kartu AI.
-  Future<void> _openPdfUpload() async {
-    if (_isDeleting) return;
-
-    // Tampilkan dialog konfirmasi pilih PDF (dummy — tanpa file picker nyata)
-    final confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8E4DB),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Unggah Dokumen PDF',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'serif',
-                color: Color(0xFF192A3A),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'AI akan membaca dokumen PDF kamu dan membuat flashcard secara otomatis. '
-              'Kamu bisa meninjau dan memilih kartu mana yang ingin disimpan.',
-              style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.45),
-            ),
-            const SizedBox(height: 28),
-            // Ilustrasi area pilih file
-            GestureDetector(
-              onTap: () => Navigator.of(ctx).pop(true),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 28),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFBF9F6),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFFE8E4DB),
-                    width: 2,
-                    strokeAlign: BorderSide.strokeAlignInside,
-                  ),
-                ),
-                child: const Column(
-                  children: [
-                    Icon(
-                      Icons.picture_as_pdf,
-                      size: 40,
-                      color: Color(0xFFE87A5D),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Ketuk untuk pilih file PDF',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF192A3A),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Maksimal 10 MB',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF192A3A),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text(
-                  'Pilih File PDF',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    // Navigasi ke halaman review kartu AI dengan nama file dummy
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => AiCardReviewPage(
-          setId:    widget.setId,
-          fileName: 'dokumen.pdf',
-        ),
-      ),
-    );
-  }
-
   Widget _buildContent(FlashcardSet set) {
     final bool isEmpty = set.cardCount == 0;
 
     return SafeArea(
       top: false,
       bottom: false,
-      child: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    set.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: _primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    set.description.isEmpty
-                        ? 'Tidak ada deskripsi set.'
-                        : set.description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                      height: 1.25,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  // Tombol aksi: Hapus & Mulai Belajar sejajar
-                  Row(
-                    children: [
-                      _buildDeleteButton(set),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildStudyButton(
-                          enabled: !isEmpty,
-                          hasInProgressSession: _repository
-                                  .getInProgressStudySessionForSet(set.id) !=
-                              null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  // Tombol Upload PDF (full width)
-                  _buildUploadPdfButton(),
-                  const SizedBox(height: 28),
-                  if (isEmpty)
-                    _buildEmptyState()
-                  else ...[
-                    _buildCardList(set.cards),
-                    const SizedBox(height: 18),
-                    Center(child: _buildAddCardButton()),
-                  ],
-                ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              set.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: _primaryColor,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.25),
+            ),
+            const SizedBox(height: 28),
+            Row(
+              children: [
+                _buildDeleteButton(set),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildStudyButton(
+                    enabled: !isEmpty,
+                    hasInProgressSession:
+                        _repository.getInProgressStudySessionForSet(set.id) != null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _buildUploadPdfButton(),
+            const SizedBox(height: 28),
+            if (isEmpty)
+              _buildEmptyState()
+            else
+              _buildCardList(set.cards),
+          ],
+        ),
       ),
     );
   }
@@ -459,25 +426,22 @@ class _DetailSetPageState extends State<DetailSetPage> {
   Widget _buildCardList(List<Flashcard> cards) {
     return Column(
       children: [
-        for (int index = 0; index < cards.length; index++) ...[
-          _buildFlashcardCard(cards[index]),
-          if (index < cards.length - 1) const SizedBox(height: 14),
+        for (int i = 0; i < cards.length; i++) ...[
+          _buildFlashcardCard(cards[i]),
+          if (i < cards.length - 1) const SizedBox(height: 14),
         ],
       ],
     );
   }
 
   Widget _buildFlashcardCard(Flashcard card) {
-    final bool isBackVisible = _backVisibleCardIds.contains(card.id);
-    final String text = isBackVisible ? card.backText : card.frontText;
-    final String sideLabel = isBackVisible ? 'Sisi Belakang' : 'Sisi Depan';
-    final String flipTooltip = isBackVisible
-        ? 'Tampilkan sisi depan'
-        : 'Balikkan kartu';
+    final bool isBackVisible  = _backVisibleCardIds.contains(card.id);
+    final String text         = isBackVisible ? card.backText : card.frontText;
+    final String sideLabel    = isBackVisible ? 'Sisi Belakang' : 'Sisi Depan';
+    final String flipTooltip  = isBackVisible ? 'Tampilkan sisi depan' : 'Balikkan kartu';
 
-    final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style
-        .merge(_cardBodyStyle);
-    final TextScaler textScaler = MediaQuery.textScalerOf(context);
+    final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style.merge(_cardBodyStyle);
+    final TextScaler textScaler        = MediaQuery.textScalerOf(context);
 
     return Container(
       width: double.infinity,
@@ -505,13 +469,9 @@ class _DetailSetPageState extends State<DetailSetPage> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final double lineHeight =
-                    effectiveBodyStyle.fontSize! *
-                    (effectiveBodyStyle.height ?? 1.0);
-
-                final int availableLines = (constraints.maxHeight / lineHeight)
-                    .floor()
-                    .clamp(1, 10);
-
+                    effectiveBodyStyle.fontSize! * (effectiveBodyStyle.height ?? 1.0);
+                final int availableLines =
+                    (constraints.maxHeight / lineHeight).floor().clamp(1, 10);
                 final String displayText = _truncateToFitWords(
                   text,
                   effectiveBodyStyle,
@@ -519,7 +479,6 @@ class _DetailSetPageState extends State<DetailSetPage> {
                   textScaler,
                   maxLines: availableLines,
                 );
-
                 return Text(
                   displayText,
                   maxLines: availableLines,
@@ -553,10 +512,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   icon: const Icon(Icons.swap_horiz, size: 23),
-                  label: const Text(
-                    'Balikkan Kartu',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  label: const Text('Balikkan Kartu', style: TextStyle(fontSize: 12)),
                 ),
               ),
               TextButton(
@@ -579,24 +535,6 @@ class _DetailSetPageState extends State<DetailSetPage> {
     );
   }
 
-  Widget _buildAddCardButton() {
-    return Material(
-      color: _accentColor,
-      elevation: 3,
-      shadowColor: Colors.black26,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: _isDeleting ? null : _openAddCard,
-        child: const SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(Icons.add, color: _primaryColor, size: 28),
-        ),
-      ),
-    );
-  }
-
   Widget _buildUploadPdfButton() {
     return SizedBox(
       width: double.infinity,
@@ -608,13 +546,8 @@ class _DetailSetPageState extends State<DetailSetPage> {
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF192A3A),
           side: const BorderSide(color: Color(0xFFB8B5AF), width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -630,41 +563,21 @@ class _DetailSetPageState extends State<DetailSetPage> {
           foregroundColor: const WidgetStatePropertyAll(Colors.white),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 16),
-          ),
+              EdgeInsets.symmetric(horizontal: 16)),
           minimumSize: const WidgetStatePropertyAll(Size(88, 40)),
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-          ),
+              TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
         ),
         child: _isDeleting
             ? const SizedBox(
                 width: 14,
                 height: 14,
                 child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: Colors.white,
-                ),
+                    strokeWidth: 1.5, color: Colors.white),
               )
             : const Text('Hapus Set'),
-      ),
-    );
-  }
-
-  Future<void> _openStudySessionStart() async {
-    if (_isDeleting) return;
-
-    final inProgressSession =
-        _repository.getInProgressStudySessionForSet(widget.setId);
-
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => inProgressSession == null
-            ? StudySessionStartPage(setId: widget.setId)
-            : StudySessionContinuePage(setId: widget.setId),
       ),
     );
   }
@@ -692,19 +605,14 @@ class _DetailSetPageState extends State<DetailSetPage> {
           }),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 14),
-          ),
+              EdgeInsets.symmetric(horizontal: 14)),
           minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-          ),
+              TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
         ),
-        child: Text(
-          hasInProgressSession ? 'Lanjut Belajar' : 'Mulai Belajar',
-        ),
+        child: Text(hasInProgressSession ? 'Lanjut Belajar' : 'Mulai Belajar'),
       ),
     );
   }
@@ -723,17 +631,35 @@ class _DetailSetPageState extends State<DetailSetPage> {
           ),
           const Spacer(),
           const Text(
-            'Silakan tekan tombol berikut untuk menambahkan kartu ke dalam set.',
+            'Tekan tombol + di bawah untuk menambahkan kartu ke dalam set.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF9A9894),
-              height: 1.35,
-            ),
+            style: TextStyle(fontSize: 12, color: Color(0xFF9A9894), height: 1.35),
           ),
-          const SizedBox(height: 10),
-          _buildAddCardButton(),
         ],
+      ),
+    );
+  }
+}
+
+class _AddCardFab extends StatelessWidget {
+  const _AddCardFab({required this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFFF3C279),
+      elevation: 4,
+      shadowColor: Colors.black26,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const SizedBox(
+          width: 56,
+          height: 56,
+          child: Icon(Icons.add, color: Color(0xFF192A3A), size: 30),
+        ),
       ),
     );
   }

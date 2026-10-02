@@ -16,28 +16,28 @@ class EditCardPage extends StatefulWidget {
 }
 
 class _EditCardPageState extends State<EditCardPage> {
-  static const Color _primaryColor   = Color(0xFF192A3A);
-  static const Color _accentColor    = Color(0xFFF3C279);
+  static const Color _primaryColor    = Color(0xFF192A3A);
+  static const Color _accentColor     = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _borderColor    = Color(0xFFB8B5AF);
-  static const Color _errorColor     = Color(0xFFD32F2F);
-  static const Color _dangerColor    = Color(0xFFEF5350);
+  static const Color _borderColor     = Color(0xFFB8B5AF);
+  static const Color _errorColor      = Color(0xFFD32F2F);
+  static const Color _dangerColor     = Color(0xFFEF5350);
 
-  static const double _fieldFooterHeight       = 22;
-  static const int    _cardMaxLength           = 999;
-  static const double _inputBoxHeight          = 360;
-  static const double _contentToActionsGap     = 28;
+  static const double _fieldFooterHeight        = 22;
+  static const int    _cardMaxLength            = 999;
+  static const double _inputBoxHeight           = 360;
+  static const double _contentToActionsGap      = 28;
   static const double _actionsHorizontalPadding = 0;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
   late final TextEditingController _frontController;
   late final TextEditingController _backController;
 
-  bool _isBackSide    = false;
+  bool _isBackSide     = false;
   bool _showFrontError = false;
   bool _showBackError  = false;
-  bool _isSaving      = false;
-  bool _isDeleting    = false;
+  bool _isSaving       = false;
+  bool _isDeleting     = false;
 
   TextEditingController get _activeController =>
       _isBackSide ? _backController : _frontController;
@@ -61,77 +61,60 @@ class _EditCardPageState extends State<EditCardPage> {
   }
 
   void _handleTextChanged() {
-    if (!mounted) {
-      return;
-    }
-    final frontValid = _frontController.text.trim().isNotEmpty;
-    final backValid  = _backController.text.trim().isNotEmpty;
+    if (!mounted) return;
+    final bool frontValid = _frontController.text.trim().isNotEmpty;
+    final bool backValid  = _backController.text.trim().isNotEmpty;
     if ((_showFrontError && frontValid) || (_showBackError && backValid)) {
       setState(() {
-        if (frontValid) {
-          _showFrontError = false;
-        }
-        if (backValid) {
-          _showBackError = false;
-        }
+        if (frontValid) _showFrontError = false;
+        if (backValid) _showBackError = false;
       });
     }
   }
 
   void _cancelEditing() {
-    if (_isSaving || _isDeleting) {
-      return;
-    }
+    if (_isSaving || _isDeleting) return;
     FocusScope.of(context).unfocus();
     Navigator.of(context).pop();
   }
 
   void _toggleCardSide() {
-    if (_isSaving || _isDeleting) {
-      return;
-    }
+    if (_isSaving || _isDeleting) return;
     FocusScope.of(context).unfocus();
     setState(() => _isBackSide = !_isBackSide);
   }
 
   Future<void> _saveChanges() async {
-    if (_isSaving || _isDeleting) {
-      return;
-    }
-
+    if (_isSaving || _isDeleting) return;
     FocusScope.of(context).unfocus();
 
-    final frontEmpty = _frontController.text.trim().isEmpty;
-    final backEmpty = _backController.text.trim().isEmpty;
+    final bool frontEmpty = _frontController.text.trim().isEmpty;
+    final bool backEmpty  = _backController.text.trim().isEmpty;
 
     if (frontEmpty && backEmpty) {
       setState(() {
-        _isBackSide = false;
+        _isBackSide     = false;
         _showFrontError = true;
-        _showBackError = true;
+        _showBackError  = true;
       });
       return;
     }
-
     if (frontEmpty) {
       setState(() {
-        _isBackSide = false;
+        _isBackSide     = false;
         _showFrontError = true;
       });
       return;
     }
-
     if (backEmpty) {
       setState(() {
-        _isBackSide = true;
+        _isBackSide    = true;
         _showBackError = true;
       });
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
+    setState(() => _isSaving = true);
 
     await _repository.updateFlashcard(
       id:        widget.card.id,
@@ -140,17 +123,13 @@ class _EditCardPageState extends State<EditCardPage> {
       backText:  _backController.text,
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     setState(() => _isSaving = false);
     Navigator.of(context).pop(EditCardResult.saved);
   }
 
   Future<void> _confirmDelete() async {
-    if (_isSaving || _isDeleting) {
-      return;
-    }
+    if (_isSaving || _isDeleting) return;
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -172,17 +151,13 @@ class _EditCardPageState extends State<EditCardPage> {
       ),
     );
 
-    if (confirmed != true || !mounted) {
-      return;
-    }
+    if (confirmed != true || !mounted) return;
 
     setState(() => _isDeleting = true);
 
-    final deleted = await _repository.deleteFlashcard(widget.card.id);
+    final bool deleted = await _repository.deleteFlashcard(widget.card.id);
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     if (!deleted) {
       setState(() => _isDeleting = false);
@@ -201,8 +176,8 @@ class _EditCardPageState extends State<EditCardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset      = MediaQuery.of(context).viewInsets.bottom;
-    final extraBottomPadding = keyboardInset.clamp(0.0, double.infinity);
+    final double keyboardInset      = MediaQuery.of(context).viewInsets.bottom;
+    final double extraBottomPadding = keyboardInset.clamp(0.0, double.infinity);
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -286,8 +261,7 @@ class _EditCardPageState extends State<EditCardPage> {
           padding: const EdgeInsets.symmetric(horizontal: 2),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         ),
         icon: const Icon(Icons.swap_horiz, size: 23),
         label: const Text('Balikkan Kartu'),
@@ -338,10 +312,10 @@ class _EditCardPageState extends State<EditCardPage> {
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: _activeController,
         builder: (context, value, _) {
-          final frontEmpty = _frontController.text.trim().isEmpty;
-          final backEmpty  = _backController.text.trim().isEmpty;
-          final showError  = _isBackSide ? _showBackError : _showFrontError;
-          final errorText  = frontEmpty && backEmpty
+          final bool frontEmpty = _frontController.text.trim().isEmpty;
+          final bool backEmpty  = _backController.text.trim().isEmpty;
+          final bool showError  = _isBackSide ? _showBackError : _showFrontError;
+          final String errorText = frontEmpty && backEmpty
               ? 'Sisi depan dan belakang perlu diisi.'
               : _isBackSide
                   ? 'Sisi belakang perlu diisi.'
@@ -356,13 +330,13 @@ class _EditCardPageState extends State<EditCardPage> {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12, right: 8),
                     child: showError
-                        ? Text(errorText,
+                        ? Text(
+                            errorText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                color: _errorColor,
-                                fontSize: 12,
-                                height: 1.2))
+                                color: _errorColor, fontSize: 12, height: 1.2),
+                          )
                         : const SizedBox.shrink(),
                   ),
                 ),
@@ -371,9 +345,7 @@ class _EditCardPageState extends State<EditCardPage> {
                   child: Text(
                     '${value.text.length}/$_cardMaxLength',
                     style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF9A9894),
-                        height: 1.6),
+                        fontSize: 10, color: Color(0xFF9A9894), height: 1.6),
                   ),
                 ),
               ],
@@ -414,7 +386,8 @@ class _EditCardPageState extends State<EditCardPage> {
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                    strokeWidth: 1.5, color: Colors.white))
+                    strokeWidth: 1.5, color: Colors.white),
+              )
             : const Text('Hapus Kartu'),
       ),
     );
@@ -451,7 +424,8 @@ class _EditCardPageState extends State<EditCardPage> {
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                    strokeWidth: 1.5, color: _primaryColor))
+                    strokeWidth: 1.5, color: _primaryColor),
+              )
             : const Text('Simpan'),
       ),
     );

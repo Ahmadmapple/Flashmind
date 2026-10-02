@@ -11,8 +11,6 @@ class StatisticPage extends StatelessWidget {
   static const Color _primary = Color(0xFF192A3A);
   static const Color _orange  = Color(0xFFE87A5D);
 
-  // ── Format helpers ─────────────────────────────────────────────────────────
-
   static String _formatDuration(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes.remainder(60);
@@ -32,8 +30,7 @@ class StatisticPage extends StatelessWidget {
     return '${diff.inDays} hari lalu';
   }
 
-  static String _formatAccuracy(double a) =>
-      '${a.toStringAsFixed(0)}%';
+  static String _formatAccuracy(double a) => '${a.toStringAsFixed(0)}%';
 
   @override
   Widget build(BuildContext context) {
@@ -48,31 +45,29 @@ class StatisticPage extends StatelessWidget {
     final sets     = repo.sets;
     final sessions = repo.allCompletedSessions;
 
-    // Agregat keseluruhan
-    final totalSessions    = sessions.length;
-    final totalCardsStudied = sessions.fold<int>(
-      0, (sum, s) => sum + s.completedCardCount,
-    );
-    final totalActiveSet   = sets.length;
-    final overallAccuracy  = sessions.isEmpty
+    final totalSessions     = sessions.length;
+    final totalCardsStudied = sessions.fold<int>(0, (sum, s) => sum + s.completedCardCount);
+    final totalActiveSet    = sets.length;
+    final overallAccuracy   = sessions.isEmpty
         ? 0.0
-        : sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
-            sessions.length;
+        : sessions.fold<double>(0, (sum, s) => sum + s.accuracy) / sessions.length;
 
-    // Sesi terbaru
     final StudySession? latestSession = sessions.isEmpty
         ? null
         : sessions.reduce(
-            (a, b) => (a.finishedAt ?? a.startedAt)
-                    .isAfter(b.finishedAt ?? b.startedAt)
-                ? a
-                : b,
+            (a, b) => (a.finishedAt ?? a.startedAt).isAfter(b.finishedAt ?? b.startedAt) ? a : b,
           );
 
-    FlashcardSet? latestSet;
-    if (latestSession != null) {
-      latestSet = repo.getSetById(latestSession.setId);
-    }
+    final FlashcardSet? latestSet =
+        latestSession != null ? repo.getSetById(latestSession.setId) : null;
+
+    final studiedSets = sets.where((set) {
+      final hasDone   = repo.getCompletedStudySessionsForSet(set.id).isNotEmpty;
+      final hasInProg = repo.getInProgressStudySessionForSet(set.id) != null;
+      return hasDone || hasInProg;
+    }).toList()
+      ..sort((a, b) =>
+          (b.lastStudiedAt ?? DateTime(1970)).compareTo(a.lastStudiedAt ?? DateTime(1970)));
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -80,7 +75,6 @@ class StatisticPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ─────────────────────────────────────────────────────
             const Text(
               'Statistik',
               style: TextStyle(
@@ -92,7 +86,7 @@ class StatisticPage extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             const Text(
-              'RIWAYAT BELAJAR',
+              'RINGKASAN BELAJAR',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
@@ -101,8 +95,6 @@ class StatisticPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // ── Overall card ───────────────────────────────────────────────
             _OverallCard(
               accuracy: overallAccuracy,
               totalSessions: totalSessions,
@@ -110,8 +102,6 @@ class StatisticPage extends StatelessWidget {
               totalActiveSets: totalActiveSet,
             ),
             const SizedBox(height: 24),
-
-            // ── Sesi terbaru ───────────────────────────────────────────────
             const Text(
               'Sesi Terbaru',
               style: TextStyle(
@@ -130,10 +120,8 @@ class StatisticPage extends StatelessWidget {
               formatAccuracy: _formatAccuracy,
             ),
             const SizedBox(height: 24),
-
-            // ── Semua set ──────────────────────────────────────────────────
             const Text(
-              'Semua Set',
+              'Riwayat Belajar',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -142,22 +130,22 @@ class StatisticPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-
-            if (sets.isEmpty)
-              const _EmptySetList()
+            if (studiedSets.isEmpty)
+              _EmptyStudyHistory()
             else
-              ...sets.map((set) {
-                final setSessions =
-                    repo.getCompletedStudySessionsForSet(set.id);
-                final lastAcc = setSessions.isEmpty
-                    ? null
-                    : setSessions.last.accuracy;
+              ...studiedSets.map((set) {
+                final setSessions = repo.getCompletedStudySessionsForSet(set.id);
+                final lastAcc     = setSessions.isEmpty ? null : setSessions.last.accuracy;
+                final inProg      = repo.getInProgressStudySessionForSet(set.id);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _SetStatCard(
                     set: set,
                     lastAccuracy: lastAcc,
+                    isInProgress: inProg != null,
+                    lastStudiedAt: set.lastStudiedAt,
                     formatAccuracy: _formatAccuracy,
+                    formatRelative: _formatRelative,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => DetailSetPage(setId: set.id),
@@ -172,10 +160,6 @@ class StatisticPage extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Widget: Overall card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _OverallCard extends StatelessWidget {
   const _OverallCard({
@@ -257,27 +241,16 @@ class _StatColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
-        ),
+        Text(label,
+            style: const TextStyle(color: Colors.white54, fontSize: 12)),
       ],
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Widget: Latest session card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _LatestSessionCard extends StatelessWidget {
   const _LatestSessionCard({
@@ -305,10 +278,22 @@ class _LatestSessionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
         ),
-        child: const Text(
-          'Belum ada sesi belajar.\nMulai belajar untuk melihat riwayat di sini.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
+        child: Column(
+          children: [
+            Icon(Icons.menu_book_rounded, size: 36, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            const Text(
+              'Belum ada sesi belajar.',
+              style: TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Buka salah satu set kartu dan mulai belajar\nuntuk melihat riwayat di sini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
+            ),
+          ],
         ),
       );
     }
@@ -324,19 +309,8 @@ class _LatestSessionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Judul + waktu
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDDECE7),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.check, color: Color(0xFF2F776F), size: 20),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,10 +318,9 @@ class _LatestSessionCard extends StatelessWidget {
                     Text(
                       set!.title,
                       style: const TextStyle(
-                        color: Color(0xFF192A3A),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                          color: Color(0xFF192A3A),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15),
                     ),
                     Text(
                       formatRelative(session!.finishedAt),
@@ -362,10 +335,9 @@ class _LatestSessionCard extends StatelessWidget {
                   Text(
                     '${session!.correctCount}/${session!.totalCardCount}',
                     style: const TextStyle(
-                      color: Color(0xFF2F776F),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                        color: Color(0xFF2F776F),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
                   ),
                   Text(
                     formatAccuracy(session!.accuracy),
@@ -415,39 +387,36 @@ class _DetailItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF8A9A9E)),
-        ),
+        Text(label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF8A9A9E))),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF192A3A),
-          ),
-        ),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF192A3A))),
       ],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Widget: Set stat card
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _SetStatCard extends StatelessWidget {
   const _SetStatCard({
     required this.set,
     required this.lastAccuracy,
+    required this.isInProgress,
+    required this.lastStudiedAt,
     required this.formatAccuracy,
+    required this.formatRelative,
     required this.onTap,
   });
 
   final FlashcardSet set;
   final double? lastAccuracy;
+  final bool isInProgress;
+  final DateTime? lastStudiedAt;
   final String Function(double) formatAccuracy;
+  final String Function(DateTime?) formatRelative;
   final VoidCallback onTap;
 
   @override
@@ -465,28 +434,50 @@ class _SetStatCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  set.title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF192A3A),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        set.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF192A3A)),
+                      ),
+                    ),
+                    if (isInProgress) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE87A5D).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Terhenti',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFFE87A5D),
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  '${set.cardCount} kartu',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
+                Text('${set.cardCount} kartu  ·  ${formatRelative(lastStudiedAt)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 if (lastAccuracy != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    '${formatAccuracy(lastAccuracy!)} terakhir',
+                    'Skor terakhir: ${formatAccuracy(lastAccuracy!)}',
                     style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF2F776F),
-                      fontWeight: FontWeight.w500,
-                    ),
+                        fontSize: 11,
+                        color: Color(0xFF2F776F),
+                        fontWeight: FontWeight.w500),
                   ),
                 ],
               ],
@@ -510,22 +501,33 @@ class _SetStatCard extends StatelessWidget {
   }
 }
 
-class _EmptySetList extends StatelessWidget {
-  const _EmptySetList();
-
+class _EmptyStudyHistory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
       ),
-      child: const Text(
-        'Belum ada set. Buat set di halaman Berkas.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, color: Colors.grey),
+      child: Column(
+        children: [
+          Icon(Icons.history_rounded, size: 36, color: Colors.grey.shade300),
+          const SizedBox(height: 12),
+          const Text(
+            'Belum ada riwayat belajar.',
+            style: TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Buka set kartu di halaman Berkas\ndan mulai sesi belajar pertamamu.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
+          ),
+        ],
       ),
     );
   }

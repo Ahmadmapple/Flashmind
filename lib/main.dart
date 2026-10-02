@@ -2,12 +2,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
-import 'pages/login_page.dart';
-import 'pages/berkas_page.dart';
-import 'pages/statistic_page.dart';
-import 'repositories/flash_mind_repository.dart';
+
 import 'models/flashcard_set.dart';
+import 'pages/berkas_page.dart';
+import 'pages/detail_set_page.dart';
+import 'pages/login_page.dart';
+import 'pages/statistic_page.dart';
+import 'providers/auth_provider.dart';
+import 'repositories/flash_mind_repository.dart';
 
 void main() {
   runApp(
@@ -37,10 +39,6 @@ class FlashMindApp extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Splash
-// ─────────────────────────────────────────────────────────────────────────────
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -93,25 +91,26 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Color(0xFFF3C279), size: 40),
             ),
             const SizedBox(height: 24),
-            const Text('Flash Mind',
-                style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'serif',
-                    color: Color(0xFF192A3A))),
+            const Text(
+              'Flash Mind',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'serif',
+                color: Color(0xFF192A3A),
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Small reviews. Lasting memory.',
-                style: TextStyle(fontSize: 14, color: Colors.black54)),
+            const Text(
+              'Small reviews. Lasting memory.',
+              style: TextStyle(fontSize: 14, color: Colors.black54),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MainPage
-// ─────────────────────────────────────────────────────────────────────────────
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -124,8 +123,9 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 1;
 
   Widget _buildNavItem(IconData icon, String label, int index) {
-    final sel   = _selectedIndex == index;
-    final color = sel ? const Color(0xFF192A3A) : Colors.grey.shade400;
+    final bool sel = _selectedIndex == index;
+    final Color color =
+        sel ? const Color(0xFF192A3A) : Colors.grey.shade400;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _selectedIndex = index),
@@ -137,11 +137,14 @@ class _MainPageState extends State<MainPage> {
           children: [
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 4),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 12,
-                    color: color,
-                    fontWeight: sel ? FontWeight.bold : FontWeight.w600)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: sel ? FontWeight.bold : FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -171,23 +174,28 @@ class _MainPageState extends State<MainPage> {
                     : Colors.white,
                 shape: const CircleBorder(),
                 elevation: 3,
-                child: Icon(Icons.home_rounded,
-                    color: _selectedIndex == 1
-                        ? Colors.white
-                        : Colors.grey.shade400,
-                    size: 30),
+                child: Icon(
+                  Icons.home_rounded,
+                  color: _selectedIndex == 1
+                      ? Colors.white
+                      : Colors.grey.shade400,
+                  size: 30,
+                ),
               ),
             ),
             const SizedBox(height: 4),
-            Text('Beranda',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: _selectedIndex == 1
-                        ? const Color(0xFF192A3A)
-                        : Colors.grey.shade400,
-                    fontWeight: _selectedIndex == 1
-                        ? FontWeight.bold
-                        : FontWeight.w600)),
+            Text(
+              'Beranda',
+              style: TextStyle(
+                fontSize: 12,
+                color: _selectedIndex == 1
+                    ? const Color(0xFF192A3A)
+                    : Colors.grey.shade400,
+                fontWeight: _selectedIndex == 1
+                    ? FontWeight.bold
+                    : FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -210,10 +218,6 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _HomeView
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _HomeView extends StatefulWidget {
   const _HomeView();
 
@@ -223,14 +227,15 @@ class _HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<_HomeView> {
   int? _selectedBarIndex;
+  final int _recSeed = DateTime.now().millisecondsSinceEpoch;
 
-  static const Color _primary  = Color(0xFF192A3A);
-  static const Color _cardBg   = Color(0xFF2C3E50);
-  static const Color _orange   = Color(0xFFE87A5D);
-  static const Color _accent   = Color(0xFFF3C279);
+  static const Color _primary = Color(0xFF192A3A);
+  static const Color _cardBg  = Color(0xFF2C3E50);
+  static const Color _orange  = Color(0xFFE87A5D);
+  static const Color _accent  = Color(0xFFF3C279);
 
   static String _greeting() {
-    final h = DateTime.now().hour;
+    final int h = DateTime.now().hour;
     if (h < 11) return 'Selamat pagi,';
     if (h < 15) return 'Selamat siang,';
     if (h < 18) return 'Selamat sore,';
@@ -238,24 +243,41 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   static String _dayMonth() {
-    const days   = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    final now = DateTime.now();
-    return '${days[now.weekday - 1].toUpperCase()}, ${now.day} ${months[now.month - 1].toUpperCase()} ${now.year}';
+    const List<String> days = [
+      'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu',
+    ];
+    const List<String> months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    ];
+    final DateTime now = DateTime.now();
+    return '${days[now.weekday - 1].toUpperCase()}, '
+        '${now.day} ${months[now.month - 1].toUpperCase()} ${now.year}';
   }
 
   static String _dayShort(DateTime d) {
-    const days = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+    const List<String> days = [
+      'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min',
+    ];
     return days[d.weekday - 1];
   }
 
+  static String _fmtDate(DateTime d) {
+    const List<String> months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    ];
+    return '${d.day} ${months[d.month - 1]}';
+  }
+
   List<_DayData> _buildWeekData(FlashMindRepository repo) {
-    final today = DateTime.now();
+    final DateTime today = DateTime.now();
     return List.generate(7, (i) {
-      final day = DateTime(today.year, today.month, today.day)
+      final DateTime day = DateTime(today.year, today.month, today.day)
           .subtract(Duration(days: 6 - i));
-      final sessions = repo.getSessionsOnDay(day);
-      final uniqueSets = sessions.map((s) => s.setId).toSet().length;
+      final sessions    = repo.getSessionsOnDay(day);
+      final int uniqueSets =
+          sessions.map((s) => s.setId).toSet().length;
       return _DayData(
         date: day,
         sessionCount: sessions.length,
@@ -268,42 +290,62 @@ class _HomeViewState extends State<_HomeView> {
   List<_RecommendedSet> _buildRecommendations(FlashMindRepository repo) {
     final sets   = repo.sets;
     final result = <_RecommendedSet>[];
-    final rng    = Random();
+    final rng    = Random(_recSeed);
 
     for (final set in sets) {
       if (repo.getInProgressStudySessionForSet(set.id) != null) {
         result.add(_RecommendedSet(
-          set: set, reason: 'Terakhir dipelajari 1 hari lalu',
-          color: const Color(0xFF52B788), dueCount: set.cardCount));
-        continue;
-      }
-      final completed = repo.getCompletedStudySessionsForSet(set.id);
-      if (completed.isNotEmpty && completed.last.accuracy < 70) {
-        result.add(_RecommendedSet(
-          set: set, reason: 'Terakhir dipelajari 1 hari lalu',
-          color: const Color(0xFFE87A5D), dueCount: set.cardCount));
-        continue;
-      }
-      if (set.lastStudiedAt == null) {
-        result.add(_RecommendedSet(
-          set: set, reason: 'Belum pernah dipelajari',
-          color: const Color(0xFF52B788), dueCount: set.cardCount));
-        continue;
+          set: set,
+          reason: 'Sesi belajar belum selesai',
+          dueCount: set.cardCount,
+        ));
       }
     }
 
-    final existingIds = result.map((r) => r.set.id).toSet();
-    final remaining   = sets.where((s) => !existingIds.contains(s.id)).toList()
+    for (final set in sets) {
+      if (result.any((r) => r.set.id == set.id)) continue;
+      final completed = repo.getCompletedStudySessionsForSet(set.id);
+      if (completed.isNotEmpty && completed.last.accuracy < 70) {
+        final int diff = DateTime.now()
+            .difference(completed.last.finishedAt ?? completed.last.startedAt)
+            .inDays;
+        result.add(_RecommendedSet(
+          set: set,
+          reason: 'Terakhir dipelajari $diff hari lalu',
+          dueCount: set.cardCount,
+        ));
+      }
+    }
+
+    for (final set in sets) {
+      if (result.any((r) => r.set.id == set.id)) continue;
+      if (set.lastStudiedAt == null) {
+        result.add(_RecommendedSet(
+          set: set,
+          reason: 'Belum pernah dipelajari',
+          dueCount: set.cardCount,
+        ));
+      }
+    }
+
+    final remaining = sets
+        .where((s) => !result.any((r) => r.set.id == s.id))
+        .toList()
       ..shuffle(rng);
-    for (final set in remaining.take(3 - result.length)) {
-      final lastStudied = set.lastStudiedAt;
-      final diff = lastStudied == null ? 0 : DateTime.now().difference(lastStudied).inDays;
-      final reason = lastStudied == null
+    for (final set in remaining) {
+      if (result.length >= 3) break;
+      final DateTime? lastStudied = set.lastStudiedAt;
+      final int diff = lastStudied == null
+          ? 0
+          : DateTime.now().difference(lastStudied).inDays;
+      final String reason = lastStudied == null
           ? 'Belum pernah dipelajari'
           : 'Terakhir dipelajari $diff hari lalu';
       result.add(_RecommendedSet(
-        set: set, reason: reason,
-        color: const Color(0xFF52B788), dueCount: set.cardCount));
+        set: set,
+        reason: reason,
+        dueCount: set.cardCount,
+      ));
     }
 
     return result.take(3).toList();
@@ -311,10 +353,10 @@ class _HomeViewState extends State<_HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final user      = context.watch<AuthProvider>().currentUser;
-    final firstName = user?.nama.split(' ').first ?? 'Pengguna';
-    final initial   = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U';
-    final repo      = FlashMindRepository.instance;
+    final user       = context.watch<AuthProvider>().currentUser;
+    final firstName  = user?.nama.split(' ').first ?? 'Pengguna';
+    final initial    = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U';
+    final repo       = FlashMindRepository.instance;
 
     return AnimatedBuilder(
       animation: repo,
@@ -322,32 +364,30 @@ class _HomeViewState extends State<_HomeView> {
         final sets            = repo.sets;
         final weekData        = _buildWeekData(repo);
         final recommendations = _buildRecommendations(repo);
-        final maxCount        = weekData
+        final int maxCount    = weekData
             .map((d) => d.sessionCount)
             .reduce((a, b) => a > b ? a : b);
-        final selected = _selectedBarIndex != null
-            ? weekData[_selectedBarIndex!]
-            : null;
+        final _DayData? selected =
+            _selectedBarIndex != null ? weekData[_selectedBarIndex!] : null;
 
-        // Set terakhir dipelajari
-        final lastStudiedSet = sets.isEmpty
+        final FlashcardSet? lastStudiedSet = sets.isEmpty
             ? null
             : sets.reduce((a, b) =>
                 (a.lastStudiedAt ?? DateTime(1970))
-                    .isAfter(b.lastStudiedAt ?? DateTime(1970))
+                        .isAfter(b.lastStudiedAt ?? DateTime(1970))
                     ? a
                     : b);
 
-        // Total kartu minggu ini
-        final weekCards = weekData.fold<int>(0, (s, d) => s + d.cardCount);
+        final int weekCards =
+            weekData.fold<int>(0, (s, d) => s + d.cardCount);
 
         return SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -358,29 +398,32 @@ class _HomeViewState extends State<_HomeView> {
                           Text(
                             _dayMonth(),
                             style: TextStyle(
-                                fontSize: 9,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5),
+                              fontSize: 9,
+                              color: Colors.grey.shade500,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             _greeting(),
                             style: const TextStyle(
-                                fontSize: 24,
-                                color: _primary,
-                                fontFamily: 'serif',
-                                fontWeight: FontWeight.w400,
-                                height: 1.2),
+                              fontSize: 24,
+                              color: _primary,
+                              fontFamily: 'serif',
+                              fontWeight: FontWeight.w400,
+                              height: 1.2,
+                            ),
                           ),
                           Text(
                             '$firstName.',
                             style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'serif',
-                                height: 1.05,
-                                color: _primary),
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'serif',
+                              height: 1.05,
+                              color: _primary,
+                            ),
                           ),
                         ],
                       ),
@@ -389,17 +432,19 @@ class _HomeViewState extends State<_HomeView> {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: const Color(0xFFE8E8E8),
-                      child: Text(initial,
-                          style: const TextStyle(
-                              color: _primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 17)),
+                      child: Text(
+                        initial,
+                        style: const TextStyle(
+                          color: _primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 17,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 28),
 
-                // Banner set terakhir
                 if (lastStudiedSet != null) ...[
                   Container(
                     width: double.infinity,
@@ -414,31 +459,39 @@ class _HomeViewState extends State<_HomeView> {
                         Text(
                           'ULASAN TERAKHIR',
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.8),
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.8,
+                          ),
                         ),
                         const SizedBox(height: 14),
                         Text(
                           lastStudiedSet.title,
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'serif',
-                              height: 1.15),
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'serif',
+                            height: 1.15,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '${lastStudiedSet.cardCount} kartu sedang menunggumu',
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 13),
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  DetailSetPage(setId: lastStudiedSet.id),
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _accent,
                             foregroundColor: _primary,
@@ -460,14 +513,14 @@ class _HomeViewState extends State<_HomeView> {
                   const SizedBox(height: 32),
                 ],
 
-                // Ritme belajar
                 Text(
                   'RITME BELAJAR',
                   style: TextStyle(
-                      fontSize: 9,
-                      color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5),
+                    fontSize: 9,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -477,37 +530,41 @@ class _HomeViewState extends State<_HomeView> {
                     const Text(
                       'Pelan tapi pasti.',
                       style: TextStyle(
-                          fontSize: 24,
-                          fontFamily: 'serif',
-                          fontWeight: FontWeight.w400,
-                          color: _primary,
-                          height: 1.2),
+                        fontSize: 24,
+                        fontFamily: 'serif',
+                        fontWeight: FontWeight.w400,
+                        color: _primary,
+                        height: 1.2,
+                      ),
                     ),
                     if (selected != null)
                       Text(
-                        '${selected.uniqueSetCount} set',
+                        '${_fmtDate(selected.date)} · ${selected.uniqueSetCount} set',
                         style: const TextStyle(
-                            fontSize: 12,
-                            color: _orange,
-                            fontWeight: FontWeight.w600),
+                          fontSize: 12,
+                          color: _orange,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 22),
 
-                // Bar chart
                 SizedBox(
                   height: 160,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: List.generate(7, (i) {
-                      final day       = weekData[i];
-                      final isToday   = i == 6;
-                      final isSel     = _selectedBarIndex == i;
-                      final fraction  = maxCount == 0 ? 0.0 : day.sessionCount / maxCount;
-                      final barH      = (fraction * 110).clamp(12.0, 110.0);
-                      final barColor  = isSel
+                      final _DayData day = weekData[i];
+                      final bool isToday = i == 6;
+                      final bool isSel   = _selectedBarIndex == i;
+                      final double fraction = maxCount == 0
+                          ? 0.0
+                          : day.sessionCount / maxCount;
+                      final double barH =
+                          (fraction * 110).clamp(12.0, 110.0);
+                      final Color barColor = isSel
                           ? _orange
                           : (day.sessionCount > 0
                               ? _orange.withValues(alpha: 0.6)
@@ -536,13 +593,14 @@ class _HomeViewState extends State<_HomeView> {
                               Text(
                                 _dayShort(day.date),
                                 style: TextStyle(
-                                    fontSize: 10,
-                                    color: isToday
-                                        ? _primary
-                                        : Colors.grey.shade400,
-                                    fontWeight: isToday || isSel
-                                        ? FontWeight.w600
-                                        : FontWeight.normal),
+                                  fontSize: 10,
+                                  color: isToday
+                                      ? _primary
+                                      : Colors.grey.shade400,
+                                  fontWeight: isToday || isSel
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
                               ),
                             ],
                           ),
@@ -558,36 +616,58 @@ class _HomeViewState extends State<_HomeView> {
                     Text(
                       'Kamu belajar $weekCards kartu minggu ini',
                       style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade400,
-                          fontWeight: FontWeight.normal),
-                    ),
-                    Text(
-                      '+18%',
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: _orange,
-                          fontWeight: FontWeight.w600),
+                        fontSize: 11,
+                        color: Colors.grey.shade400,
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 36),
 
-                // Rekomendasi
                 const Text(
-                  'Rekomendasi Set Kartu',
+                  'Karena kamu melewatkan ini',
                   style: TextStyle(
-                      fontSize: 22,
-                      fontFamily: 'serif',
-                      fontWeight: FontWeight.w400,
-                      color: _primary,
-                      height: 1.2),
+                    fontSize: 22,
+                    fontFamily: 'serif',
+                    fontWeight: FontWeight.w400,
+                    color: _primary,
+                    height: 1.2,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                ...recommendations.map((rec) => Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: _RecCard(rec: rec),
-                    )),
+                if (recommendations.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 28, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                          color: const Color(0xFFE8E4DB), width: 1),
+                    ),
+                    child: const Text(
+                      'Belum ada rekomendasi.\n'
+                      'Mulai pelajari set kartu untuk mendapatkan rekomendasi.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 13, color: Colors.grey, height: 1.5),
+                    ),
+                  )
+                else
+                  ...recommendations.map((rec) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _RecCard(
+                          rec: rec,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  DetailSetPage(setId: rec.set.id),
+                            ),
+                          ),
+                        ),
+                      )),
               ],
             ),
           ),
@@ -597,10 +677,6 @@ class _HomeViewState extends State<_HomeView> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Data
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _DayData {
   const _DayData({
     required this.date,
@@ -608,6 +684,7 @@ class _DayData {
     required this.cardCount,
     required this.uniqueSetCount,
   });
+
   final DateTime date;
   final int sessionCount;
   final int cardCount;
@@ -618,54 +695,83 @@ class _RecommendedSet {
   const _RecommendedSet({
     required this.set,
     required this.reason,
-    required this.color,
     required this.dueCount,
   });
+
   final FlashcardSet set;
   final String reason;
-  final Color color;
   final int dueCount;
 }
 
 class _RecCard extends StatelessWidget {
-  const _RecCard({required this.rec});
+  const _RecCard({required this.rec, required this.onTap});
+
   final _RecommendedSet rec;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1),
+        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(rec.set.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF192A3A),
-                        fontSize: 15)),
-                const SizedBox(height: 3),
-                Text(rec.reason,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: 12, color: Colors.grey.shade500)),
-              ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  rec.set.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF192A3A),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${rec.dueCount} kartu',
+                style: const TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+            ],
+          ),
+          if (rec.reason.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              rec.reason,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  color: Colors.grey, fontSize: 12, height: 1.3),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: onTap,
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFE87A5D),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Lihat Detail →',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          Text('${rec.dueCount} kartu',
-              style: TextStyle(
-                  color: rec.color, fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );

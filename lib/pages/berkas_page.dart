@@ -42,14 +42,13 @@ class _BerkasPageState extends State<BerkasPage> {
               builder: (context, _) {
                 final allSets = _repository.sets;
 
-                // Filter: sesi terhenti
                 var filtered = _showInterruptedSessions
-                    ? allSets.where((set) =>
-                        _repository.getInProgressStudySessionForSet(set.id) !=
-                        null).toList(growable: false)
+                    ? allSets
+                        .where((set) =>
+                            _repository.getInProgressStudySessionForSet(set.id) != null)
+                        .toList(growable: false)
                     : allSets;
 
-                // Filter: pencarian judul
                 if (_searchQuery.isNotEmpty) {
                   final q = _searchQuery.toLowerCase();
                   filtered = filtered
@@ -60,12 +59,10 @@ class _BerkasPageState extends State<BerkasPage> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Search bar
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                       child: _buildSearchBar(),
                     ),
-                    // Filter chips
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
                       child: _buildFilterRow(),
@@ -75,19 +72,21 @@ class _BerkasPageState extends State<BerkasPage> {
                       child: filtered.isEmpty
                           ? _buildEmptyState()
                           : SingleChildScrollView(
-                              padding:
-                                  const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: filtered.map((set) => Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 14),
-                                  child: _FlashcardSetCard(
-                                    set: set,
-                                    onViewDetail: () =>
-                                        _openDetail(context, set.id),
-                                  ),
-                                )).toList(),
+                                children: filtered
+                                    .map(
+                                      (set) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 14),
+                                        child: _FlashcardSetCard(
+                                          set: set,
+                                          onViewDetail: () =>
+                                              _openDetail(context, set.id),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
                     ),
@@ -116,14 +115,11 @@ class _BerkasPageState extends State<BerkasPage> {
         style: const TextStyle(fontSize: 14, color: Color(0xFF192A3A)),
         decoration: InputDecoration(
           hintText: 'Cari set flashcard...',
-          hintStyle:
-              const TextStyle(fontSize: 14, color: Color(0xFFB4B1AC)),
-          prefixIcon: const Icon(Icons.search,
-              color: Color(0xFF9A9894), size: 20),
+          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFB4B1AC)),
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF9A9894), size: 20),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.close,
-                      color: Color(0xFF9A9894), size: 18),
+                  icon: const Icon(Icons.close, color: Color(0xFF9A9894), size: 18),
                   onPressed: () {
                     _searchController.clear();
                     setState(() => _searchQuery = '');
@@ -142,7 +138,7 @@ class _BerkasPageState extends State<BerkasPage> {
   }
 
   Widget _buildEmptyState() {
-    final isSearchEmpty = _searchQuery.isNotEmpty;
+    final isSearching = _searchQuery.isNotEmpty;
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
@@ -150,16 +146,16 @@ class _BerkasPageState extends State<BerkasPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isSearchEmpty ? Icons.search_off : Icons.folder_open,
+              isSearching ? Icons.search_off : Icons.folder_open,
               size: 40,
               color: Colors.grey.shade300,
             ),
             const SizedBox(height: 12),
             Text(
-              isSearchEmpty
+              isSearching
                   ? 'Tidak ada set yang cocok\ndengan "$_searchQuery"'
                   : _showInterruptedSessions
-                      ? 'Tidak ada set dengan sesi belajar\nyang terhenti atau belum selesai'
+                      ? 'Tidak ada sesi belajar yang terhenti.\nSemua sesi sudah selesai!'
                       : 'Belum ada set flashcard.\nTekan "+ Tambah Set" untuk mulai.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey, fontSize: 13),
@@ -229,13 +225,11 @@ class _BerkasPageState extends State<BerkasPage> {
               backgroundColor: _accentColor,
               foregroundColor: _primaryColor,
               elevation: 0,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              textStyle: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700),
+              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -270,10 +264,6 @@ class _BerkasPageState extends State<BerkasPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Filter chip
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _FilterChip extends StatelessWidget {
   const _FilterChip({
     required this.label,
@@ -290,32 +280,21 @@ class _FilterChip extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        backgroundColor:
-            selected ? const Color(0xFF192A3A) : Colors.white,
-        foregroundColor:
-            selected ? Colors.white : const Color(0xFF192A3A),
+        backgroundColor: selected ? const Color(0xFF192A3A) : Colors.white,
+        foregroundColor: selected ? Colors.white : const Color(0xFF192A3A),
         side: BorderSide(
-          color: selected
-              ? const Color(0xFF192A3A)
-              : const Color(0xFFE8E4DB),
+          color: selected ? const Color(0xFF192A3A) : const Color(0xFFE8E4DB),
           width: 1.5,
         ),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         minimumSize: Size.zero,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
-        textStyle:
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
       child: Text(label),
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Set card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _FlashcardSetCard extends StatelessWidget {
   const _FlashcardSetCard({
@@ -369,8 +348,7 @@ class _FlashcardSetCard extends StatelessWidget {
               set.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  color: Colors.grey, fontSize: 12, height: 1.3),
+              style: const TextStyle(color: Colors.grey, fontSize: 12, height: 1.3),
             ),
           ],
           const SizedBox(height: 10),

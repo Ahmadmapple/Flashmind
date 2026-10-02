@@ -4,7 +4,6 @@ import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 
-/// Layar ringkasan setelah seluruh kartu dalam satu sesi selesai dinilai.
 class StudySessionEndPage extends StatelessWidget {
   const StudySessionEndPage({
     super.key,
@@ -12,9 +11,9 @@ class StudySessionEndPage extends StatelessWidget {
     required this.sessionId,
   });
 
-  static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
-  static const Color _headerColor = Color(0xFFFFE5B4);
+  static const Color _primaryColor    = Color(0xFF192A3A);
+  static const Color _accentColor     = Color(0xFFF3C279);
+  static const Color _headerColor     = Color(0xFFFFE5B4);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
 
   static const TextStyle _valueStyle = TextStyle(
@@ -28,22 +27,20 @@ class StudySessionEndPage extends StatelessWidget {
   final String sessionId;
 
   static String _formatDuration(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
+    final int totalSeconds = duration.inSeconds;
+    final int hours        = totalSeconds ~/ 3600;
+    final int minutes      = (totalSeconds % 3600) ~/ 60;
+    final int seconds      = totalSeconds % 60;
     return '${hours.toString().padLeft(2, '0')}:'
         '${minutes.toString().padLeft(2, '0')}:'
         '${seconds.toString().padLeft(2, '0')}';
   }
 
   static String _formatRecordDuration(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
+    final int totalSeconds = duration.inSeconds;
+    final int hours        = totalSeconds ~/ 3600;
+    final int minutes      = (totalSeconds % 3600) ~/ 60;
+    final int seconds      = totalSeconds % 60;
     if (hours > 0) {
       return '$hours jam${minutes > 0 ? ' $minutes menit' : ''}';
     }
@@ -54,13 +51,12 @@ class StudySessionEndPage extends StatelessWidget {
   }
 
   static String _formatAccuracy(double accuracy) {
-    final value = accuracy.clamp(0, 100);
+    final num value = accuracy.clamp(0, 100);
     return '${value.toStringAsFixed(2)}%';
   }
 
   static StudySession? _highestAccuracySession(List<StudySession> sessions) {
     if (sessions.isEmpty) return null;
-
     return sessions.reduce(
       (current, next) => next.accuracy > current.accuracy ? next : current,
     );
@@ -68,7 +64,6 @@ class StudySessionEndPage extends StatelessWidget {
 
   static StudySession? _fastestSession(List<StudySession> sessions) {
     if (sessions.isEmpty) return null;
-
     return sessions.reduce(
       (current, next) =>
           next.totalDuration < current.totalDuration ? next : current,
@@ -82,7 +77,7 @@ class StudySessionEndPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: repository,
       builder: (context, _) {
-        final set = repository.getSetById(setId);
+        final set            = repository.getSetById(setId);
         final currentSession = repository.getStudySessionById(sessionId);
 
         if (set == null || currentSession == null) {
@@ -92,22 +87,16 @@ class StudySessionEndPage extends StatelessWidget {
           );
         }
 
-        final completedSessions = repository.getCompletedStudySessionsForSet(
-          set.id,
-        );
+        final completedSessions =
+            repository.getCompletedStudySessionsForSet(set.id);
         final highestAccuracy = _highestAccuracySession(completedSessions);
-        final fastestSession = _fastestSession(completedSessions);
+        final fastestSession  = _fastestSession(completedSessions);
 
         return Scaffold(
           backgroundColor: _backgroundColor,
           appBar: _buildAppBar(context),
           body: _buildBody(
-            context,
-            set,
-            currentSession,
-            highestAccuracy,
-            fastestSession,
-          ),
+            context, set, currentSession, highestAccuracy, fastestSession),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
         );
@@ -155,9 +144,7 @@ class StudySessionEndPage extends StatelessWidget {
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 34, 20, 88),
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 34,
-              ),
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 34),
               child: Column(
                 children: [
                   _buildSummaryCard(
@@ -225,17 +212,11 @@ class StudySessionEndPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            set.description.isEmpty
-                ? 'Tidak ada deskripsi set.'
-                : set.description,
+            set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-              height: 1.25,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.25),
           ),
           const SizedBox(height: 25),
           const Text(
@@ -292,14 +273,9 @@ class StudySessionEndPage extends StatelessWidget {
             Expanded(child: Text(label, style: _valueStyle)),
             const SizedBox(width: 10),
             ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: constraints.maxWidth * 0.55,
-              ),
-              child: Text(
-                value,
-                textAlign: TextAlign.right,
-                style: _valueStyle,
-              ),
+              constraints:
+                  BoxConstraints(maxWidth: constraints.maxWidth * 0.55),
+              child: Text(value, textAlign: TextAlign.right, style: _valueStyle),
             ),
           ],
         );
@@ -324,11 +300,8 @@ class StudySessionEndPage extends StatelessWidget {
             Text(accuracy, textAlign: TextAlign.left, style: _valueStyle),
             const SizedBox(width: 10),
             Flexible(
-              child: Text(
-                duration,
-                textAlign: TextAlign.right,
-                style: _valueStyle,
-              ),
+              child: Text(duration,
+                  textAlign: TextAlign.right, style: _valueStyle),
             ),
           ],
         ),
@@ -346,15 +319,13 @@ class StudySessionEndPage extends StatelessWidget {
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 18),
-          ),
+              EdgeInsets.symmetric(horizontal: 18)),
           minimumSize: const WidgetStatePropertyAll(Size(90, 32)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-          ),
+              TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         ),
         child: const Text('Kembali'),
       ),
