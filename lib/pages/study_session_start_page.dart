@@ -6,9 +6,16 @@ import '../repositories/flash_mind_repository.dart';
 import 'study_session_continue_page.dart';
 import 'study_session_page.dart';
 
-class StudySessionStartPage extends StatelessWidget {
+class StudySessionStartPage extends StatefulWidget {
   const StudySessionStartPage({super.key, required this.setId});
 
+  final String setId;
+
+  @override
+  State<StudySessionStartPage> createState() => _StudySessionStartPageState();
+}
+
+class _StudySessionStartPageState extends State<StudySessionStartPage> {
   static const Color _primaryColor    = Color(0xFF192A3A);
   static const Color _accentColor     = Color(0xFFF3C279);
   static const Color _headerColor     = Color(0xFFFFE5B4);
@@ -21,8 +28,7 @@ class StudySessionStartPage extends StatelessWidget {
     height: 1.2,
   );
 
-  final String setId;
-  static bool _isStarting = false;
+  bool _isStarting = false;
 
   static String _formatAverageDuration(Duration duration) {
     final int totalSeconds = duration.inSeconds;
@@ -114,7 +120,7 @@ class StudySessionStartPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: repository,
       builder: (context, _) {
-        final set = repository.getSetById(setId);
+        final set = repository.getSetById(widget.setId);
 
         if (set == null) {
           return const Scaffold(
@@ -351,16 +357,16 @@ class StudySessionStartPage extends StatelessWidget {
 
   Future<void> _startSession(BuildContext context) async {
     if (_isStarting) return;
-    _isStarting = true;
+    setState(() => _isStarting = true);
 
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      final session =
-          await FlashMindRepository.instance.startStudySession(setId);
+      final session = await FlashMindRepository.instance
+          .startStudySession(widget.setId);
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       if (session == null) {
         messenger.showSnackBar(
@@ -375,17 +381,17 @@ class StudySessionStartPage extends StatelessWidget {
 
       navigator.pushReplacement<void, void>(
         MaterialPageRoute<void>(
-          builder: (_) => StudySessionContinuePage(setId: setId),
+          builder: (_) => StudySessionContinuePage(setId: widget.setId),
         ),
       );
       navigator.push<void>(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              StudySessionPage(setId: setId, sessionId: session.id),
+          builder: (_) => StudySessionPage(
+              setId: widget.setId, sessionId: session.id),
         ),
       );
     } finally {
-      _isStarting = false;
+      if (mounted) setState(() => _isStarting = false);
     }
   }
 
@@ -393,9 +399,14 @@ class StudySessionStartPage extends StatelessWidget {
     return SizedBox(
       height: 32,
       child: ElevatedButton(
-        onPressed: () => _startSession(context),
+        onPressed: _isStarting ? null : () => _startSession(context),
         style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_accentColor),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return _accentColor.withValues(alpha: 0.55);
+            }
+            return _accentColor;
+          }),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
@@ -407,7 +418,14 @@ class StudySessionStartPage extends StatelessWidget {
           textStyle: const WidgetStatePropertyAll(
               TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         ),
-        child: const Text('Mulai'),
+        child: _isStarting
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                    strokeWidth: 1.5, color: _primaryColor),
+              )
+            : const Text('Mulai'),
       ),
     );
   }

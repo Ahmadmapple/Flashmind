@@ -7,6 +7,7 @@ import 'models/flashcard_set.dart';
 import 'pages/berkas_page.dart';
 import 'pages/detail_set_page.dart';
 import 'pages/login_page.dart';
+import 'pages/profil_page.dart';
 import 'pages/statistic_page.dart';
 import 'providers/auth_provider.dart';
 import 'repositories/flash_mind_repository.dart';
@@ -403,15 +404,22 @@ class _HomeViewState extends State<_HomeView> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: const Color(0xFFE8E8E8),
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          color: _primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17,
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ProfilePage(),
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: const Color(0xFFE8E8E8),
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            color: _primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 17,
+                          ),
                         ),
                       ),
                     ),
