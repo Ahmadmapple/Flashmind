@@ -27,13 +27,30 @@ class AuthProvider extends ChangeNotifier {
 
     await Future.delayed(const Duration(seconds: 2));
 
-    if (email.isNotEmpty && kataSandi.isNotEmpty) {
-      _currentUser = User(id: 'u1', nama: 'Pengguna Flash Mind', email: email);
+    final prefs       = await SharedPreferences.getInstance();
+    final storedEmail = prefs.getString('user_email');
+    final storedPass  = prefs.getString('user_password');
+    final storedNama  = prefs.getString('user_nama');
 
-      final prefs = await SharedPreferences.getInstance();
+    final emailMatch = storedEmail != null &&
+        storedEmail.toLowerCase() == email.toLowerCase();
+    final passMatch  = storedPass != null && storedPass == kataSandi;
+
+    if (emailMatch && passMatch) {
+      _currentUser = User(
+          id: 'u1', nama: storedNama ?? 'Pengguna Flash Mind', email: email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    }
+
+    // Akun belum ada sama sekali — izinkan login pertama kali dan simpan password
+    if (storedEmail == null && email.isNotEmpty && kataSandi.isNotEmpty) {
+      _currentUser =
+          User(id: 'u1', nama: 'Pengguna Flash Mind', email: email);
       await prefs.setString('user_nama', _currentUser!.nama);
-      await prefs.setString('user_email', _currentUser!.email);
-
+      await prefs.setString('user_email', email);
+      await prefs.setString('user_password', kataSandi);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -56,6 +73,7 @@ class AuthProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_nama', _currentUser!.nama);
       await prefs.setString('user_email', _currentUser!.email);
+      await prefs.setString('user_password', kataSandi);
 
       _isLoading = false;
       notifyListeners();
@@ -67,7 +85,6 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
-  /// Mengecek apakah email terdaftar di penyimpanan lokal.
   Future<bool> checkEmailExists(String email) async {
     _isLoading = true;
     notifyListeners();
@@ -84,7 +101,6 @@ class AuthProvider extends ChangeNotifier {
         storedEmail.toLowerCase() == email.toLowerCase();
   }
 
-  /// Mengubah kata sandi pengguna berdasarkan email yang cocok.
   Future<bool> resetPassword({
     required String email,
     required String newPassword,
@@ -104,7 +120,6 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
-    // Simpan password baru (disimpan hashed sederhana untuk demo lokal)
     await prefs.setString('user_password', newPassword);
 
     _isLoading = false;

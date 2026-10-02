@@ -294,11 +294,7 @@ class _HomeViewState extends State<_HomeView> {
 
     for (final set in sets) {
       if (repo.getInProgressStudySessionForSet(set.id) != null) {
-        result.add(_RecommendedSet(
-          set: set,
-          reason: 'Sesi belajar belum selesai',
-          dueCount: set.cardCount,
-        ));
+        result.add(_RecommendedSet(set: set, dueCount: set.cardCount));
       }
     }
 
@@ -306,25 +302,14 @@ class _HomeViewState extends State<_HomeView> {
       if (result.any((r) => r.set.id == set.id)) continue;
       final completed = repo.getCompletedStudySessionsForSet(set.id);
       if (completed.isNotEmpty && completed.last.accuracy < 70) {
-        final int diff = DateTime.now()
-            .difference(completed.last.finishedAt ?? completed.last.startedAt)
-            .inDays;
-        result.add(_RecommendedSet(
-          set: set,
-          reason: 'Terakhir dipelajari $diff hari lalu',
-          dueCount: set.cardCount,
-        ));
+        result.add(_RecommendedSet(set: set, dueCount: set.cardCount));
       }
     }
 
     for (final set in sets) {
       if (result.any((r) => r.set.id == set.id)) continue;
       if (set.lastStudiedAt == null) {
-        result.add(_RecommendedSet(
-          set: set,
-          reason: 'Belum pernah dipelajari',
-          dueCount: set.cardCount,
-        ));
+        result.add(_RecommendedSet(set: set, dueCount: set.cardCount));
       }
     }
 
@@ -334,18 +319,7 @@ class _HomeViewState extends State<_HomeView> {
       ..shuffle(rng);
     for (final set in remaining) {
       if (result.length >= 3) break;
-      final DateTime? lastStudied = set.lastStudiedAt;
-      final int diff = lastStudied == null
-          ? 0
-          : DateTime.now().difference(lastStudied).inDays;
-      final String reason = lastStudied == null
-          ? 'Belum pernah dipelajari'
-          : 'Terakhir dipelajari $diff hari lalu';
-      result.add(_RecommendedSet(
-        set: set,
-        reason: reason,
-        dueCount: set.cardCount,
-      ));
+      result.add(_RecommendedSet(set: set, dueCount: set.cardCount));
     }
 
     return result.take(3).toList();
@@ -694,12 +668,10 @@ class _DayData {
 class _RecommendedSet {
   const _RecommendedSet({
     required this.set,
-    required this.reason,
     required this.dueCount,
   });
 
   final FlashcardSet set;
-  final String reason;
   final int dueCount;
 }
 
@@ -744,10 +716,10 @@ class _RecCard extends StatelessWidget {
               ),
             ],
           ),
-          if (rec.reason.isNotEmpty) ...[
+          if (rec.set.description.isNotEmpty) ...[
             const SizedBox(height: 3),
             Text(
-              rec.reason,
+              rec.set.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

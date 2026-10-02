@@ -68,7 +68,6 @@ class StatisticPage extends StatelessWidget {
     }).toList()
       ..sort((a, b) =>
           (b.lastStudiedAt ?? DateTime(1970)).compareTo(a.lastStudiedAt ?? DateTime(1970)));
-
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
@@ -468,8 +467,10 @@ class _SetStatCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text('${set.cardCount} kartu  ·  ${formatRelative(lastStudiedAt)}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  '${set.cardCount} kartu  ·  ${formatRelative(lastStudiedAt)}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
                 if (lastAccuracy != null) ...[
                   const SizedBox(height: 2),
                   Text(
