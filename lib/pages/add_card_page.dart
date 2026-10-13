@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../repositories/flash_mind_repository.dart';
 
@@ -19,6 +20,12 @@ class _AddCardPageState extends State<AddCardPage> {
   static const Color _errorColor = Color(0xFFD32F2F);
 
   static const double _fieldFooterHeight = 22;
+
+  static const int _cardMaxLength = 999;
+
+  static const double _inputBoxHeightFactor = 0.45;
+  static const double _inputBoxMinHeight = 280;
+  static const double _inputBoxMaxHeight = 460;
 
   final TextEditingController _frontController = TextEditingController();
   final TextEditingController _backController = TextEditingController();
@@ -140,14 +147,24 @@ class _AddCardPageState extends State<AddCardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final extraBottomPadding = keyboardInset.clamp(0.0, double.infinity).toDouble();
+    final media = MediaQuery.of(context);
+    final keyboardInset = media.viewInsets.bottom;
+    final extraBottomPadding =
+        keyboardInset.clamp(0.0, double.infinity).toDouble();
+
+    final double inputBoxHeight =
+        (media.size.height * _inputBoxHeightFactor)
+            .clamp(_inputBoxMinHeight, _inputBoxMaxHeight)
+            .toDouble();
 
     return Scaffold(
       backgroundColor: _backgroundColor,
       resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(),
-      body: SafeArea(bottom: false, child: _buildContent(extraBottomPadding)),
+      body: SafeArea(
+        bottom: false,
+        child: _buildContent(extraBottomPadding, inputBoxHeight),
+      ),
     );
   }
 
@@ -176,47 +193,52 @@ class _AddCardPageState extends State<AddCardPage> {
     );
   }
 
-  Widget _buildContent(double extraBottomPadding) {
+  Widget _buildContent(double extraBottomPadding, double inputBoxHeight) {
     final isBack = _isBackSide;
     final controller = _activeController;
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 180),
-      child: SingleChildScrollView(
-        key: ValueKey<bool>(isBack),
-        padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    isBack ? 'Sisi Belakang' : 'Sisi Depan',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: _primaryColor,
-                    ),
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  isBack ? 'Sisi Belakang' : 'Sisi Depan',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: _primaryColor,
                   ),
                 ),
-                _buildFlipButton(),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildInputField(controller: controller, isBack: isBack),
-            _buildFieldFooter(isBack: isBack, controller: controller),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: _buildActionButton(
-                label: 'Buat Kartu',
-                onPressed: _isSaving ? null : _tryCreateCard,
+              ),
+              _buildFlipButton(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: inputBoxHeight,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: SizedBox.expand(
+                key: ValueKey<bool>(isBack),
+                child: _buildInputField(controller: controller, isBack: isBack),
               ),
             ),
-          ],
-        ),
+          ),
+          _buildFieldFooter(isBack: isBack, controller: controller),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildActionButton(
+              label: 'Buat Kartu',
+              onPressed: _isSaving ? null : _tryCreateCard,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -243,42 +265,40 @@ class _AddCardPageState extends State<AddCardPage> {
     required TextEditingController controller,
     required bool isBack,
   }) {
-    return ValueListenableBuilder<TextEditingValue>(
-      valueListenable: controller,
-      builder: (context, value, _) {
-        return TextField(
-          controller: controller,
-          maxLength: 999,
-          minLines: 8,
-          maxLines: null,
-          textCapitalization: TextCapitalization.sentences,
-          textAlignVertical: TextAlignVertical.top,
-          textAlign: TextAlign.justify,
-          style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
-          decoration: InputDecoration(
-            hintText: isBack
-                ? 'Masukkan isi dari sisi belakang kartu.\nMinimal 1 karakter.'
-                : 'Masukkan isi dari sisi depan kartu.\nMinimal 1 karakter.',
-            hintStyle: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFFB4B1AC),
-              height: 1.25,
-            ),
-            contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            counterText: '',
-            filled: true,
-            fillColor: Colors.white,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: _borderColor, width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: _primaryColor, width: 1.2),
-            ),
-          ),
-        );
-      },
+    return TextField(
+      controller: controller,
+      maxLength: _cardMaxLength,
+      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+      expands: true,
+      minLines: null,
+      maxLines: null,
+      keyboardType: TextInputType.multiline,
+      textCapitalization: TextCapitalization.sentences,
+      textAlignVertical: TextAlignVertical.top,
+      textAlign: TextAlign.justify,
+      style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
+      decoration: InputDecoration(
+        hintText: isBack
+            ? 'Masukkan isi dari sisi belakang kartu.\nMinimal 1 karakter.'
+            : 'Masukkan isi dari sisi depan kartu.\nMinimal 1 karakter.',
+        hintStyle: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFFB4B1AC),
+          height: 1.25,
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        counterText: '',
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _borderColor, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _primaryColor, width: 1.2),
+        ),
+      ),
     );
   }
 
@@ -326,7 +346,7 @@ class _AddCardPageState extends State<AddCardPage> {
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: Text(
-                    '${value.text.length}/999',
+                    '${value.text.length}/$_cardMaxLength',
                     style: const TextStyle(
                       fontSize: 10,
                       color: Color(0xFF9A9894),

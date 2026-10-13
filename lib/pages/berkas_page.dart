@@ -29,6 +29,14 @@ class _BerkasPageState extends State<BerkasPage> {
     super.dispose();
   }
 
+  static const double _bottomBarHeight = 65;
+
+  double _keyboardOverlap(BuildContext context) {
+    final double overlap =
+        MediaQuery.of(context).viewInsets.bottom - _bottomBarHeight;
+    return overlap > 0 ? overlap : 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -37,6 +45,7 @@ class _BerkasPageState extends State<BerkasPage> {
         Expanded(
           child: SafeArea(
             top: false,
+            minimum: EdgeInsets.only(bottom: _keyboardOverlap(context)),
             child: AnimatedBuilder(
               animation: _repository,
               builder: (context, _) {
