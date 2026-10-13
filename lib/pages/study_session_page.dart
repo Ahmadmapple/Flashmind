@@ -22,12 +22,16 @@ class StudySessionPage extends StatefulWidget {
 class _StudySessionPageState extends State<StudySessionPage>
     with SingleTickerProviderStateMixin {
   // ── Warna ──────────────────────────────────────────────────────────────────
-  static const Color _primaryColor   = Color(0xFF192A3A);
+  static const Color _primaryColor    = Color(0xFF192A3A);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _cardFrontColor  = Color(0xFF192A3A);   // biru gelap
   static const Color _cardBackColor   = Color(0xFFF3C279);   // kuning emas
   static const Color _dangerColor     = Color(0xFFEF5350);
   static const Color _successColor    = Color(0xFF2D6A4F);
+  static const Color _orangeColor     = Color(0xFFE87A5D);
+
+  // Ukuran area bawah berisikan petunjuk dan tombol dibuat tetap
+  static const double _bottomSectionHeight = 50;
 
   // ── Repository & state ────────────────────────────────────────────────────
   final FlashMindRepository _repository = FlashMindRepository.instance;
@@ -265,54 +269,51 @@ class _StudySessionPageState extends State<StudySessionPage>
 
     return SafeArea(
       top: false,
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-
-              // Label: NAMA SET · KARTU N
-              Text(
-                '${set.title.toUpperCase()} · KARTU $currentNumber',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  color: const Color(0xFFE87A5D),
-                ),
-              ),
-
-              // Progress bar tipis
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: currentNumber / totalCards,
-                  minHeight: 3,
-                  backgroundColor: const Color(0xFFE8E4DB),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Color(0xFFE87A5D),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 45),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Label: NAMA SET · KARTU N
+                Text(
+                  '${set.title.toUpperCase()} · KARTU $currentNumber',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    color: _orangeColor,
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: currentNumber / totalCards,
+                    minHeight: 3,
+                    backgroundColor: const Color(0xFFE8E4DB),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      _orangeColor,
+                    ),
+                  ),
+                ),
 
-              // Kartu flip
-              SizedBox(
-                height: 340,
-                child: _buildFlipCard(card),
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 20),
+                // Kartu flip akan mengisi seluruh sisa ruang
+                Expanded(child: _buildFlipCard(card)),
 
-              // Hint / tombol evaluasi
-              _buildBottomSection(),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 32),
-            ],
+                // Area bawah berisikan Petunjuk dan tombol evaluasi
+                _buildBottomSection(),
+              ],
+            ),
           ),
         ),
       ),
@@ -329,28 +330,27 @@ class _StudySessionPageState extends State<StudySessionPage>
           final angle = _flipAnimation.value * pi;
           final isFront = angle <= pi / 2;
 
-          // Saat sudut > 90° tampilkan sisi belakang (diputar 180° lagi)
           Widget face;
           if (isFront) {
             face = _buildCardFace(
+              faceId:    '${card.id}-front',
               text:      card.frontText,
               color:     _cardFrontColor,
               textColor: Colors.white,
               hint:      'KETUK UNTUK LIHAT JAWABAN',
               hintColor: Colors.white38,
-              isBack:    false,
             );
           } else {
             face = Transform(
               alignment: Alignment.center,
               transform: Matrix4.rotationY(pi),
               child: _buildCardFace(
+                faceId:    '${card.id}-back',
                 text:      card.backText,
                 color:     _cardBackColor,
                 textColor: _primaryColor,
                 hint:      'KETUK UNTUK LIHAT PERTANYAAN',
-                hintColor: const Color(0xFF192A3A66),
-                isBack:    true,
+                hintColor: const Color(0x66192A3A),
               ),
             );
           }
@@ -368,39 +368,33 @@ class _StudySessionPageState extends State<StudySessionPage>
   }
 
   Widget _buildCardFace({
+    required String faceId,
     required String text,
     required Color color,
     required Color textColor,
     required String hint,
     required Color hintColor,
-    required bool isBack,
   }) {
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'serif',
-                color: textColor,
-                height: 1.35,
-              ),
+          Expanded(
+            child: _CardFaceText(
+              key: ValueKey<String>(faceId),
+              text: text,
+              textColor: textColor,
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 14),
           Text(
             hint,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -415,48 +409,37 @@ class _StudySessionPageState extends State<StudySessionPage>
 
   // ── Bagian bawah ─────────────────────────────────────────────────────────
   Widget _buildBottomSection() {
-    if (!_answerVisible) {
-      // Sebelum flip: teks panduan
-      return Center(
-        child: RichText(
-          text: const TextSpan(
-            style: TextStyle(fontSize: 13, color: Colors.grey),
-            children: [
-              TextSpan(text: 'Pikirkan jawabannya, lalu ketuk kartu untuk '),
-              TextSpan(
-                text: 'balik.',
-                style: TextStyle(
-                  color: const Color(0xFFE87A5D),
-                  fontWeight: FontWeight.bold,
+    return SizedBox(
+      height: _bottomSectionHeight,
+      child: _answerVisible
+          ? Row(
+              children: [
+                Expanded(
+                  child: _buildEvaluationButton(
+                    label:           'Salah',
+                    backgroundColor: const Color(0xFFFDE8E8),
+                    textColor:       _dangerColor,
+                    onPressed:       _isEvaluating ? null : () => _evaluateCard(false),
+                  ),
                 ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: _buildEvaluationButton(
+                    label:           'Benar',
+                    backgroundColor: _successColor,
+                    textColor:       Colors.white,
+                    onPressed:       _isEvaluating ? null : () => _evaluateCard(true),
+                  ),
+                ),
+              ],
+            )
+          : const Center(
+              child: Text(
+                'Pikirkan jawabannya, lalu ketuk kartu untuk membalik.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey),
               ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Setelah flip: tombol evaluasi
-    return Row(
-      children: [
-        Expanded(
-          child: _buildEvaluationButton(
-            label:           'Tidak Tahu',
-            backgroundColor: const Color(0xFFFDE8E8),
-            textColor:       _dangerColor,
-            onPressed:       _isEvaluating ? null : () => _evaluateCard(false),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _buildEvaluationButton(
-            label:           'Sudah Tahu',
-            backgroundColor: _successColor,
-            textColor:       Colors.white,
-            onPressed:       _isEvaluating ? null : () => _evaluateCard(true),
-          ),
-        ),
-      ],
+            ),
     );
   }
 
@@ -467,7 +450,7 @@ class _StudySessionPageState extends State<StudySessionPage>
     required VoidCallback? onPressed,
   }) {
     return SizedBox(
-      height: 52,
+      height: _bottomSectionHeight,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ButtonStyle(
@@ -496,6 +479,84 @@ class _StudySessionPageState extends State<StudySessionPage>
                 ),
               )
             : Text(label),
+      ),
+    );
+  }
+}
+
+class _CardFaceText extends StatefulWidget {
+  const _CardFaceText({
+    super.key,
+    required this.text,
+    required this.textColor,
+  });
+
+  final String text;
+  final Color textColor;
+
+  @override
+  State<_CardFaceText> createState() => _CardFaceTextState();
+}
+
+class _CardFaceTextState extends State<_CardFaceText> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  static double _fontSizeFor(int length) {
+    if (length <= 80) return 22;
+    if (length <= 200) return 19;
+    if (length <= 400) return 16;
+    return 14;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String text = widget.text;
+    final bool isLong = text.length > 120;
+
+    return ScrollbarTheme(
+      data: ScrollbarThemeData(
+        thumbColor: WidgetStatePropertyAll(
+          widget.textColor.withValues(alpha: 0.35),
+        ),
+        thickness: const WidgetStatePropertyAll(4),
+        radius: const Radius.circular(4),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: ConstrainedBox(
+                // Teks pendek tetap rata tengah.
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      text,
+                      textAlign: isLong ? TextAlign.justify : TextAlign.center,
+                      style: TextStyle(
+                        fontSize: _fontSizeFor(text.length),
+                        fontWeight: isLong ? FontWeight.w600 : FontWeight.bold,
+                        fontFamily: 'serif',
+                        color: widget.textColor,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
