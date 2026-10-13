@@ -123,13 +123,18 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 1;
 
+  void _selectTab(int index) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _selectedIndex = index);
+  }
+
   Widget _buildNavItem(IconData icon, String label, int index) {
     final bool sel = _selectedIndex == index;
     final Color color =
         sel ? const Color(0xFF192A3A) : Colors.grey.shade400;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () => _selectTab(index),
       child: SizedBox(
         width: 72,
         child: Column(
@@ -156,6 +161,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F6),
+      resizeToAvoidBottomInset: false,
       body: IndexedStack(
         index: _selectedIndex,
         children: const [BerkasPage(), _HomeView(), StatisticPage()],
@@ -169,7 +175,7 @@ class _MainPageState extends State<MainPage> {
               width: 56,
               height: 56,
               child: FloatingActionButton(
-                onPressed: () => setState(() => _selectedIndex = 1),
+                onPressed: () => _selectTab(1),
                 backgroundColor: _selectedIndex == 1
                     ? const Color(0xFF192A3A)
                     : Colors.white,
