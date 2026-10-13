@@ -11,6 +11,7 @@ import 'pages/profil_page.dart';
 import 'pages/statistic_page.dart';
 import 'providers/auth_provider.dart';
 import 'repositories/flash_mind_repository.dart';
+import 'widgets/app_bottom_nav.dart'; 
 
 void main() {
   runApp(
@@ -121,40 +122,12 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 1;
+  // Urutan enum (berkas, beranda, statistik)
+  AppNavTab _selectedTab = AppNavTab.beranda;
 
-  void _selectTab(int index) {
+  void _selectTab(AppNavTab tab) {
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _selectedIndex = index);
-  }
-
-  Widget _buildNavItem(IconData icon, String label, int index) {
-    final bool sel = _selectedIndex == index;
-    final Color color =
-        sel ? const Color(0xFF192A3A) : Colors.grey.shade400;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _selectTab(index),
-      child: SizedBox(
-        width: 72,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: sel ? FontWeight.bold : FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    setState(() => _selectedTab = tab);
   }
 
   @override
@@ -163,63 +136,20 @@ class _MainPageState extends State<MainPage> {
       backgroundColor: const Color(0xFFFBF9F6),
       resizeToAvoidBottomInset: false,
       body: IndexedStack(
-        index: _selectedIndex,
+        index: _selectedTab.index,
         children: const [BerkasPage(), _HomeView(), StatisticPage()],
       ),
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 56,
-              height: 56,
-              child: FloatingActionButton(
-                onPressed: () => _selectTab(1),
-                backgroundColor: _selectedIndex == 1
-                    ? const Color(0xFF192A3A)
-                    : Colors.white,
-                shape: const CircleBorder(),
-                elevation: 3,
-                child: Icon(
-                  Icons.home_rounded,
-                  color: _selectedIndex == 1
-                      ? Colors.white
-                      : Colors.grey.shade400,
-                  size: 30,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Beranda',
-              style: TextStyle(
-                fontSize: 12,
-                color: _selectedIndex == 1
-                    ? const Color(0xFF192A3A)
-                    : Colors.grey.shade400,
-                fontWeight: _selectedIndex == 1
-                    ? FontWeight.bold
-                    : FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+
+      floatingActionButton: AppHomeFab(
+        isActive: _selectedTab == AppNavTab.beranda,
+        onPressed: () => _selectTab(AppNavTab.beranda),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 6.0,
-        padding: const EdgeInsets.symmetric(horizontal: 36.0),
-        height: 65,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildNavItem(Icons.article_outlined, 'Berkas', 0),
-            _buildNavItem(Icons.timer_outlined, 'Statistik', 2),
-          ],
-        ),
+
+      bottomNavigationBar: AppBottomNavBar(
+        selectedTab: _selectedTab,
+        onBerkasTap: () => _selectTab(AppNavTab.berkas),
+        onStatistikTap: () => _selectTab(AppNavTab.statistik),
       ),
     );
   }

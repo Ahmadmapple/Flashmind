@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/flashcard.dart';
 import '../repositories/flash_mind_repository.dart';
 import 'edit_card_page.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class DetailCardPage extends StatefulWidget {
   const DetailCardPage({super.key, required this.setId, required this.cardId});
@@ -19,8 +20,6 @@ class _DetailCardPageState extends State<DetailCardPage> {
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _dangerColor = Color(0xFFEF5350);
-
-  static const double _bottomBarHeight = 65;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
@@ -121,7 +120,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
   @override
   Widget build(BuildContext context) {
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final extraBottomPadding = (keyboardInset - _bottomBarHeight)
+    final extraBottomPadding = (keyboardInset - AppNavStyle.barHeight)
         .clamp(0.0, double.infinity)
         .toDouble();
 
@@ -148,9 +147,19 @@ class _DetailCardPageState extends State<DetailCardPage> {
           },
         ),
       ),
-      floatingActionButton: _buildHomeButton(),
+      floatingActionButton: AppHomeFab(
+        isActive: true,
+        compact: true,
+        onPressed: _isDeleting ? null : _goBack,
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: AppBottomNavBar(
+        selectedTab: AppNavTab.berkas,
+        compact: true,
+        elevation: 2,
+        onBerkasTap: _isDeleting ? null : _goBack,
+        onStatistikTap: null,
+      ),
     );
   }
 
@@ -330,97 +339,6 @@ class _DetailCardPageState extends State<DetailCardPage> {
           ),
         ),
         child: const Text('Edit Kartu'),
-      ),
-    );
-  }
-
-  Widget _buildHomeButton() {
-    return Transform.translate(
-      offset: const Offset(0, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: FloatingActionButton(
-              onPressed: _isDeleting ? null : _goBack,
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              elevation: 3,
-              child: const Icon(Icons.home_rounded, size: 30),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Beranda',
-            style: TextStyle(
-              fontSize: 9,
-              color: _primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 2,
-      height: _bottomBarHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.article_outlined,
-            label: 'Berkas',
-            onTap: _isDeleting ? null : _goBack,
-          ),
-          const SizedBox(width: 72),
-          _buildBottomNavItem(
-            icon: Icons.timer_outlined,
-            label: 'Statistik',
-            onTap: null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final color = label == 'Berkas' ? _primaryColor : Colors.grey.shade400;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        width: 64,
-        height: _bottomBarHeight,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
 import 'add_set_page.dart';
 import 'detail_set_page.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class BerkasPage extends StatefulWidget {
   const BerkasPage({super.key});
@@ -29,7 +30,7 @@ class _BerkasPageState extends State<BerkasPage> {
     super.dispose();
   }
 
-  static const double _bottomBarHeight = 65;
+  static const double _bottomBarHeight = AppNavStyle.barHeight;
 
   double _keyboardOverlap(BuildContext context) {
     final double overlap =
