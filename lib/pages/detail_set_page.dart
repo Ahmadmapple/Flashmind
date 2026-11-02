@@ -10,6 +10,10 @@ import 'study_session_continue_page.dart';
 import 'study_session_start_page.dart';
 import 'ai_card_review_page.dart';
 
+import '../widgets/confirm_delete_dialog.dart';
+import '../widgets/responsive_scale.dart';
+enum _AddCardMode { manual, ai }
+
 class DetailSetPage extends StatefulWidget {
   const DetailSetPage({
     super.key,
@@ -29,20 +33,19 @@ class _DetailSetPageState extends State<DetailSetPage> {
   static const Color _accentColor  = Color(0xFFF3C279);
   static const Color _dangerColor  = Color(0xFFEF5350);
 
-  static const TextStyle _cardBodyStyle = TextStyle(
-    fontSize: 14,
+  static TextStyle _cardBodyStyle(double s) => TextStyle(
+    fontSize: 15 * s,
     fontWeight: FontWeight.w600,
     color: _primaryColor,
     height: 1.25,
   );
 
   static const String _ellipsis = ' ...';
-  static const double _cardHeight        = 136;
-  static const double _bodyToActionsGap  = 12;
+  static const double _bodyToActionsGap = 12;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
-  bool _isDeleting      = false;
+  bool _isDeleting = false;
   bool _notificationShown = false;
 
   final Set<String> _backVisibleCardIds = <String>{};
@@ -98,24 +101,12 @@ class _DetailSetPageState extends State<DetailSetPage> {
   Future<void> _confirmDelete(FlashcardSet set) async {
     if (_isDeleting) return;
 
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus Set'),
-        content: Text('Apakah Anda yakin ingin menghapus set "${set.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: _dangerColor),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
+    final bool? confirmed = await showConfirmDeleteDialog(
+      context,
+      title: 'Hapus Set',
+      message:'Set dan kartu di dalamnya akan dihapus.',
+      itemName: set.title,
+      confirmLabel: 'Hapus',
     );
 
     if (confirmed != true || !mounted) return;
@@ -167,10 +158,10 @@ class _DetailSetPageState extends State<DetailSetPage> {
     );
   }
 
-  Future<void> _openPdfUpload() async {
+  Future<void> _openAddCardOptions() async {
     if (_isDeleting) return;
 
-    final confirmed = await showModalBottomSheet<bool>(
+    final _AddCardMode? choice = await showModalBottomSheet<_AddCardMode>(
       context: context,
       backgroundColor: Colors.white,
       isScrollControlled: true,
@@ -178,108 +169,123 @@ class _DetailSetPageState extends State<DetailSetPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        final bottomPadding = MediaQuery.of(ctx).viewPadding.bottom;
-        return Padding(
-          padding: EdgeInsets.fromLTRB(24, 20, 24, 36 + bottomPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8E4DB),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Unggah Dokumen PDF',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'serif',
-                  color: Color(0xFF192A3A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'AI akan membaca dokumen PDF kamu dan membuat flashcard secara otomatis. '
-                'Kamu bisa meninjau dan memilih kartu mana yang ingin disimpan.',
-                style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.45),
-              ),
-              const SizedBox(height: 28),
-              GestureDetector(
-                onTap: () => Navigator.of(ctx).pop(true),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 28),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFBF9F6),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFFE8E4DB),
-                      width: 2,
-                      strokeAlign: BorderSide.strokeAlignInside,
-                    ),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(Icons.picture_as_pdf, size: 40, color: Color(0xFFE87A5D)),
-                      SizedBox(height: 12),
-                      Text(
-                        'Ketuk untuk pilih file PDF',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF192A3A),
+        final double s = ResponsiveScale.of(ctx);
+        final double bottomPadding = MediaQuery.of(ctx).viewPadding.bottom;
+        return SafeArea(
+          top: false,
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                    24, 20, 24, 28 + (bottomPadding > 0 ? 0 : 8)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8E4DB),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Maksimal 10 MB',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF192A3A),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
                     ),
-                  ),
-                  child: const Text(
-                    'Pilih File PDF',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Tambah Kartu',
+                      style: TextStyle(
+                        fontSize: 22 * s,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'serif',
+                        color: _primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Pilih cara yang ingin kamu gunakan untuk membuat kartu.',
+                      style: TextStyle(
+                        fontSize: 14 * s,
+                        color: Colors.grey,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54 * s,
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            Navigator.of(ctx).pop(_AddCardMode.manual),
+                        icon: Icon(Icons.edit_outlined, size: 22 * s),
+                        label: const Text('Buat Kartu Sendiri'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _accentColor,
+                          foregroundColor: _primaryColor,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(27 * s),
+                          ),
+                          textStyle: TextStyle(
+                              fontSize: 16 * s, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54 * s,
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.of(ctx).pop(_AddCardMode.ai),
+                        icon: Icon(Icons.auto_awesome, size: 22 * s),
+                        label: const Text('Gunakan Bantuan AI'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _primaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(27 * s),
+                          ),
+                          textStyle: TextStyle(
+                              fontSize: 16 * s, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Bantuan AI membaca dokumen PDF dan membuat kartu secara otomatis. '
+                      'Kamu bisa meninjau kartunya sebelum disimpan.',
+                      style: TextStyle(
+                        fontSize: 12 * s,
+                        color: Colors.grey,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         );
       },
     );
 
-    if (confirmed != true || !mounted) return;
+    if (choice == null || !mounted) return;
 
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => AiCardReviewPage(setId: widget.setId, fileName: 'dokumen.pdf'),
-      ),
-    );
+    switch (choice) {
+      case _AddCardMode.manual:
+        await _openAddCard();
+      case _AddCardMode.ai:
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => AiCardReviewPage(
+                setId: widget.setId, fileName: 'dokumen.pdf'),
+          ),
+        );
+    }
   }
 
   Future<void> _openStudySessionStart() async {
@@ -309,29 +315,27 @@ class _DetailSetPageState extends State<DetailSetPage> {
           return _buildContent(set);
         },
       ),
-      floatingActionButton: _AddCardFab(
-        onTap: _isDeleting ? null : _openAddCard,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final double s = ResponsiveScale.of(context);
     return AppBar(
       backgroundColor: const Color(0xFFFBF9F6),
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
+      toolbarHeight: 60 * s,
       leading: IconButton(
         onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-        icon: const Icon(Icons.arrow_back, size: 28),
+        icon: Icon(Icons.arrow_back, size: 28 * s),
         color: _primaryColor,
         tooltip: 'Kembali',
       ),
-      title: const Text(
+      title: Text(
         'Detail Set',
         style: TextStyle(
-          fontSize: 25,
+          fontSize: 25 * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
           color: _primaryColor,
@@ -351,13 +355,13 @@ class _DetailSetPageState extends State<DetailSetPage> {
             style: TextButton.styleFrom(
               backgroundColor: _primaryColor,
               foregroundColor: Colors.white,
-              minimumSize: const Size(95, 34),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              minimumSize: Size(100 * s, 35 * s),
+              padding: EdgeInsets.symmetric(horizontal: 15 * s),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
               ),
-              textStyle: const TextStyle(
-                fontSize: 13,
+              textStyle: TextStyle(
+                fontSize: 14 * s,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -369,13 +373,14 @@ class _DetailSetPageState extends State<DetailSetPage> {
   }
 
   Widget _buildContent(FlashcardSet set) {
+    final double s = ResponsiveScale.of(context);
     final bool isEmpty = set.cardCount == 0;
 
     return SafeArea(
       top: false,
       bottom: false,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -383,8 +388,8 @@ class _DetailSetPageState extends State<DetailSetPage> {
               set.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 22,
+              style: TextStyle(
+                fontSize: 22 * s,
                 fontWeight: FontWeight.bold,
                 color: _primaryColor,
               ),
@@ -394,15 +399,17 @@ class _DetailSetPageState extends State<DetailSetPage> {
               set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.25),
+              textAlign: TextAlign.justify,
+              style: TextStyle(fontSize: 13 * s, color: Colors.grey, height: 1.25),
             ),
             const SizedBox(height: 28),
             Row(
               children: [
-                _buildDeleteButton(set),
-                const SizedBox(width: 10),
+                Expanded(child: _buildDeleteButton(set, s)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildStudyButton(
+                    s: s,
                     enabled: !isEmpty,
                     hasInProgressSession:
                         _repository.getInProgressStudySessionForSet(set.id) != null,
@@ -410,43 +417,44 @@ class _DetailSetPageState extends State<DetailSetPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            _buildUploadPdfButton(),
+            const SizedBox(height: 12),
+            _buildAddCardButton(s),
             const SizedBox(height: 28),
             if (isEmpty)
-              _buildEmptyState()
+              _buildEmptyState(s)
             else
-              _buildCardList(set.cards),
+              _buildCardList(set.cards, s),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCardList(List<Flashcard> cards) {
+  Widget _buildCardList(List<Flashcard> cards, double s) {
     return Column(
       children: [
         for (int i = 0; i < cards.length; i++) ...[
-          _buildFlashcardCard(cards[i]),
+          _buildFlashcardCard(cards[i], s),
           if (i < cards.length - 1) const SizedBox(height: 14),
         ],
       ],
     );
   }
 
-  Widget _buildFlashcardCard(Flashcard card) {
+  Widget _buildFlashcardCard(Flashcard card, double s) {
     final bool isBackVisible  = _backVisibleCardIds.contains(card.id);
     final String text         = isBackVisible ? card.backText : card.frontText;
     final String sideLabel    = isBackVisible ? 'Sisi Belakang' : 'Sisi Depan';
     final String flipTooltip  = isBackVisible ? 'Tampilkan sisi depan' : 'Balikkan kartu';
 
-    final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style.merge(_cardBodyStyle);
+    final TextStyle bodyStyle = _cardBodyStyle(s);
+    final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style.merge(bodyStyle);
     final TextScaler textScaler        = MediaQuery.textScalerOf(context);
 
     return Container(
       width: double.infinity,
-      height: _cardHeight,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      height: 155 * s,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
@@ -457,11 +465,11 @@ class _DetailSetPageState extends State<DetailSetPage> {
         children: [
           Text(
             sideLabel,
-            style: const TextStyle(
-              fontSize: 11,
+            style: TextStyle(
+              fontSize: 12 * s,
               fontWeight: FontWeight.bold,
               fontFamily: 'serif',
-              color: Color(0xFF9A9894),
+              color: const Color(0xFF9A9894),
             ),
           ),
           const SizedBox(height: 5),
@@ -484,7 +492,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
                   maxLines: availableLines,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.justify,
-                  style: _cardBodyStyle,
+                  style: bodyStyle,
                 );
               },
             ),
@@ -507,25 +515,25 @@ class _DetailSetPageState extends State<DetailSetPage> {
                   },
                   style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF9A9894),
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 2 * s, vertical: 2 * s),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  icon: const Icon(Icons.swap_horiz, size: 23),
-                  label: const Text('Balikkan Kartu', style: TextStyle(fontSize: 12)),
+                  icon: Icon(Icons.swap_horiz, size: 24 * s),
+                  label: Text('Balikkan Kartu', style: TextStyle(fontSize: 13 * s)),
                 ),
               ),
               TextButton(
                 onPressed: () => _openDetailCard(card),
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFFD97745),
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  padding: EdgeInsets.symmetric(horizontal: 2 * s, vertical: 2 * s),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
+                child: Text(
                   'Lihat Detail →',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -535,27 +543,28 @@ class _DetailSetPageState extends State<DetailSetPage> {
     );
   }
 
-  Widget _buildUploadPdfButton() {
+  Widget _buildAddCardButton(double s) {
     return SizedBox(
       width: double.infinity,
-      height: 44,
+      height: 45 * s,
       child: OutlinedButton.icon(
-        onPressed: _isDeleting ? null : _openPdfUpload,
-        icon: const Icon(Icons.picture_as_pdf, size: 18),
-        label: const Text('Upload PDF'),
+        onPressed: _isDeleting ? null : _openAddCardOptions,
+        icon: Icon(Icons.add_rounded, size: 22 * s),
+        label: const Text('Tambah Kartu'),
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF192A3A),
-          side: const BorderSide(color: Color(0xFFB8B5AF), width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          foregroundColor: _primaryColor,
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: _primaryColor, width: 1.3),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22 * s)),
+          textStyle: TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
         ),
       ),
     );
   }
 
-  Widget _buildDeleteButton(FlashcardSet set) {
+  Widget _buildDeleteButton(FlashcardSet set, double s) {
     return SizedBox(
-      height: 40,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: _isDeleting ? null : () => _confirmDelete(set),
         style: ButtonStyle(
@@ -563,19 +572,18 @@ class _DetailSetPageState extends State<DetailSetPage> {
           foregroundColor: const WidgetStatePropertyAll(Colors.white),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 16)),
-          minimumSize: const WidgetStatePropertyAll(Size(88, 40)),
-          shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-          textStyle: const WidgetStatePropertyAll(
-              TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              EdgeInsets.symmetric(horizontal: 12)),
+          minimumSize: WidgetStatePropertyAll(Size(0, 40 * s)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
+          textStyle: WidgetStatePropertyAll(
+              TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
         ),
         child: _isDeleting
-            ? const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                    strokeWidth: 1.5, color: Colors.white),
+            ? SizedBox(
+                width: 14 * s,
+                height: 14 * s,
+                child: const CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               )
             : const Text('Hapus Set'),
       ),
@@ -583,11 +591,12 @@ class _DetailSetPageState extends State<DetailSetPage> {
   }
 
   Widget _buildStudyButton({
+    required double s,
     required bool enabled,
     required bool hasInProgressSession,
   }) {
     return SizedBox(
-      height: 40,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: enabled && !_isDeleting ? _openStudySessionStart : null,
         style: ButtonStyle(
@@ -605,61 +614,38 @@ class _DetailSetPageState extends State<DetailSetPage> {
           }),
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 14)),
-          minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
-          shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-          textStyle: const WidgetStatePropertyAll(
-              TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              EdgeInsets.symmetric(horizontal: 12)),
+          minimumSize: WidgetStatePropertyAll(Size(0, 40 * s)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+          textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
         ),
-        child: Text(hasInProgressSession ? 'Lanjut Belajar' : 'Mulai Belajar'),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(hasInProgressSession ? 'Lanjut Belajar' : 'Mulai Belajar'),
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(double s) {
     return SizedBox(
       height: 250,
       child: Column(
         children: [
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Belum ada kartu dalam set ini.',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(fontSize: 14 * s, color: Colors.grey),
             ),
           ),
           const Spacer(),
-          const Text(
-            'Tekan tombol + di bawah untuk menambahkan kartu ke dalam set.',
+          Text(
+            'Tekan tombol Tambah Kartu di atas untuk menambahkan kartu ke dalam set.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: Color(0xFF9A9894), height: 1.35),
+            style: TextStyle(fontSize: 13 * s, color: const Color(0xFF9A9894), height: 1.35),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AddCardFab extends StatelessWidget {
-  const _AddCardFab({required this.onTap});
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFF3C279),
-      elevation: 4,
-      shadowColor: Colors.black26,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: const SizedBox(
-          width: 56,
-          height: 56,
-          child: Icon(Icons.add, color: Color(0xFF192A3A), size: 30),
-        ),
       ),
     );
   }
