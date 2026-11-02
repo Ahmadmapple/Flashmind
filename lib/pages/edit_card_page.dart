@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/flashcard.dart';
 import '../repositories/flash_mind_repository.dart';
 
+import '../widgets/confirm_delete_dialog.dart';
+import '../widgets/responsive_scale.dart';
+
 enum EditCardResult { saved, deleted }
 
 class EditCardPage extends StatefulWidget {
@@ -23,10 +26,8 @@ class _EditCardPageState extends State<EditCardPage> {
   static const Color _errorColor      = Color(0xFFD32F2F);
   static const Color _dangerColor     = Color(0xFFEF5350);
 
-  static const double _fieldFooterHeight        = 22;
-  static const int    _cardMaxLength            = 999;
-  static const double _inputBoxHeight           = 360;
-  static const double _contentToActionsGap      = 28;
+  static const int _cardMaxLength = 999;
+  static const double _inputBoxHeight = 360;
   static const double _actionsHorizontalPadding = 0;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
@@ -131,24 +132,11 @@ class _EditCardPageState extends State<EditCardPage> {
   Future<void> _confirmDelete() async {
     if (_isSaving || _isDeleting) return;
 
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Kartu'),
-        content: const Text('Apakah Anda yakin ingin menghapus kartu ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: _dangerColor),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
+    final bool? confirmed = await showConfirmDeleteDialog(
+      context,
+      title: 'Hapus Kartu',
+      message: 'Kartu ini akan dihapus dari set dan tidak dapat dikembalikan.',
+      confirmLabel: 'Hapus',
     );
 
     if (confirmed != true || !mounted) return;
@@ -176,13 +164,14 @@ class _EditCardPageState extends State<EditCardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final double keyboardInset      = MediaQuery.of(context).viewInsets.bottom;
+    final double s = ResponsiveScale.of(context);
+    final double keyboardInset = MediaQuery.of(context).viewInsets.bottom;
     final double extraBottomPadding = keyboardInset.clamp(0.0, double.infinity);
 
     return Scaffold(
       backgroundColor: _backgroundColor,
       resizeToAvoidBottomInset: false,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(s),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -190,15 +179,15 @@ class _EditCardPageState extends State<EditCardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeadingRow(),
+              _buildHeadingRow(s),
               const SizedBox(height: 8),
-              SizedBox(height: _inputBoxHeight, child: _buildInputArea()),
-              _buildFieldFooter(),
-              const SizedBox(height: _contentToActionsGap - _fieldFooterHeight),
+              SizedBox(height: _inputBoxHeight, child: _buildInputArea(s)),
+              _buildFieldFooter(s),
+              const SizedBox(height: 15),
               Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: _actionsHorizontalPadding),
-                child: _buildActionRow(),
+                child: _buildActionRow(s),
               ),
             ],
           ),
@@ -207,7 +196,7 @@ class _EditCardPageState extends State<EditCardPage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(double s) {
     return AppBar(
       backgroundColor: _backgroundColor,
       elevation: 0,
@@ -215,14 +204,14 @@ class _EditCardPageState extends State<EditCardPage> {
       automaticallyImplyLeading: false,
       leading: IconButton(
         onPressed: (_isSaving || _isDeleting) ? null : _cancelEditing,
-        icon: const Icon(Icons.arrow_back, size: 28),
+        icon: Icon(Icons.arrow_back, size: 28 * s),
         color: _primaryColor,
         tooltip: 'Batalkan pengeditan',
       ),
-      title: const Text(
+      title: Text(
         'Edit Kartu',
         style: TextStyle(
-          fontSize: 24,
+          fontSize: 24 * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
           color: _primaryColor,
@@ -232,44 +221,44 @@ class _EditCardPageState extends State<EditCardPage> {
     );
   }
 
-  Widget _buildHeadingRow() {
+  Widget _buildHeadingRow(double s) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
             _isBackSide ? 'Sisi Belakang' : 'Sisi Depan',
-            style: const TextStyle(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: 20 * s,
               fontWeight: FontWeight.bold,
               color: _primaryColor,
             ),
           ),
         ),
-        _buildFlipButton(),
+        _buildFlipButton(s),
       ],
     );
   }
 
-  Widget _buildFlipButton() {
+  Widget _buildFlipButton(double s) {
     return Tooltip(
       message: _isBackSide ? 'Tampilkan sisi depan' : 'Balikkan kartu',
       child: TextButton.icon(
         onPressed: (_isSaving || _isDeleting) ? null : _toggleCardSide,
         style: TextButton.styleFrom(
           foregroundColor: _primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 2),
+          padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          textStyle: TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
         ),
-        icon: const Icon(Icons.swap_horiz, size: 23),
+        icon: Icon(Icons.swap_horiz, size: 24 * s),
         label: const Text('Balikkan Kartu'),
       ),
     );
   }
 
-  Widget _buildInputArea() {
+  Widget _buildInputArea(double s) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -290,8 +279,7 @@ class _EditCardPageState extends State<EditCardPage> {
         textCapitalization: TextCapitalization.sentences,
         textAlignVertical: TextAlignVertical.top,
         textAlign: TextAlign.justify,
-        style: const TextStyle(
-            fontSize: 14, color: _primaryColor, height: 1.45),
+        style: TextStyle(fontSize: 15 * s, color: _primaryColor, height: 1.45),
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           counterText: '',
@@ -299,16 +287,16 @@ class _EditCardPageState extends State<EditCardPage> {
           hintText: _isBackSide
               ? 'Masukkan isi dari sisi belakang kartu.'
               : 'Masukkan isi dari sisi depan kartu.',
-          hintStyle: const TextStyle(
-              fontSize: 14, color: Color(0xFFB4B1AC), height: 1.45),
+          hintStyle: TextStyle(
+              fontSize: 14 * s, color: const Color(0xFFB4B1AC), height: 1.45),
         ),
       ),
     );
   }
 
-  Widget _buildFieldFooter() {
+  Widget _buildFieldFooter(double s) {
     return SizedBox(
-      height: _fieldFooterHeight,
+      height: 26 * s,
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: _activeController,
         builder: (context, value, _) {
@@ -334,8 +322,10 @@ class _EditCardPageState extends State<EditCardPage> {
                             errorText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: _errorColor, fontSize: 12, height: 1.2),
+                            style: TextStyle(
+                                color: _errorColor,
+                                fontSize: 13 * s,
+                                height: 1.2),
                           )
                         : const SizedBox.shrink(),
                   ),
@@ -344,8 +334,10 @@ class _EditCardPageState extends State<EditCardPage> {
                   padding: const EdgeInsets.only(right: 4),
                   child: Text(
                     '${value.text.length}/$_cardMaxLength',
-                    style: const TextStyle(
-                        fontSize: 10, color: Color(0xFF9A9894), height: 1.6),
+                    style: TextStyle(
+                        fontSize: 12 * s,
+                        color: const Color(0xFF9A9894),
+                        height: 1.4),
                   ),
                 ),
               ],
@@ -356,46 +348,46 @@ class _EditCardPageState extends State<EditCardPage> {
     );
   }
 
-  Widget _buildActionRow() {
+  Widget _buildActionRow(double s) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [_buildDeleteButton(), _buildFinishButton()],
+      children: [_buildDeleteButton(s), _buildFinishButton(s)],
     );
   }
 
-  Widget _buildDeleteButton() {
+  Widget _buildDeleteButton(double s) {
     return SizedBox(
-      height: 40,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: (_isSaving || _isDeleting) ? null : _confirmDelete,
         style: ButtonStyle(
           backgroundColor: const WidgetStatePropertyAll(_dangerColor),
           foregroundColor: const WidgetStatePropertyAll(Colors.white),
           elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 16)),
-          minimumSize: const WidgetStatePropertyAll(Size(88, 40)),
+          padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 18 * s)),
+          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
-          textStyle: const WidgetStatePropertyAll(
-              TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          textStyle: WidgetStatePropertyAll(
+              TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
         ),
         child: _isDeleting
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 1.5, color: Colors.white),
+            ? SizedBox(
+                width: 16 * s,
+                height: 16 * s,
+                child: const CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               )
             : const Text('Hapus Kartu'),
       ),
     );
   }
 
-  Widget _buildFinishButton() {
+  Widget _buildFinishButton(double s) {
     return SizedBox(
-      height: 40,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: (_isSaving || _isDeleting) ? null : _saveChanges,
         style: ButtonStyle(
@@ -407,24 +399,24 @@ class _EditCardPageState extends State<EditCardPage> {
           }),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 20)),
-          minimumSize: const WidgetStatePropertyAll(Size(110, 40)),
+          padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 18 * s)),
+          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: Color(0xFFD7A957), width: 0.7),
             ),
           ),
-          textStyle: const WidgetStatePropertyAll(
-              TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          textStyle: WidgetStatePropertyAll(
+              TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
         ),
         child: _isSaving
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 1.5, color: _primaryColor),
+            ? SizedBox(
+                width: 16 * s,
+                height: 16 * s,
+                child: const CircularProgressIndicator(
+                    strokeWidth: 2, color: _primaryColor),
               )
             : const Text('Simpan'),
       ),
