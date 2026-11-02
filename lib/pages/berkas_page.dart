@@ -5,6 +5,8 @@ import '../repositories/flash_mind_repository.dart';
 import 'add_set_page.dart';
 import 'detail_set_page.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/responsive_scale.dart';
+import '../widgets/word_ellipsis_text.dart';
 
 class BerkasPage extends StatefulWidget {
   const BerkasPage({super.key});
@@ -74,10 +76,10 @@ class _BerkasPageState extends State<BerkasPage> {
                       child: _buildSearchBar(),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                       child: _buildFilterRow(),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                     Expanded(
                       child: filtered.isEmpty
                           ? _buildEmptyState()
@@ -111,32 +113,33 @@ class _BerkasPageState extends State<BerkasPage> {
   }
 
   Widget _buildSearchBar() {
+    final double s = ResponsiveScale.of(context);
     return Container(
-      height: 44,
+      height: 45 * s,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(25 * s),
         border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
       ),
       child: TextField(
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value.trim()),
         textAlignVertical: TextAlignVertical.center,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF192A3A)),
+        style: TextStyle(fontSize: 15 * s, color: const Color(0xFF192A3A)),
         decoration: InputDecoration(
-          hintText: 'Cari set flashcard...',
-          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFB4B1AC)),
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF9A9894), size: 20),
+          hintText: 'Cari set flashcard',
+          hintStyle: TextStyle(fontSize: 15 * s, color: const Color(0xFFB4B1AC)),
+          prefixIcon: Icon(Icons.search, color: const Color(0xFF9A9894), size: 22 * s),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF9A9894), size: 18),
+                  icon: Icon(Icons.close, color: const Color(0xFF9A9894), size: 18 * s),
                   onPressed: () {
                     _searchController.clear();
                     setState(() => _searchQuery = '');
                   },
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  splashRadius: 16,
+                  splashRadius: 18,
                 )
               : null,
           border: InputBorder.none,
@@ -148,6 +151,7 @@ class _BerkasPageState extends State<BerkasPage> {
   }
 
   Widget _buildEmptyState() {
+    final double s = ResponsiveScale.of(context);
     final isSearching = _searchQuery.isNotEmpty;
     return Center(
       child: Padding(
@@ -157,7 +161,7 @@ class _BerkasPageState extends State<BerkasPage> {
           children: [
             Icon(
               isSearching ? Icons.search_off : Icons.folder_open,
-              size: 40,
+              size: 44 * s,
               color: Colors.grey.shade300,
             ),
             const SizedBox(height: 12),
@@ -168,7 +172,7 @@ class _BerkasPageState extends State<BerkasPage> {
                       ? 'Tidak ada sesi belajar yang terhenti.\nSemua sesi sudah selesai!'
                       : 'Belum ada set flashcard.\nTekan "+ Tambah Set" untuk mulai.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: Colors.grey, fontSize: 15 * s),
             ),
           ],
         ),
@@ -193,6 +197,7 @@ class _BerkasPageState extends State<BerkasPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final double s = ResponsiveScale.of(context);
     final double statusBarHeight = MediaQuery.of(context).padding.top;
     return Container(
       width: double.infinity,
@@ -200,7 +205,7 @@ class _BerkasPageState extends State<BerkasPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -208,7 +213,7 @@ class _BerkasPageState extends State<BerkasPage> {
                   'Berkas',
                   style: TextStyle(
                     color: _primaryColor,
-                    fontSize: 28,
+                    fontSize: 30 * s,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'serif',
                   ),
@@ -216,9 +221,9 @@ class _BerkasPageState extends State<BerkasPage> {
                 Text(
                   'Daftar Set Flashcard',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12 * s,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFE87A5D),
+                    color: const Color(0xFFE87A5D),
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -235,11 +240,13 @@ class _BerkasPageState extends State<BerkasPage> {
               backgroundColor: _accentColor,
               foregroundColor: _primaryColor,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              minimumSize: Size(0, 44 * s),
+              padding: EdgeInsets.symmetric(
+                  horizontal: 15 * s, vertical: 9 * s),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(22),
               ),
-              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              textStyle: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -259,7 +266,7 @@ class _BerkasPageState extends State<BerkasPage> {
             }
           },
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         _FilterChip(
           label: 'Sesi Terhenti',
           selected: _showInterruptedSessions,
@@ -287,6 +294,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double s = ResponsiveScale.of(context);
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
@@ -296,10 +304,10 @@ class _FilterChip extends StatelessWidget {
           color: selected ? const Color(0xFF192A3A) : const Color(0xFFE8E4DB),
           width: 1.5,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        minimumSize: Size.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        padding: EdgeInsets.symmetric(horizontal: 16 * s, vertical: 9 * s),
+        minimumSize: Size(0,5 * s),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        textStyle: TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w600),
       ),
       child: Text(label),
     );
@@ -319,9 +327,10 @@ class _FlashcardSetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double s = ResponsiveScale.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 8, 12),
+      padding: const EdgeInsets.fromLTRB(18, 16, 10, 14),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
@@ -334,13 +343,12 @@ class _FlashcardSetCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
+                child: WordEllipsisText(
                   set.title,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: _primaryColor,
-                    fontSize: 16,
+                    fontSize: 17 * s,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -348,17 +356,16 @@ class _FlashcardSetCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '${set.cardCount} kartu',
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
+                style: TextStyle(color: Colors.grey, fontSize: 11 * s),
               ),
             ],
           ),
           if (set.description.isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text(
+            const SizedBox(height: 4),
+            WordEllipsisText(
               set.description,
               maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.grey, fontSize: 12, height: 1.3),
+              style: TextStyle(color: Colors.grey, fontSize: 12 * s, height: 1.3),
             ),
           ],
           const SizedBox(height: 10),
@@ -368,13 +375,13 @@ class _FlashcardSetCard extends StatelessWidget {
               onPressed: onViewDetail,
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFFE87A5D),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8 * s, vertical: 6 * s),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
+              child: Text(
                 'Lihat Detail →',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.bold),
               ),
             ),
           ),
