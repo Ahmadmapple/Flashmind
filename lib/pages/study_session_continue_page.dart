@@ -6,6 +6,8 @@ import '../repositories/flash_mind_repository.dart';
 import 'study_session_page.dart';
 import 'study_session_start_page.dart';
 
+import '../widgets/responsive_scale.dart';
+
 /// Layar informasi untuk sesi belajar yang masih berstatus inProgress karena sesi belajar sempat dihentikan.
 class StudySessionContinuePage extends StatefulWidget {
   const StudySessionContinuePage({super.key, required this.setId});
@@ -23,11 +25,18 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
   static const Color _headerColor = Color(0xFFFFE5B4);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
 
-  static const TextStyle _valueStyle = TextStyle(
-    fontSize: 12,
+  TextStyle get _valueStyle => TextStyle(
+    fontSize: 13 * ResponsiveScale.of(context),
     color: _primaryColor,
     fontWeight: FontWeight.w400,
     height: 1.2,
+  );
+
+  TextStyle get _sectionStyle => TextStyle(
+    fontSize: 15 * ResponsiveScale.of(context),
+    fontWeight: FontWeight.bold,
+    fontFamily: 'serif',
+    color: _primaryColor,
   );
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
@@ -171,6 +180,7 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final double s = ResponsiveScale.of(context);
     return AppBar(
       backgroundColor: _headerColor,
       elevation: 0,
@@ -178,14 +188,14 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
       automaticallyImplyLeading: false,
       leading: IconButton(
         onPressed: () => Navigator.of(context).pop(),
-        icon: const Icon(Icons.arrow_back, size: 28),
+        icon: Icon(Icons.arrow_back, size: 28 * s),
         color: _primaryColor,
         tooltip: 'Kembali',
       ),
-      title: const Text(
+      title: Text(
         'Sesi Belajar',
         style: TextStyle(
-          fontSize: 25,
+          fontSize: 25 * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
           color: _primaryColor,
@@ -257,9 +267,10 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
     required String fastestAccuracy,
     required String cardProgress,
   }) {
+    final double s = ResponsiveScale.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: const Color(0xFFB8B5AF), width: 1),
@@ -273,8 +284,8 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
-            style: const TextStyle(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: 20 * s,
               fontWeight: FontWeight.bold,
               fontFamily: 'serif',
               color: _primaryColor,
@@ -288,22 +299,14 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: 13 * s,
               color: Colors.grey,
               height: 1.25,
             ),
           ),
           const SizedBox(height: 25),
-          const Text(
-            'Riwayat Pembelajaran',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
+          Text('Riwayat Pembelajaran', style: _sectionStyle),
           const SizedBox(height: 10),
           _buildStatRow('Durasi pengerjaan', duration),
           const SizedBox(height: 10),
@@ -311,15 +314,7 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
           const SizedBox(height: 10),
           _buildStatRow('Waktu terakhir dipelajari', lastStudied),
           const SizedBox(height: 30),
-          const Text(
-            'Rekor Belajar',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
+          Text('Rekor Belajar', style: _sectionStyle),
           const SizedBox(height: 10),
           _buildRecordRow(
             label: 'Tingkat kebenaran tertinggi',
@@ -396,8 +391,9 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
   }
 
   Widget _buildContinueButton(BuildContext context, StudySession session) {
+    final double s = ResponsiveScale.of(context);
     return SizedBox(
-      height: 32,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: () async {
           await Navigator.of(context).push<void>(
@@ -411,15 +407,15 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
           backgroundColor: const WidgetStatePropertyAll(_accentColor),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 18),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 24 * s),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(90, 32)),
+          minimumSize: WidgetStatePropertyAll(Size(120 * s, 40 * s)),
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           ),
-          textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          textStyle: WidgetStatePropertyAll(
+            TextStyle(fontSize: 16 * s, fontWeight: FontWeight.w700),
           ),
         ),
         child: const Text('Lanjut'),

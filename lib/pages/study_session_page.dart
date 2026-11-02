@@ -246,9 +246,18 @@ class _StudySessionPageState extends State<StudySessionPage>
       automaticallyImplyLeading: false,
       leading: IconButton(
         onPressed: _isEvaluating ? null : () => Navigator.of(context).pop(),
-        icon: const Icon(Icons.arrow_back_ios_new, size: 22),
+        icon: const Icon(Icons.arrow_back, size: 28),
         color: _primaryColor,
         tooltip: 'Kembali',
+      ),
+      title: Text(
+        'Sesi Belajar',
+        style: TextStyle(
+          fontSize: 25,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'serif',
+          color: _primaryColor,
+        ),
       ),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
