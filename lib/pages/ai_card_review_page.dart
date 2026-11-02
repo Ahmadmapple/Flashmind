@@ -121,7 +121,6 @@ class _AiCardReviewPageState extends State<AiCardReviewPage> {
 
     // Kembali ke detail set (2 halaman: review + pilih PDF)
     Navigator.of(context).pop();
-    Navigator.of(context).pop();
   }
 
   @override

@@ -5,6 +5,9 @@ import '../repositories/flash_mind_repository.dart';
 import 'edit_card_page.dart';
 import '../widgets/app_bottom_nav.dart';
 
+import '../widgets/confirm_delete_dialog.dart';
+import '../widgets/responsive_scale.dart';
+
 class DetailCardPage extends StatefulWidget {
   const DetailCardPage({super.key, required this.setId, required this.cardId});
 
@@ -41,26 +44,11 @@ class _DetailCardPageState extends State<DetailCardPage> {
   Future<void> _confirmDelete(Flashcard card) async {
     if (_isDeleting) return;
 
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Hapus Kartu'),
-          content: const Text('Apakah Anda yakin ingin menghapus kartu ini?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              style: TextButton.styleFrom(foregroundColor: Colors.grey),
-              child: const Text('Batal'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: TextButton.styleFrom(foregroundColor: _dangerColor),
-              child: const Text('Hapus'),
-            ),
-          ],
-        );
-      },
+    final bool? confirmed = await showConfirmDeleteDialog(
+      context,
+      title: 'Hapus Kartu',
+      message: 'Kartu ini akan dihapus dari set dan tidak dapat dikembalikan.',
+      confirmLabel: 'Hapus',
     );
 
     if (confirmed != true || !mounted) return;
@@ -164,6 +152,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final double s = ResponsiveScale.of(context);
     return AppBar(
       backgroundColor: _backgroundColor,
       elevation: 0,
@@ -171,14 +160,14 @@ class _DetailCardPageState extends State<DetailCardPage> {
       automaticallyImplyLeading: false,
       leading: IconButton(
         onPressed: _isDeleting ? null : _goBack,
-        icon: const Icon(Icons.arrow_back, size: 28),
+        icon: Icon(Icons.arrow_back, size: 28 * s),
         color: _primaryColor,
         tooltip: 'Kembali',
       ),
-      title: const Text(
+      title: Text(
         'Detail Kartu',
         style: TextStyle(
-          fontSize: 24,
+          fontSize: 24 * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
           color: _primaryColor,
@@ -189,6 +178,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
   }
 
   Widget _buildContent(Flashcard card, double extraBottomPadding) {
+    final double s = ResponsiveScale.of(context);
     final String text = _isBackSide ? card.backText : card.frontText;
     final String sideLabel = _isBackSide ? 'Sisi Belakang' : 'Sisi Depan';
     final String flipTooltip = _isBackSide
@@ -196,7 +186,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
         : 'Balikkan kartu';
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + extraBottomPadding),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 50 + extraBottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -206,8 +196,8 @@ class _DetailCardPageState extends State<DetailCardPage> {
               Expanded(
                 child: Text(
                   sideLabel,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize: 20 * s,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'serif',
                     color: _primaryColor,
@@ -220,14 +210,14 @@ class _DetailCardPageState extends State<DetailCardPage> {
                   onPressed: _toggleCardSide,
                   style: TextButton.styleFrom(
                     foregroundColor: _primaryColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  icon: const Icon(Icons.swap_horiz, size: 23),
-                  label: const Text(
+                  icon: Icon(Icons.swap_horiz, size: 25 * s),
+                  label: Text(
                     'Balikkan Kartu',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 15 * s, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -235,8 +225,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
           ),
           const SizedBox(height: 8),
 
-          SizedBox(
-            height: 420,
+          Expanded(
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
@@ -259,8 +248,8 @@ class _DetailCardPageState extends State<DetailCardPage> {
                   child: Text(
                     text,
                     textAlign: TextAlign.justify,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: 15 * s,
                       color: _primaryColor,
                       height: 1.45,
                     ),
@@ -270,13 +259,16 @@ class _DetailCardPageState extends State<DetailCardPage> {
             ),
           ),
 
-          const SizedBox(height: 35),
+          const SizedBox(height: 30),
 
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [_buildDeleteButton(card), _buildEditButton(card)],
+              children: [
+                _buildDeleteButton(card, s),
+                _buildEditButton(card, s),
+              ],
             ),
           ),
         ],
@@ -284,32 +276,32 @@ class _DetailCardPageState extends State<DetailCardPage> {
     );
   }
 
-  Widget _buildDeleteButton(Flashcard card) {
+  Widget _buildDeleteButton(Flashcard card, double s) {
     return SizedBox(
-      height: 32,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: _isDeleting ? null : () => _confirmDelete(card),
         style: ButtonStyle(
           backgroundColor: const WidgetStatePropertyAll(_dangerColor),
           foregroundColor: const WidgetStatePropertyAll(Colors.white),
           elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 12),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 15 * s),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(95, 32)),
+          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
-          textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          textStyle: WidgetStatePropertyAll(
+            TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
           ),
         ),
         child: _isDeleting
-            ? const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
+            ? SizedBox(
+                width: 14 * s,
+                height: 14 * s,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
                   color: Colors.white,
                 ),
               )
@@ -318,24 +310,24 @@ class _DetailCardPageState extends State<DetailCardPage> {
     );
   }
 
-  Widget _buildEditButton(Flashcard card) {
+  Widget _buildEditButton(Flashcard card, double s) {
     return SizedBox(
-      height: 32,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: _isDeleting ? null : () => _openEditCard(card),
         style: ButtonStyle(
           backgroundColor: const WidgetStatePropertyAll(_accentColor),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 14),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 15 * s),
           ),
-          minimumSize: const WidgetStatePropertyAll(Size(95, 32)),
+          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
-          textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          textStyle: WidgetStatePropertyAll(
+            TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
           ),
         ),
         child: const Text('Edit Kartu'),
