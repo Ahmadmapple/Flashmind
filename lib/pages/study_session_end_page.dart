@@ -4,6 +4,8 @@ import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 
+import '../widgets/responsive_scale.dart';
+
 class StudySessionEndPage extends StatelessWidget {
   const StudySessionEndPage({
     super.key,
@@ -16,11 +18,18 @@ class StudySessionEndPage extends StatelessWidget {
   static const Color _headerColor     = Color(0xFFFFE5B4);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
 
-  static const TextStyle _valueStyle = TextStyle(
-    fontSize: 12,
+  static TextStyle _valueStyle(double s) => TextStyle(
+    fontSize: 13 * s,
     color: _primaryColor,
     fontWeight: FontWeight.w400,
     height: 1.2,
+  );
+
+  static TextStyle _sectionStyle(double s) => TextStyle(
+    fontSize: 15 * s,
+    fontWeight: FontWeight.bold,
+    fontFamily: 'serif',
+    color: _primaryColor,
   );
 
   final String setId;
@@ -105,6 +114,7 @@ class StudySessionEndPage extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final double s = ResponsiveScale.of(context);
     return AppBar(
       backgroundColor: _headerColor,
       elevation: 0,
@@ -112,14 +122,14 @@ class StudySessionEndPage extends StatelessWidget {
       automaticallyImplyLeading: false,
       leading: IconButton(
         onPressed: () => Navigator.of(context).pop(),
-        icon: const Icon(Icons.arrow_back, size: 28),
+        icon: Icon(Icons.arrow_back, size: 28 * s),
         color: _primaryColor,
         tooltip: 'Kembali',
       ),
-      title: const Text(
+      title: Text(
         'Sesi Belajar',
         style: TextStyle(
-          fontSize: 25,
+          fontSize: 25 * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
           color: _primaryColor,
@@ -136,6 +146,7 @@ class StudySessionEndPage extends StatelessWidget {
     StudySession? highestAccuracy,
     StudySession? fastestSession,
   ) {
+    final double s = ResponsiveScale.of(context);
     return SafeArea(
       top: false,
       bottom: false,
@@ -148,6 +159,7 @@ class StudySessionEndPage extends StatelessWidget {
               child: Column(
                 children: [
                   _buildSummaryCard(
+                    s: s,
                     set: set,
                     duration: _formatDuration(currentSession.totalDuration),
                     accuracy: _formatAccuracy(currentSession.accuracy),
@@ -167,7 +179,7 @@ class StudySessionEndPage extends StatelessWidget {
                         : _formatAccuracy(fastestSession.accuracy),
                   ),
                   const SizedBox(height: 30),
-                  _buildBackButton(context),
+                  _buildBackButton(context, s),
                 ],
               ),
             ),
@@ -178,6 +190,7 @@ class StudySessionEndPage extends StatelessWidget {
   }
 
   Widget _buildSummaryCard({
+    required double s,
     required FlashcardSet set,
     required String duration,
     required String accuracy,
@@ -189,7 +202,7 @@ class StudySessionEndPage extends StatelessWidget {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: const Color(0xFFB8B5AF), width: 1),
@@ -203,8 +216,8 @@ class StudySessionEndPage extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
-            style: const TextStyle(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: 20 * s,
               fontWeight: FontWeight.bold,
               fontFamily: 'serif',
               color: _primaryColor,
@@ -216,40 +229,26 @@ class StudySessionEndPage extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
-            style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.25),
+            style: TextStyle(fontSize: 13 * s, color: Colors.grey, height: 1.25),
           ),
           const SizedBox(height: 25),
-          const Text(
-            'Riwayat Pembelajaran',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
+          Text('Riwayat Pembelajaran', style: _sectionStyle(s)),
           const SizedBox(height: 10),
-          _buildStatRow('Durasi pengerjaan', duration),
+          _buildStatRow(s, 'Durasi pengerjaan', duration),
           const SizedBox(height: 10),
-          _buildStatRow('Persentase jawaban benar', accuracy),
+          _buildStatRow(s, 'Persentase jawaban benar', accuracy),
           const SizedBox(height: 40),
-          const Text(
-            'Rekor Belajar',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: _primaryColor,
-            ),
-          ),
+          Text('Rekor Belajar', style: _sectionStyle(s)),
           const SizedBox(height: 10),
           _buildRecordRow(
+            s: s,
             label: 'Tingkat kebenaran tertinggi',
             accuracy: highestAccuracy,
             duration: highestAccuracyDuration,
           ),
           const SizedBox(height: 20),
           _buildRecordRow(
+            s: s,
             label: 'Durasi pengerjaan tercepat',
             accuracy: fastestAccuracy,
             duration: fastestDuration,
@@ -257,25 +256,26 @@ class StudySessionEndPage extends StatelessWidget {
           const SizedBox(height: 30),
           Align(
             alignment: Alignment.centerRight,
-            child: Text(cardProgress, style: _valueStyle),
+            child: Text(cardProgress, style: _valueStyle(s)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatRow(String label, String value) {
+  Widget _buildStatRow(double s, String label, String value) {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: Text(label, style: _valueStyle)),
+            Expanded(child: Text(label, style: _valueStyle(s))),
             const SizedBox(width: 10),
             ConstrainedBox(
               constraints:
                   BoxConstraints(maxWidth: constraints.maxWidth * 0.55),
-              child: Text(value, textAlign: TextAlign.right, style: _valueStyle),
+              child: Text(value,
+                  textAlign: TextAlign.right, style: _valueStyle(s)),
             ),
           ],
         );
@@ -284,6 +284,7 @@ class StudySessionEndPage extends StatelessWidget {
   }
 
   Widget _buildRecordRow({
+    required double s,
     required String label,
     required String accuracy,
     required String duration,
@@ -291,17 +292,17 @@ class StudySessionEndPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: _valueStyle),
+        Text(label, style: _valueStyle(s)),
         const SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(accuracy, textAlign: TextAlign.left, style: _valueStyle),
+            Text(accuracy, textAlign: TextAlign.left, style: _valueStyle(s)),
             const SizedBox(width: 10),
             Flexible(
               child: Text(duration,
-                  textAlign: TextAlign.right, style: _valueStyle),
+                  textAlign: TextAlign.right, style: _valueStyle(s)),
             ),
           ],
         ),
@@ -309,23 +310,23 @@ class StudySessionEndPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBackButton(BuildContext context) {
+  Widget _buildBackButton(BuildContext context, double s) {
     return SizedBox(
-      height: 32,
+      height: 40 * s,
       child: ElevatedButton(
         onPressed: () => Navigator.of(context).pop(),
         style: ButtonStyle(
           backgroundColor: const WidgetStatePropertyAll(_accentColor),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 18)),
-          minimumSize: const WidgetStatePropertyAll(Size(90, 32)),
+          padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 22 * s)),
+          minimumSize: WidgetStatePropertyAll(Size(120 * s, 40 * s)),
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(23)),
           ),
-          textStyle: const WidgetStatePropertyAll(
-              TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          textStyle: WidgetStatePropertyAll(
+              TextStyle(fontSize: 16 * s, fontWeight: FontWeight.w700)),
         ),
         child: const Text('Kembali'),
       ),
