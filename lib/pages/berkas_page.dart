@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../models/flashcard_set.dart';
+import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../services/review_recommendation.dart';
 import 'add_set_page.dart';
 import 'detail_set_page.dart';
+import 'study_history_page.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/app_filter_chip.dart';
 import '../widgets/responsive_scale.dart';
+import '../widgets/study_history_card.dart';
 import '../widgets/word_ellipsis_text.dart';
+
+// Filter pada halaman berkas
+enum _BerkasFilter { semua, sesiTerhenti, perluDiulas }
 
 class BerkasPage extends StatefulWidget {
   const BerkasPage({super.key});
@@ -21,7 +29,7 @@ class _BerkasPageState extends State<BerkasPage> {
 
   static final FlashMindRepository _repository = FlashMindRepository.instance;
 
-  bool   _showInterruptedSessions = false;
+  _BerkasFilter _filter = _BerkasFilter.semua;
   String _searchQuery = '';
 
   final TextEditingController _searchController = TextEditingController();
@@ -40,6 +48,52 @@ class _BerkasPageState extends State<BerkasPage> {
     return overlap > 0 ? overlap : 0;
   }
 
+  // Menentukan daftar set sesuai filter yang dipilih
+  List<FlashcardSet> _applyFilter(List<FlashcardSet> allSets) {
+    switch (_filter) {
+      case _BerkasFilter.semua:
+        return allSets;
+      case _BerkasFilter.sesiTerhenti:
+        return allSets
+            .where((set) =>
+                _repository.getInProgressStudySessionForSet(set.id) != null)
+            .toList(growable: false);
+      case _BerkasFilter.perluDiulas:
+        return ReviewRecommendation.dueSets(_repository);
+    }
+  }
+
+  // Sesi selesai terbaru dari sebuah set
+  StudySession? _latestCompleted(String setId) {
+    final sessions = _repository.getCompletedStudySessionsForSet(setId);
+    if (sessions.isEmpty) return null;
+    return sessions.reduce(
+      (a, b) => (a.finishedAt ?? a.startedAt).isAfter(b.finishedAt ?? b.startedAt)
+          ? a
+          : b,
+    );
+  }
+
+  // Daftar set pada filter "Perlu Diulas"
+  Widget _buildSetItem(BuildContext context, FlashcardSet set) {
+    if (_filter == _BerkasFilter.perluDiulas) {
+      final latest = _latestCompleted(set.id);
+      return StudyHistoryCard(
+        title: set.title,
+        cardCount: set.cardCount,
+        lastStudiedLabel: latest == null
+            ? 'Belum pernah'
+            : formatLastStudied(latest.finishedAt ?? latest.startedAt),
+        accuracy: latest?.accuracy,
+        onViewDetail: () => _openDetail(context, set.id),
+      );
+    }
+    return _FlashcardSetCard(
+      set: set,
+      onViewDetail: () => _openDetail(context, set.id),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -54,12 +108,7 @@ class _BerkasPageState extends State<BerkasPage> {
               builder: (context, _) {
                 final allSets = _repository.sets;
 
-                var filtered = _showInterruptedSessions
-                    ? allSets
-                        .where((set) =>
-                            _repository.getInProgressStudySessionForSet(set.id) != null)
-                        .toList(growable: false)
-                    : allSets;
+                var filtered = _applyFilter(allSets);
 
                 if (_searchQuery.isNotEmpty) {
                   final q = _searchQuery.toLowerCase();
@@ -79,6 +128,7 @@ class _BerkasPageState extends State<BerkasPage> {
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                       child: _buildFilterRow(),
                     ),
+                    _buildHistoryTestButton(context),
                     const SizedBox(height: 16),
                     Expanded(
                       child: filtered.isEmpty
@@ -91,11 +141,7 @@ class _BerkasPageState extends State<BerkasPage> {
                                     .map(
                                       (set) => Padding(
                                         padding: const EdgeInsets.only(bottom: 14),
-                                        child: _FlashcardSetCard(
-                                          set: set,
-                                          onViewDetail: () =>
-                                              _openDetail(context, set.id),
-                                        ),
+                                        child: _buildSetItem(context, set),
                                       ),
                                     )
                                     .toList(),
@@ -109,6 +155,34 @@ class _BerkasPageState extends State<BerkasPage> {
           ),
         ),
       ],
+    );
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tombol sementara untuk menguji layar Riwayat Belajar.
+  // Untuk menghapus, hapus method ini, satu pemanggilannya di build(), dan import study_history_page.dart.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Widget _buildHistoryTestButton(BuildContext context) {
+    final double s = ResponsiveScale.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const StudyHistoryPage()),
+          ),
+          icon: Icon(Icons.history_rounded, size: 18 * s),
+          label: const Text('Riwayat Belajar'),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFFE87A5D),
+            padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 4 * s),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            textStyle: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
     );
   }
 
@@ -153,6 +227,24 @@ class _BerkasPageState extends State<BerkasPage> {
   Widget _buildEmptyState() {
     final double s = ResponsiveScale.of(context);
     final isSearching = _searchQuery.isNotEmpty;
+
+    // Pesan kosong untuk setiap filter
+    final String message;
+    if (isSearching) {
+      message = 'Tidak ada set yang cocok\ndengan "$_searchQuery"';
+    } else {
+      switch (_filter) {
+        case _BerkasFilter.sesiTerhenti:
+          message =
+              'Tidak ada sesi belajar yang terhenti.\nSemua sesi sudah selesai!';
+        case _BerkasFilter.perluDiulas:
+          message = 'Tidak ada set yang perlu diulas saat ini.';
+        case _BerkasFilter.semua:
+          message =
+              'Belum ada set flashcard.\nTekan "+ Tambah Set" untuk mulai.';
+      }
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
@@ -166,11 +258,7 @@ class _BerkasPageState extends State<BerkasPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              isSearching
-                  ? 'Tidak ada set yang cocok\ndengan "$_searchQuery"'
-                  : _showInterruptedSessions
-                      ? 'Tidak ada sesi belajar yang terhenti.\nSemua sesi sudah selesai!'
-                      : 'Belum ada set flashcard.\nTekan "+ Tambah Set" untuk mulai.',
+              message,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey, fontSize: 15 * s),
             ),
@@ -254,63 +342,33 @@ class _BerkasPageState extends State<BerkasPage> {
     );
   }
 
+  // Area filter daftar set
   Widget _buildFilterRow() {
-    return Row(
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
       children: [
-        _FilterChip(
+        AppFilterChip(
           label: 'Semua',
-          selected: !_showInterruptedSessions,
-          onPressed: () {
-            if (_showInterruptedSessions) {
-              setState(() => _showInterruptedSessions = false);
-            }
-          },
+          selected: _filter == _BerkasFilter.semua,
+          onPressed: () => _setFilter(_BerkasFilter.semua),
         ),
-        const SizedBox(width: 10),
-        _FilterChip(
+        AppFilterChip(
           label: 'Sesi Terhenti',
-          selected: _showInterruptedSessions,
-          onPressed: () {
-            if (!_showInterruptedSessions) {
-              setState(() => _showInterruptedSessions = true);
-            }
-          },
+          selected: _filter == _BerkasFilter.sesiTerhenti,
+          onPressed: () => _setFilter(_BerkasFilter.sesiTerhenti),
+        ),
+        AppFilterChip(
+          label: 'Perlu Diulas',
+          selected: _filter == _BerkasFilter.perluDiulas,
+          onPressed: () => _setFilter(_BerkasFilter.perluDiulas),
         ),
       ],
     );
   }
-}
 
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final double s = ResponsiveScale.of(context);
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        backgroundColor: selected ? const Color(0xFF192A3A) : Colors.white,
-        foregroundColor: selected ? Colors.white : const Color(0xFF192A3A),
-        side: BorderSide(
-          color: selected ? const Color(0xFF192A3A) : const Color(0xFFE8E4DB),
-          width: 1.5,
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 16 * s, vertical: 9 * s),
-        minimumSize: Size(0,5 * s),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        textStyle: TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w600),
-      ),
-      child: Text(label),
-    );
+  void _setFilter(_BerkasFilter next) {
+    if (_filter != next) setState(() => _filter = next);
   }
 }
 
