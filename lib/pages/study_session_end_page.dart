@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
-
 import '../widgets/responsive_scale.dart';
 
 class StudySessionEndPage extends StatelessWidget {
@@ -89,23 +87,32 @@ class StudySessionEndPage extends StatelessWidget {
         final set            = repository.getSetById(setId);
         final currentSession = repository.getStudySessionById(sessionId);
 
-        if (set == null || currentSession == null) {
+        if (currentSession == null) {
           return const Scaffold(
             backgroundColor: _backgroundColor,
             body: Center(child: Text('Data sesi belajar tidak ditemukan.')),
           );
         }
 
+        // Nama serta deskripsi set
+        final String title =
+            set?.title ?? currentSession.setTitle ?? 'Set yang dihapus';
+        final String description = set == null
+            ? 'Set ini sudah dihapus.'
+            : (set.description.isEmpty
+                ? 'Tidak ada deskripsi set.'
+                : set.description);
+
+        // Sesi selesai milik setId ini tetap tersedia walau set sudah dihapus.
         final completedSessions =
-            repository.getCompletedStudySessionsForSet(set.id);
+            repository.getCompletedStudySessionsForSet(setId);
         final highestAccuracy = _highestAccuracySession(completedSessions);
         final fastestSession  = _fastestSession(completedSessions);
 
         return Scaffold(
           backgroundColor: _backgroundColor,
           appBar: _buildAppBar(context),
-          body: _buildBody(
-            context, set, currentSession, highestAccuracy, fastestSession),
+          body: _buildBody(context, title, description, currentSession, highestAccuracy, fastestSession),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
         );
@@ -141,7 +148,8 @@ class StudySessionEndPage extends StatelessWidget {
 
   Widget _buildBody(
     BuildContext context,
-    FlashcardSet set,
+    String title,
+    String description,
     StudySession currentSession,
     StudySession? highestAccuracy,
     StudySession? fastestSession,
@@ -160,7 +168,8 @@ class StudySessionEndPage extends StatelessWidget {
                 children: [
                   _buildSummaryCard(
                     s: s,
-                    set: set,
+                    title: title,
+                    description: description,
                     duration: _formatDuration(currentSession.totalDuration),
                     accuracy: _formatAccuracy(currentSession.accuracy),
                     cardProgress:
@@ -191,7 +200,8 @@ class StudySessionEndPage extends StatelessWidget {
 
   Widget _buildSummaryCard({
     required double s,
-    required FlashcardSet set,
+    required String title,
+    required String description,
     required String duration,
     required String accuracy,
     required String cardProgress,
@@ -212,7 +222,7 @@ class StudySessionEndPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            set.title,
+            title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
@@ -225,7 +235,7 @@ class StudySessionEndPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
+            description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,

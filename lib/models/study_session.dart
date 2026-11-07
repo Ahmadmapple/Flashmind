@@ -1,10 +1,10 @@
-/// Status dari satu sesi belajar.
+// Status dari satu sesi belajar.
 enum StudySessionStatus {
   inProgress,
   completed,
 }
 
-/// Hasil penilaian satu flashcard dalam sebuah sesi belajar.
+// Hasil penilaian satu flashcard dalam sebuah sesi belajar.
 class StudyCardResult {
   const StudyCardResult({
     required this.cardId,
@@ -23,7 +23,7 @@ class StudyCardResult {
   final Duration duration;
 }
 
-/// Representasi satu kegiatan belajar pada sebuah set flashcard.
+// Representasi satu kegiatan belajar pada sebuah set flashcard.
 class StudySession {
   const StudySession({
     required this.id,
@@ -43,6 +43,7 @@ class StudySession {
     this.wrongCount = 0,
     this.accuracy = 0,
     this.averageCardDuration = Duration.zero,
+    this.setTitle,
   });
 
   final String id;
@@ -62,6 +63,10 @@ class StudySession {
   final int wrongCount;
   final double accuracy;
   final Duration averageCardDuration;
+
+  // Nama set disimpan ketika set dihapus agar sesi selesai dapat ditampilkan
+  // Null selama masih ada
+  final String? setTitle;
 
   int get completedCardCount => cardResults.length;
   int get totalCardCount => cardOrder.length;
@@ -88,6 +93,7 @@ class StudySession {
     int? wrongCount,
     double? accuracy,
     Duration? averageCardDuration,
+    String? setTitle,
   }) {
     return StudySession(
       id: id ?? this.id,
@@ -112,6 +118,7 @@ class StudySession {
       wrongCount: wrongCount ?? this.wrongCount,
       accuracy: accuracy ?? this.accuracy,
       averageCardDuration: averageCardDuration ?? this.averageCardDuration,
+      setTitle: setTitle ?? this.setTitle,
     );
   }
 }
