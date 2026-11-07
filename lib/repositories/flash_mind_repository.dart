@@ -284,10 +284,23 @@ class FlashMindRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Penghapusan set
+  // Sesi selesai dipertahankan walau setnya dihapus.
+  // Nama set disimpan pada sesi sebagai cadangan.
+  // Sesi inProgress ikut dihapus karena tidak dapat dilanjutkan lagi.
   Future<void> deleteSet(String id) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
+    final String? title = getSetById(id)?.title;
+
     _sets.removeWhere((s) => s.id == id);
-    _studySessions.removeWhere((s) => s.setId == id);
+    _studySessions.removeWhere(
+      (s) => s.setId == id && s.status == StudySessionStatus.inProgress,
+    );
+    for (int i = 0; i < _studySessions.length; i++) {
+      if (_studySessions[i].setId == id) {
+        _studySessions[i] = _studySessions[i].copyWith(setTitle: title);
+      }
+    }
     notifyListeners();
   }
 

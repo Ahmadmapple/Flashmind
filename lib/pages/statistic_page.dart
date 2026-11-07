@@ -9,7 +9,7 @@ class StatisticPage extends StatelessWidget {
   const StatisticPage({super.key});
 
   static const Color _primary = Color(0xFF192A3A);
-  static const Color _orange  = Color(0xFFE87A5D);
+  static const Color _orange = Color(0xFFE87A5D);
 
   static String _formatDuration(Duration d) {
     final h = d.inHours;
@@ -41,33 +41,51 @@ class StatisticPage extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
-    final repo     = FlashMindRepository.instance;
-    final sets     = repo.sets;
+    final repo = FlashMindRepository.instance;
+    final sets = repo.sets;
     final sessions = repo.allCompletedSessions;
 
-    final totalSessions     = sessions.length;
-    final totalCardsStudied = sessions.fold<int>(0, (sum, s) => sum + s.completedCardCount);
-    final totalActiveSet    = sets.length;
-    final overallAccuracy   = sessions.isEmpty
+    final totalSessions = sessions.length;
+    final totalCardsStudied = sessions.fold<int>(
+      0,
+      (sum, s) => sum + s.completedCardCount,
+    );
+    final totalActiveSet = sets.length;
+    final overallAccuracy = sessions.isEmpty
         ? 0.0
-        : sessions.fold<double>(0, (sum, s) => sum + s.accuracy) / sessions.length;
+        : sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
+              sessions.length;
 
     final StudySession? latestSession = sessions.isEmpty
         ? null
         : sessions.reduce(
-            (a, b) => (a.finishedAt ?? a.startedAt).isAfter(b.finishedAt ?? b.startedAt) ? a : b,
+            (a, b) =>
+                (a.finishedAt ?? a.startedAt).isAfter(
+                  b.finishedAt ?? b.startedAt,
+                )
+                ? a
+                : b,
           );
 
-    final FlashcardSet? latestSet =
-        latestSession != null ? repo.getSetById(latestSession.setId) : null;
+    final String? latestTitle = latestSession == null
+        ? null
+        : (repo.getSetById(latestSession.setId)?.title ??
+              latestSession.setTitle ??
+              'Set yang dihapus');
 
-    final studiedSets = sets.where((set) {
-      final hasDone   = repo.getCompletedStudySessionsForSet(set.id).isNotEmpty;
-      final hasInProg = repo.getInProgressStudySessionForSet(set.id) != null;
-      return hasDone || hasInProg;
-    }).toList()
-      ..sort((a, b) =>
-          (b.lastStudiedAt ?? DateTime(1970)).compareTo(a.lastStudiedAt ?? DateTime(1970)));
+    final studiedSets =
+        sets.where((set) {
+          final hasDone = repo
+              .getCompletedStudySessionsForSet(set.id)
+              .isNotEmpty;
+          final hasInProg =
+              repo.getInProgressStudySessionForSet(set.id) != null;
+          return hasDone || hasInProg;
+        }).toList()..sort(
+          (a, b) => (b.lastStudiedAt ?? DateTime(1970)).compareTo(
+            a.lastStudiedAt ?? DateTime(1970),
+          ),
+        );
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
@@ -113,7 +131,7 @@ class StatisticPage extends StatelessWidget {
             const SizedBox(height: 12),
             _LatestSessionCard(
               session: latestSession,
-              set: latestSet,
+              title: latestTitle,
               formatDuration: _formatDuration,
               formatRelative: _formatRelative,
               formatAccuracy: _formatAccuracy,
@@ -133,9 +151,13 @@ class StatisticPage extends StatelessWidget {
               _EmptyStudyHistory()
             else
               ...studiedSets.map((set) {
-                final setSessions = repo.getCompletedStudySessionsForSet(set.id);
-                final lastAcc     = setSessions.isEmpty ? null : setSessions.last.accuracy;
-                final inProg      = repo.getInProgressStudySessionForSet(set.id);
+                final setSessions = repo.getCompletedStudySessionsForSet(
+                  set.id,
+                );
+                final lastAcc = setSessions.isEmpty
+                    ? null
+                    : setSessions.last.accuracy;
+                final inProg = repo.getInProgressStudySessionForSet(set.id);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _SetStatCard(
@@ -240,12 +262,19 @@ class _StatColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label,
-            style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white54, fontSize: 12),
+        ),
       ],
     );
   }
@@ -254,21 +283,21 @@ class _StatColumn extends StatelessWidget {
 class _LatestSessionCard extends StatelessWidget {
   const _LatestSessionCard({
     required this.session,
-    required this.set,
+    required this.title,
     required this.formatDuration,
     required this.formatRelative,
     required this.formatAccuracy,
   });
 
   final StudySession? session;
-  final FlashcardSet? set;
+  final String? title;
   final String Function(Duration) formatDuration;
   final String Function(DateTime?) formatRelative;
   final String Function(double) formatAccuracy;
 
   @override
   Widget build(BuildContext context) {
-    if (session == null || set == null) {
+    if (session == null || title == null) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
@@ -279,12 +308,19 @@ class _LatestSessionCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(Icons.menu_book_rounded, size: 36, color: Colors.grey.shade300),
+            Icon(
+              Icons.menu_book_rounded,
+              size: 36,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 12),
             const Text(
               'Belum ada sesi belajar.',
               style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(height: 6),
             const Text(
@@ -315,11 +351,12 @@ class _LatestSessionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      set!.title,
+                      title!,
                       style: const TextStyle(
-                          color: Color(0xFF192A3A),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15),
+                        color: Color(0xFF192A3A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                     Text(
                       formatRelative(session!.finishedAt),
@@ -334,9 +371,10 @@ class _LatestSessionCard extends StatelessWidget {
                   Text(
                     '${session!.correctCount}/${session!.totalCardCount}',
                     style: const TextStyle(
-                        color: Color(0xFF2F776F),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
+                      color: Color(0xFF2F776F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   Text(
                     formatAccuracy(session!.accuracy),
@@ -386,14 +424,19 @@ class _DetailItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF8A9A9E))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Color(0xFF8A9A9E)),
+        ),
         const SizedBox(height: 2),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF192A3A))),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF192A3A),
+          ),
+        ),
       ],
     );
   }
@@ -441,26 +484,31 @@ class _SetStatCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF192A3A)),
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF192A3A),
+                        ),
                       ),
                     ),
                     if (isInProgress) ...[
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE87A5D).withValues(alpha: 0.12),
+                          color: const Color(0xFFE87A5D)
+                              .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
                           'Terhenti',
                           style: TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFFE87A5D),
-                              fontWeight: FontWeight.w600),
+                            fontSize: 10,
+                            color: Color(0xFFE87A5D),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -476,9 +524,10 @@ class _SetStatCard extends StatelessWidget {
                   Text(
                     'Skor terakhir: ${formatAccuracy(lastAccuracy!)}',
                     style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF2F776F),
-                        fontWeight: FontWeight.w500),
+                      fontSize: 11,
+                      color: Color(0xFF2F776F),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ],
@@ -520,7 +569,10 @@ class _EmptyStudyHistory extends StatelessWidget {
           const Text(
             'Belum ada riwayat belajar.',
             style: TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
           ),
           const SizedBox(height: 6),
           const Text(
