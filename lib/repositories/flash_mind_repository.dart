@@ -493,4 +493,201 @@ class FlashMindRepository extends ChangeNotifier {
     notifyListeners();
     return updated;
   }
+
+  List<StudySession> getSessionsInRange(DateTime from, DateTime to) {
+    return _studySessions.where((s) {
+      if (s.status != StudySessionStatus.completed) return false;
+      final DateTime t = s.finishedAt ?? s.startedAt;
+      return !t.isBefore(from) && t.isBefore(to);
+    }).toList();
+  }
+
+  int get currentStreak {
+    final DateTime today = DateTime(
+        DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    int streak = 0;
+    DateTime check = today;
+    while (true) {
+      final bool active = _studySessions.any((s) {
+        if (s.status != StudySessionStatus.completed) return false;
+        final DateTime t = s.finishedAt ?? s.startedAt;
+        final DateTime d = DateTime(t.year, t.month, t.day);
+        return d == check;
+      });
+      if (!active) break;
+      streak++;
+      check = check.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  int get highestStreak {
+    if (_studySessions.isEmpty) return 0;
+    final activeDays = _studySessions
+        .where((s) => s.status == StudySessionStatus.completed)
+        .map((s) {
+          final DateTime t = s.finishedAt ?? s.startedAt;
+          return DateTime(t.year, t.month, t.day);
+        })
+        .toSet()
+        .toList()
+      ..sort();
+    if (activeDays.isEmpty) return 0;
+    int best = 1;
+    int cur  = 1;
+    for (int i = 1; i < activeDays.length; i++) {
+      final diff = activeDays[i].difference(activeDays[i - 1]).inDays;
+      if (diff == 1) {
+        cur++;
+        if (cur > best) best = cur;
+      } else {
+        cur = 1;
+      }
+    }
+    return best;
+  }
+
+  int get weeklyUniqueSets {
+    final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
+    return _studySessions
+        .where((s) =>
+            s.status == StudySessionStatus.completed &&
+            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
+        .map((s) => s.setId)
+        .toSet()
+        .length;
+  }
+
+  int get weeklyCardCount {
+    final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
+    return _studySessions
+        .where((s) =>
+            s.status == StudySessionStatus.completed &&
+            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
+        .fold<int>(0, (sum, s) => sum + s.completedCardCount);
+  }
+
+  Duration get weeklyDuration {
+    final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
+    return _studySessions
+        .where((s) =>
+            s.status == StudySessionStatus.completed &&
+            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
+        .fold<Duration>(Duration.zero, (sum, s) => sum + s.totalDuration);
+  }
+
+  double get weeklyAccuracy {
+    final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
+    final List<StudySession> sessions = _studySessions
+        .where((s) =>
+            s.status == StudySessionStatus.completed &&
+            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
+        .toList();
+    if (sessions.isEmpty) return 0;
+    return sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
+        sessions.length;
+  }
+
+  FlashcardSet? get bestMasteredSet {
+    FlashcardSet? best;
+    double bestAcc = -1;
+    for (final set in _sets) {
+      final sessions = getCompletedStudySessionsForSet(set.id);
+      if (sessions.isEmpty) continue;
+      final double avg =
+          sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
+      if (avg > bestAcc) {
+        bestAcc = avg;
+        best = set;
+      }
+    }
+    return best;
+  }
+
+  double bestMasteredAccuracy(String setId) {
+    final sessions = getCompletedStudySessionsForSet(setId);
+    if (sessions.isEmpty) return 0;
+    return sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
+  }
+
+  FlashcardSet? get worstSet {
+    FlashcardSet? worst;
+    double worstAcc = 101;
+    for (final set in _sets) {
+      final sessions = getCompletedStudySessionsForSet(set.id);
+      if (sessions.isEmpty) continue;
+      final double avg =
+          sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
+      if (avg < worstAcc) {
+        worstAcc = avg;
+        worst = set;
+      }
+    }
+    return worst;
+  }
+
+  double worstSetAccuracy(String setId) {
+    final sessions = getCompletedStudySessionsForSet(setId);
+    if (sessions.isEmpty) return 0;
+    return sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
+  }
+
+  StudySession? get latestInProgressSession {
+    for (final s in _studySessions.reversed) {
+      if (s.status == StudySessionStatus.inProgress) return s;
+    }
+    return null;
+  }
+
+  FlashcardSet? get recommendedSet {
+    final inProg = latestInProgressSession;
+    if (inProg != null) return getSetById(inProg.setId);
+
+    FlashcardSet? pick;
+    double worstScore = double.infinity;
+    for (final set in _sets) {
+      final sessions = getCompletedStudySessionsForSet(set.id);
+      final DateTime lastStudied = set.lastStudiedAt ?? DateTime(1970);
+      final double acc = sessions.isEmpty
+          ? 0
+          : sessions.fold<double>(0, (s, x) => s + x.accuracy) /
+              sessions.length;
+      final double daysSince =
+          DateTime.now().difference(lastStudied).inHours / 24.0;
+      final double score = acc - daysSince;
+      if (score < worstScore) {
+        worstScore = score;
+        pick = set;
+      }
+    }
+    return pick;
+  }
+
+  List<FlashcardSet> reviewSets({int limit = 3}) {
+    final scored = <MapEntry<FlashcardSet, double>>[];
+    for (final set in _sets) {
+      final sessions = getCompletedStudySessionsForSet(set.id);
+      final DateTime lastStudied = set.lastStudiedAt ?? DateTime(1970);
+      final double acc = sessions.isEmpty
+          ? 0
+          : sessions.fold<double>(0, (s, x) => s + x.accuracy) /
+              sessions.length;
+      final double daysSince =
+          DateTime.now().difference(lastStudied).inHours / 24.0;
+      scored.add(MapEntry(set, acc - daysSince));
+    }
+    scored.sort((a, b) => a.value.compareTo(b.value));
+    return scored.take(limit).map((e) => e.key).toList();
+  }
+
+  List<FlashcardSet> recentStudiedSets({int limit = 3}) {
+    final list = _sets
+        .where((s) =>
+            getCompletedStudySessionsForSet(s.id).isNotEmpty ||
+            getInProgressStudySessionForSet(s.id) != null)
+        .toList()
+      ..sort((a, b) => (b.lastStudiedAt ?? DateTime(1970))
+          .compareTo(a.lastStudiedAt ?? DateTime(1970)));
+    return list.take(limit).toList();
+  }
 }
