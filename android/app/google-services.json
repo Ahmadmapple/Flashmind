@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "724463234542",
+    "project_id": "flashmind-2a25d",
+    "storage_bucket": "flashmind-2a25d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:724463234542:android:ae5ad71301d16de0b8f2ff",
+        "android_client_info": {
+          "package_name": "com.example.flashmind"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALWBUBKNBitjh4rpq3CjnIPl5YyD6N4KA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
