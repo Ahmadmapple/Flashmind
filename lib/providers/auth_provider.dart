@@ -211,18 +211,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> resetPassword({required String email, required String newPassword}) async {
-    _isLoading = true;
-    notifyListeners();
-
+  Future<bool> resetPassword({required String email}) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-      _isLoading = false;
-      notifyListeners();
       return true;
     } catch (e) {
-      _isLoading = false;
-      notifyListeners();
       return false;
     }
   }
