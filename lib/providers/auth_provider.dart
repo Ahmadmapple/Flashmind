@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -15,12 +14,10 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
 
-  // Cek sesi Firebase saat aplikasi dibuka dari Splash Screen
   Future<void> checkLoginStatus() async {
     final firebaseUser = _firebaseAuth.currentUser;
 
     if (firebaseUser != null) {
-      // Ambil data nama dari Firestore jika user masih dalam status login
       try {
         final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
         final data = doc.data();
@@ -31,7 +28,6 @@ class AuthProvider extends ChangeNotifier {
           email: firebaseUser.email ?? '',
         );
       } catch (e) {
-        // Jika gagal ambil data Firestore, fallback menggunakan data email
         _currentUser = User(
           id: firebaseUser.uid,
           nama: firebaseUser.email?.split('@').first ?? 'Pengguna',
@@ -42,13 +38,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Proses Pendaftaran Menggunakan Firebase Auth
   Future<String?> register(String nama, String email, String kataSandi) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // 1. Buat akun di Firebase Authentication
       final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: kataSandi,
@@ -57,7 +51,6 @@ class AuthProvider extends ChangeNotifier {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        // 2. Simpan data tambahan (nama) ke dalam koleksi 'users' di Firestore
         await _firestore.collection('users').doc(firebaseUser.uid).set({
           'id': firebaseUser.uid,
           'nama': nama,
@@ -65,7 +58,6 @@ class AuthProvider extends ChangeNotifier {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        // 3. Set current user untuk UI
         _currentUser = User(
           id: firebaseUser.uid,
           nama: nama,
@@ -75,12 +67,10 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
-      return null; // Return null menandakan sukses tanpa pesan error
-
+      return null;
     } on auth.FirebaseAuthException catch (e) {
       _isLoading = false;
       notifyListeners();
-      // Terjemahkan error Firebase ke Bahasa Indonesia
       if (e.code == 'weak-password') {
         return 'Kata sandi terlalu lemah.';
       } else if (e.code == 'email-already-in-use') {
@@ -96,7 +86,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Proses Masuk (Login) Menggunakan Firebase Auth
   Future<String?> login(String email, String kataSandi) async {
     _isLoading = true;
     notifyListeners();
@@ -110,7 +99,6 @@ class AuthProvider extends ChangeNotifier {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        // Ambil nama dari Firestore
         final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
         final data = doc.data();
 
@@ -123,8 +111,7 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
-      return null; // Null menandakan sukses
-
+      return null;
     } on auth.FirebaseAuthException catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -139,14 +126,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Proses Keluar (Logout)
   Future<void> logout() async {
     await _firebaseAuth.signOut();
     _currentUser = null;
     notifyListeners();
   }
 
-  // Proses Memperbarui Profil ke Firestore
   Future<String?> updateProfile(String newName) async {
     if (_currentUser == null) return 'Pengguna tidak valid';
 
@@ -171,6 +156,31 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return 'Gagal memperbarui profil.';
+    }
+  }
+
+  Future<bool> checkEmailExists(String email) async {
+    try {
+      final methods = await _firebaseAuth.fetchSignInMethodsForEmail(email);
+      return methods.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword({required String email, required String newPassword}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 }
