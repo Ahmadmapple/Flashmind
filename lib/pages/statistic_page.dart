@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
-import 'all_study_history_page.dart';
 import 'detail_set_page.dart';
+import 'study_history_page.dart'; ////
 
 enum _Filter { tujuhHari, tigaPuluhHari, keseluruhan }
 
@@ -343,7 +343,7 @@ class _StatisticPageState extends State<StatisticPage> {
                 TextButton(
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                        builder: (_) => const AllStudyHistoryPage()),
+                        builder: (_) => const StudyHistoryPage()),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: _orange,

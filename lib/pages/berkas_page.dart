@@ -6,7 +6,6 @@ import '../repositories/flash_mind_repository.dart';
 import '../services/review_recommendation.dart';
 import 'add_set_page.dart';
 import 'detail_set_page.dart';
-import 'study_history_page.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_filter_chip.dart';
 import '../widgets/responsive_scale.dart';
@@ -128,7 +127,6 @@ class _BerkasPageState extends State<BerkasPage> {
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                       child: _buildFilterRow(),
                     ),
-                    _buildHistoryTestButton(context),
                     const SizedBox(height: 16),
                     Expanded(
                       child: filtered.isEmpty
@@ -155,34 +153,6 @@ class _BerkasPageState extends State<BerkasPage> {
           ),
         ),
       ],
-    );
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Tombol sementara untuk menguji layar Riwayat Belajar.
-  // Untuk menghapus, hapus method ini, satu pemanggilannya di build(), dan import study_history_page.dart.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  Widget _buildHistoryTestButton(BuildContext context) {
-    final double s = ResponsiveScale.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const StudyHistoryPage()),
-          ),
-          icon: Icon(Icons.history_rounded, size: 18 * s),
-          label: const Text('Riwayat Belajar'),
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFFE87A5D),
-            padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 4 * s),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            textStyle: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
     );
   }
 
