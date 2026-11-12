@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
 class AuthProvider extends ChangeNotifier {
+  final auth.FirebaseAuth _firebaseAuth = auth.FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   User? _currentUser;
   bool _isLoading = false;
 
@@ -10,144 +15,162 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
 
+  // Cek sesi Firebase saat aplikasi dibuka dari Splash Screen
   Future<void> checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final nama = prefs.getString('user_nama');
-    final email = prefs.getString('user_email');
+    final firebaseUser = _firebaseAuth.currentUser;
 
-    if (nama != null && email != null) {
-      _currentUser = User(id: 'u1', nama: nama, email: email);
+    if (firebaseUser != null) {
+      // Ambil data nama dari Firestore jika user masih dalam status login
+      try {
+        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+        final data = doc.data();
+
+        _currentUser = User(
+          id: firebaseUser.uid,
+          nama: data?['nama'] ?? 'Pengguna',
+          email: firebaseUser.email ?? '',
+        );
+      } catch (e) {
+        // Jika gagal ambil data Firestore, fallback menggunakan data email
+        _currentUser = User(
+          id: firebaseUser.uid,
+          nama: firebaseUser.email?.split('@').first ?? 'Pengguna',
+          email: firebaseUser.email ?? '',
+        );
+      }
       notifyListeners();
     }
   }
 
-  Future<bool> login(String email, String kataSandi) async {
+  // Proses Pendaftaran Menggunakan Firebase Auth
+  Future<String?> register(String nama, String email, String kataSandi) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // 1. Buat akun di Firebase Authentication
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: kataSandi,
+      );
 
-    final prefs       = await SharedPreferences.getInstance();
-    final storedEmail = prefs.getString('user_email');
-    final storedPass  = prefs.getString('user_password');
-    final storedNama  = prefs.getString('user_nama');
+      final firebaseUser = userCredential.user;
 
-    final emailMatch = storedEmail != null &&
-        storedEmail.toLowerCase() == email.toLowerCase();
-    final passMatch  = storedPass != null && storedPass == kataSandi;
+      if (firebaseUser != null) {
+        // 2. Simpan data tambahan (nama) ke dalam koleksi 'users' di Firestore
+        await _firestore.collection('users').doc(firebaseUser.uid).set({
+          'id': firebaseUser.uid,
+          'nama': nama,
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
 
-    if (emailMatch && passMatch) {
-      _currentUser = User(
-          id: 'u1', nama: storedNama ?? 'Pengguna Flash Mind', email: email);
+        // 3. Set current user untuk UI
+        _currentUser = User(
+          id: firebaseUser.uid,
+          nama: nama,
+          email: email,
+        );
+      }
+
       _isLoading = false;
       notifyListeners();
-      return true;
-    }
+      return null; // Return null menandakan sukses tanpa pesan error
 
-    // Akun belum ada sama sekali — izinkan login pertama kali dan simpan password
-    if (storedEmail == null && email.isNotEmpty && kataSandi.isNotEmpty) {
-      _currentUser =
-          User(id: 'u1', nama: 'Pengguna Flash Mind', email: email);
-      await prefs.setString('user_nama', _currentUser!.nama);
-      await prefs.setString('user_email', email);
-      await prefs.setString('user_password', kataSandi);
+    } on auth.FirebaseAuthException catch (e) {
       _isLoading = false;
       notifyListeners();
-      return true;
+      // Terjemahkan error Firebase ke Bahasa Indonesia
+      if (e.code == 'weak-password') {
+        return 'Kata sandi terlalu lemah.';
+      } else if (e.code == 'email-already-in-use') {
+        return 'Email ini sudah terdaftar.';
+      } else if (e.code == 'invalid-email') {
+        return 'Format email tidak valid.';
+      }
+      return 'Gagal mendaftar: ${e.message}';
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Terjadi kesalahan sistem.';
     }
-
-    _isLoading = false;
-    notifyListeners();
-    return false;
   }
 
-  Future<bool> register(String nama, String email, String kataSandi) async {
+  // Proses Masuk (Login) Menggunakan Firebase Auth
+  Future<String?> login(String email, String kataSandi) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: kataSandi,
+      );
 
-    if (nama.isNotEmpty && email.isNotEmpty && kataSandi.length >= 6) {
-      _currentUser = User(id: 'u2', nama: nama, email: email);
+      final firebaseUser = userCredential.user;
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_nama', _currentUser!.nama);
-      await prefs.setString('user_email', _currentUser!.email);
-      await prefs.setString('user_password', kataSandi);
+      if (firebaseUser != null) {
+        // Ambil nama dari Firestore
+        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+        final data = doc.data();
+
+        _currentUser = User(
+          id: firebaseUser.uid,
+          nama: data?['nama'] ?? firebaseUser.email?.split('@').first ?? 'Pengguna',
+          email: firebaseUser.email ?? '',
+        );
+      }
 
       _isLoading = false;
       notifyListeners();
-      return true;
-    }
+      return null; // Null menandakan sukses
 
-    _isLoading = false;
-    notifyListeners();
-    return false;
-  }
-
-  Future<bool> checkEmailExists(String email) async {
-    _isLoading = true;
-    notifyListeners();
-
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    final prefs = await SharedPreferences.getInstance();
-    final storedEmail = prefs.getString('user_email');
-
-    _isLoading = false;
-    notifyListeners();
-
-    return storedEmail != null &&
-        storedEmail.toLowerCase() == email.toLowerCase();
-  }
-
-  Future<bool> resetPassword({
-    required String email,
-    required String newPassword,
-  }) async {
-    _isLoading = true;
-    notifyListeners();
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    final prefs = await SharedPreferences.getInstance();
-    final storedEmail = prefs.getString('user_email');
-
-    if (storedEmail == null ||
-        storedEmail.toLowerCase() != email.toLowerCase()) {
+    } on auth.FirebaseAuthException catch (e) {
       _isLoading = false;
       notifyListeners();
-      return false;
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return 'Email atau kata sandi salah.';
+      }
+      return 'Gagal masuk: ${e.message}';
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Terjadi kesalahan sistem.';
     }
-
-    await prefs.setString('user_password', newPassword);
-
-    _isLoading = false;
-    notifyListeners();
-    return true;
   }
 
+  // Proses Keluar (Logout)
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_nama');
-    await prefs.remove('user_email');
-
+    await _firebaseAuth.signOut();
     _currentUser = null;
     notifyListeners();
   }
 
-  Future<void> updateProfile(String newName) async {
-    if (_currentUser != null && newName.isNotEmpty) {
+  // Proses Memperbarui Profil ke Firestore
+  Future<String?> updateProfile(String newName) async {
+    if (_currentUser == null) return 'Pengguna tidak valid';
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _firestore.collection('users').doc(_currentUser!.id).update({
+        'nama': newName,
+      });
+
       _currentUser = User(
         id: _currentUser!.id,
         nama: newName,
         email: _currentUser!.email,
       );
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_nama', newName);
-
+      _isLoading = false;
       notifyListeners();
+      return null;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Gagal memperbarui profil.';
     }
   }
 }
