@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../repositories/flash_mind_repository.dart';
-import 'detail_set_page.dart';
+import 'detail_set_screen.dart';
 import '../models/flashcard_set.dart';
 
-class AddSetPage extends StatefulWidget {
-  const AddSetPage({super.key});
+class AddSetScreen extends StatefulWidget {
+  const AddSetScreen({super.key});
 
   @override
-  State<AddSetPage> createState() => _AddSetPageState();
+  State<AddSetScreen> createState() => _AddSetScreenState();
 }
 
-class _AddSetPageState extends State<AddSetPage> {
+class _AddSetScreenState extends State<AddSetScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
@@ -63,7 +63,7 @@ class _AddSetPageState extends State<AddSetPage> {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) =>
-            DetailSetPage(setId: set.id, showCreatedNotification: true),
+            DetailSetScreen(setId: set.id, showCreatedNotification: true),
       ),
     );
   }

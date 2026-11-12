@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import 'register_page.dart';
-import 'forgot_password_page.dart';
-import '../main.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _namaController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -21,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _namaController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -29,29 +28,25 @@ class _LoginPageState extends State<LoginPage> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       final auth = context.read<AuthProvider>();
-      final errorMessage = await auth.login(
+      final errorMessage = await auth.register(
+        _namaController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
 
       if (errorMessage == null && mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-            const MainPage(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 600),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pendaftaran berhasil! Silakan masuk.'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
           ),
-              (route) => false,
         );
+        Navigator.pop(context);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage ?? 'Terjadi kesalahan sistem'),
+            content: Text(errorMessage ?? 'Pendaftaran gagal'),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           ),
@@ -66,6 +61,14 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F6),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF192A3A)),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -92,9 +95,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   const Text(
-                    'Selamat Datang',
+                    'Daftar Akun',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -105,11 +108,41 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Masuk untuk melanjutkan belajarmu.',
+                    'Buat akun Flash Mind baru untuk memulai',
                     style: TextStyle(fontSize: 14, color: Colors.black54),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 40),
+                  TextFormField(
+                    controller: _namaController,
+                    cursorColor: const Color(0xFF192A3A),
+                    decoration: InputDecoration(
+                      labelText: 'Nama Lengkap',
+                      labelStyle: const TextStyle(color: Colors.black54),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
+                      ),
+                      prefixIcon: const Icon(Icons.person_outline, color: Colors.black54),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().length < 2) {
+                        return 'Nama minimal 2 karakter';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -121,26 +154,20 @@ class _LoginPageState extends State<LoginPage> {
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide:
-                        const BorderSide(color: Color(0xFF192A3A), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
                       ),
-                      prefixIcon:
-                      const Icon(Icons.email_outlined, color: Colors.black54),
+                      prefixIcon: const Icon(Icons.email_outlined, color: Colors.black54),
                     ),
                     validator: (value) {
-                      if (value == null ||
-                          value.isEmpty ||
-                          !value.contains('@')) {
+                      if (value == null || value.isEmpty || !value.contains('@')) {
                         return 'Masukkan alamat email yang valid';
                       }
                       return null;
@@ -158,26 +185,20 @@ class _LoginPageState extends State<LoginPage> {
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide:
-                        const BorderSide(color: Color(0xFF192A3A), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFF192A3A), width: 2),
                       ),
-                      prefixIcon:
-                      const Icon(Icons.lock_outline, color: Colors.black54),
+                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _passwordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                          _passwordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.black45,
                         ),
                         onPressed: () {
@@ -194,33 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordPage(),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFE87A5D),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 0, vertical: 8),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text(
-                        'Lupa Kata Sandi?',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 40),
                   ElevatedButton(
                     onPressed: isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
@@ -242,37 +237,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     )
                         : const Text(
-                      'Masuk',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                      'Daftar Sekarang',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Belum punya akun? ',
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const RegisterPage(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Daftar di sini',
-                          style: TextStyle(
-                            color: Color(0xFFE87A5D),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

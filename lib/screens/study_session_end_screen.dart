@@ -4,8 +4,8 @@ import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 import '../widgets/responsive_scale.dart';
 
-class StudySessionEndPage extends StatelessWidget {
-  const StudySessionEndPage({
+class StudySessionEndScreen extends StatelessWidget {
+  const StudySessionEndScreen({
     super.key,
     required this.setId,
     required this.sessionId,

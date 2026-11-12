@@ -8,17 +8,17 @@ import '../widgets/responsive_scale.dart';
 
 enum EditCardResult { saved, deleted }
 
-class EditCardPage extends StatefulWidget {
-  const EditCardPage({super.key, required this.setId, required this.card});
+class EditCardScreen extends StatefulWidget {
+  const EditCardScreen({super.key, required this.setId, required this.card});
 
   final String setId;
   final Flashcard card;
 
   @override
-  State<EditCardPage> createState() => _EditCardPageState();
+  State<EditCardScreen> createState() => _EditCardScreenState();
 }
 
-class _EditCardPageState extends State<EditCardPage> {
+class _EditCardScreenState extends State<EditCardScreen> {
   static const Color _primaryColor    = Color(0xFF192A3A);
   static const Color _accentColor     = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);

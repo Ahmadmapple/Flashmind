@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
-import 'add_card_page.dart';
-import 'edit_set_page.dart';
-import 'detail_card_page.dart';
-import 'study_session_continue_page.dart';
-import 'study_session_start_page.dart';
-import 'ai_card_review_page.dart';
+import 'add_card_screen.dart';
+import 'edit_set_screen.dart';
+import 'detail_card_screen.dart';
+import 'study_session_continue_screen.dart';
+import 'study_session_start_screen.dart';
+import 'ai_card_review_screen.dart';
 
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/responsive_scale.dart';
 enum _AddCardMode { manual, ai }
 
-class DetailSetPage extends StatefulWidget {
-  const DetailSetPage({
+class DetailSetScreen extends StatefulWidget {
+  const DetailSetScreen({
     super.key,
     required this.setId,
     this.showCreatedNotification = false,
@@ -25,10 +25,10 @@ class DetailSetPage extends StatefulWidget {
   final bool showCreatedNotification;
 
   @override
-  State<DetailSetPage> createState() => _DetailSetPageState();
+  State<DetailSetScreen> createState() => _DetailSetScreenState();
 }
 
-class _DetailSetPageState extends State<DetailSetPage> {
+class _DetailSetScreenState extends State<DetailSetScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor  = Color(0xFFF3C279);
   static const Color _dangerColor  = Color(0xFFEF5350);
@@ -120,7 +120,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
   Future<void> _openEditSet(FlashcardSet set) async {
     if (_isDeleting) return;
     final edited = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => EditSetPage(set: set)),
+      MaterialPageRoute<bool>(builder: (_) => EditSetScreen(set: set)),
     );
     if (edited == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +136,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
   Future<void> _openAddCard() async {
     if (_isDeleting) return;
     final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => AddCardPage(setId: widget.setId)),
+      MaterialPageRoute<bool>(builder: (_) => AddCardScreen(setId: widget.setId)),
     );
     if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -153,7 +153,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
     if (_isDeleting) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => DetailCardPage(setId: card.setId, cardId: card.id),
+        builder: (_) => DetailCardScreen(setId: card.setId, cardId: card.id),
       ),
     );
   }
@@ -281,7 +281,7 @@ class _DetailSetPageState extends State<DetailSetPage> {
       case _AddCardMode.ai:
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
-            builder: (_) => AiCardReviewPage(
+            builder: (_) => AiCardReviewScreen(
                 setId: widget.setId, fileName: 'dokumen.pdf'),
           ),
         );
@@ -294,8 +294,8 @@ class _DetailSetPageState extends State<DetailSetPage> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => inProgressSession == null
-            ? StudySessionStartPage(setId: widget.setId)
-            : StudySessionContinuePage(setId: widget.setId),
+            ? StudySessionStartScreen(setId: widget.setId)
+            : StudySessionContinueScreen(setId: widget.setId),
       ),
     );
   }

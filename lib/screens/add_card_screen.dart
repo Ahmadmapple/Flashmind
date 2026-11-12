@@ -3,16 +3,16 @@ import 'package:flutter/services.dart';
 
 import '../repositories/flash_mind_repository.dart';
 
-class AddCardPage extends StatefulWidget {
-  const AddCardPage({super.key, required this.setId});
+class AddCardScreen extends StatefulWidget {
+  const AddCardScreen({super.key, required this.setId});
 
   final String setId;
 
   @override
-  State<AddCardPage> createState() => _AddCardPageState();
+  State<AddCardScreen> createState() => _AddCardScreenState();
 }
 
-class _AddCardPageState extends State<AddCardPage> {
+class _AddCardScreenState extends State<AddCardScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);

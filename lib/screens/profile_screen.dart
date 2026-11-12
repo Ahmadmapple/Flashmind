@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
-import 'edit_profile_page.dart';
-import 'login_page.dart';
+import 'edit_profile_screen.dart';
+import 'login_screen.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +79,7 @@ class ProfilePage extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const EditProfilePage(),
+                        builder: (_) => const EditProfileScreen(),
                       ),
                     ),
                     icon: const Icon(Icons.edit_outlined, size: 20),
@@ -107,7 +107,7 @@ class ProfilePage extends StatelessWidget {
                           PageRouteBuilder<void>(
                             pageBuilder:
                                 (context, animation, secondaryAnimation) =>
-                                    const LoginPage(),
+                                    const LoginScreen(),
                             transitionsBuilder: (context, animation,
                                     secondaryAnimation, child) =>
                                 FadeTransition(

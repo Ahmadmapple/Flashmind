@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
 
-class EditSetPage extends StatefulWidget {
-  const EditSetPage({super.key, required this.set});
+class EditSetScreen extends StatefulWidget {
+  const EditSetScreen({super.key, required this.set});
 
   final FlashcardSet set;
 
   @override
-  State<EditSetPage> createState() => _EditSetPageState();
+  State<EditSetScreen> createState() => _EditSetScreenState();
 }
 
-class _EditSetPageState extends State<EditSetPage> {
+class _EditSetScreenState extends State<EditSetScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);

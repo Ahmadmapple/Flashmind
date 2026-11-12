@@ -6,20 +6,20 @@ import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
-import 'study_session_end_page.dart';
+import 'study_session_end_screen.dart';
 
 /// Layar pelaksanaan sesi belajar.
-class StudySessionPage extends StatefulWidget {
-  const StudySessionPage({super.key, required this.setId, this.sessionId});
+class StudySessionScreen extends StatefulWidget {
+  const StudySessionScreen({super.key, required this.setId, this.sessionId});
 
   final String setId;
   final String? sessionId;
 
   @override
-  State<StudySessionPage> createState() => _StudySessionPageState();
+  State<StudySessionScreen> createState() => _StudySessionScreenState();
 }
 
-class _StudySessionPageState extends State<StudySessionPage>
+class _StudySessionScreenState extends State<StudySessionScreen>
     with SingleTickerProviderStateMixin {
   // ── Warna ──────────────────────────────────────────────────────────────────
   static const Color _primaryColor    = Color(0xFF192A3A);
@@ -174,7 +174,7 @@ class _StudySessionPageState extends State<StudySessionPage>
     if (updatedSession.status == StudySessionStatus.completed) {
       await Navigator.of(context).pushReplacement<void, void>(
         MaterialPageRoute<void>(
-          builder: (_) => StudySessionEndPage(
+          builder: (_) => StudySessionEndScreen(
             setId:     updatedSession.setId,
             sessionId: updatedSession.id,
           ),
