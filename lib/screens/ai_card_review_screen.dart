@@ -12,8 +12,8 @@ class _AiCard {
 
 /// Halaman untuk meninjau kartu yang dibuat AI dari dokumen PDF.
 /// Pengguna dapat menerima atau menolak tiap kartu sebelum disimpan ke set.
-class AiCardReviewPage extends StatefulWidget {
-  const AiCardReviewPage({
+class AiCardReviewScreen extends StatefulWidget {
+  const AiCardReviewScreen({
     super.key,
     required this.setId,
     required this.fileName,
@@ -23,10 +23,10 @@ class AiCardReviewPage extends StatefulWidget {
   final String fileName;
 
   @override
-  State<AiCardReviewPage> createState() => _AiCardReviewPageState();
+  State<AiCardReviewScreen> createState() => _AiCardReviewScreenState();
 }
 
-class _AiCardReviewPageState extends State<AiCardReviewPage> {
+class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
   static const Color _primaryColor   = Color(0xFF192A3A);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _successColor   = Color(0xFF2D6A4F);

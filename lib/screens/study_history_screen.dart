@@ -7,7 +7,7 @@ import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_filter_chip.dart';
 import '../widgets/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
-import 'study_session_end_page.dart';
+import 'study_session_end_screen.dart';
 
 enum _HistoryRange {
   week('7 Hari', 7),
@@ -29,14 +29,14 @@ class _HistoryEntry {
   int get cardCount => set?.cardCount ?? session.totalCardCount;
 }
 
-class StudyHistoryPage extends StatefulWidget {
-  const StudyHistoryPage({super.key});
+class StudyHistoryScreen extends StatefulWidget {
+  const StudyHistoryScreen({super.key});
 
   @override
-  State<StudyHistoryPage> createState() => _StudyHistoryPageState();
+  State<StudyHistoryScreen> createState() => _StudyHistoryScreenState();
 }
 
-class _StudyHistoryPageState extends State<StudyHistoryPage> {
+class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
 
@@ -61,7 +61,7 @@ class _StudyHistoryPageState extends State<StudyHistoryPage> {
   void _openSessionResult(_HistoryEntry e) {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => StudySessionEndPage(
+        builder: (_) => StudySessionEndScreen(
           setId: e.session.setId,
           sessionId: e.session.id,
         ),

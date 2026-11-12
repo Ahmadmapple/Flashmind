@@ -3,26 +3,24 @@ import 'package:flutter/material.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
-import 'study_session_page.dart';
-import 'study_session_start_page.dart';
+import 'study_session_continue_screen.dart';
+import 'study_session_screen.dart';
 
 import '../widgets/responsive_scale.dart';
 
-/// Layar informasi untuk sesi belajar yang masih berstatus inProgress karena sesi belajar sempat dihentikan.
-class StudySessionContinuePage extends StatefulWidget {
-  const StudySessionContinuePage({super.key, required this.setId});
+class StudySessionStartScreen extends StatefulWidget {
+  const StudySessionStartScreen({super.key, required this.setId});
 
   final String setId;
 
   @override
-  State<StudySessionContinuePage> createState() =>
-      _StudySessionContinuePageState();
+  State<StudySessionStartScreen> createState() => _StudySessionStartScreenState();
 }
 
-class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
-  static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
-  static const Color _headerColor = Color(0xFFFFE5B4);
+class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
+  static const Color _primaryColor    = Color(0xFF192A3A);
+  static const Color _accentColor     = Color(0xFFF3C279);
+  static const Color _headerColor     = Color(0xFFFFE5B4);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
 
   TextStyle get _valueStyle => TextStyle(
@@ -39,27 +37,23 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
     color: _primaryColor,
   );
 
-  final FlashMindRepository _repository = FlashMindRepository.instance;
+  bool _isStarting = false;
 
-  bool _isReplacing = false;
-
-  static String _formatDuration(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
+  static String _formatAverageDuration(Duration duration) {
+    final int totalSeconds = duration.inSeconds;
+    final int hours        = totalSeconds ~/ 3600;
+    final int minutes      = (totalSeconds % 3600) ~/ 60;
+    final int seconds      = totalSeconds % 60;
     return '${hours.toString().padLeft(2, '0')}:'
         '${minutes.toString().padLeft(2, '0')}:'
         '${seconds.toString().padLeft(2, '0')}';
   }
 
   static String _formatRecordDuration(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
+    final int totalSeconds = duration.inSeconds;
+    final int hours        = totalSeconds ~/ 3600;
+    final int minutes      = (totalSeconds % 3600) ~/ 60;
+    final int seconds      = totalSeconds % 60;
     if (hours > 0) {
       return '$hours jam${minutes > 0 ? ' $minutes menit' : ''}';
     }
@@ -70,16 +64,15 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
   }
 
   static String _formatAccuracy(double accuracy) {
-    final value = accuracy.clamp(0, 100);
+    final num value = accuracy.clamp(0, 100);
     return '${value.toStringAsFixed(2)}%';
   }
 
-  static String _formatLastStudied(DateTime? lastPausedAt) {
-    if (lastPausedAt == null) return '-';
-
-    final difference = DateTime.now().difference(lastPausedAt);
-    if (difference.isNegative) return _formatDate(lastPausedAt);
-
+  static String _formatLastStudied(DateTime? lastStudiedAt) {
+    if (lastStudiedAt == null) return '-';
+    final DateTime now        = DateTime.now();
+    final Duration difference = now.difference(lastStudiedAt);
+    if (difference.isNegative) return _formatDate(lastStudiedAt);
     if (difference < const Duration(minutes: 1)) {
       return '${difference.inSeconds} detik lalu';
     }
@@ -89,8 +82,7 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
     if (difference < const Duration(days: 1)) {
       return '${difference.inHours} jam lalu';
     }
-
-    return _formatDate(lastPausedAt);
+    return _formatDate(lastStudiedAt);
   }
 
   static String _formatDate(DateTime date) {
@@ -99,9 +91,24 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
         '${date.year}';
   }
 
+  static Duration _averageDuration(List<StudySession> sessions) {
+    if (sessions.isEmpty) return Duration.zero;
+    final int totalMicroseconds = sessions.fold<int>(
+      0,
+      (sum, session) => sum + session.totalDuration.inMicroseconds,
+    );
+    return Duration(microseconds: totalMicroseconds ~/ sessions.length);
+  }
+
+  static double _averageAccuracy(List<StudySession> sessions) {
+    if (sessions.isEmpty) return 0;
+    final double total = sessions.fold<double>(
+        0, (sum, session) => sum + session.accuracy);
+    return total / sessions.length;
+  }
+
   static StudySession? _highestAccuracySession(List<StudySession> sessions) {
     if (sessions.isEmpty) return null;
-
     return sessions.reduce(
       (current, next) => next.accuracy > current.accuracy ? next : current,
     );
@@ -109,71 +116,35 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
 
   static StudySession? _fastestSession(List<StudySession> sessions) {
     if (sessions.isEmpty) return null;
-
     return sessions.reduce(
       (current, next) =>
           next.totalDuration < current.totalDuration ? next : current,
     );
   }
 
-  static Duration _currentSessionDuration(StudySession session) {
-    return session.totalDuration + session.currentCardElapsedDuration;
-  }
-
-  void _scheduleReplaceWithStart() {
-    if (_isReplacing) return;
-    _isReplacing = true;
-
-    final route = ModalRoute.of(context);
-    final navigator = Navigator.of(context);
-    final setId = widget.setId;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || route == null || !route.isActive) return;
-
-      navigator.replace<void>(
-        oldRoute: route,
-        newRoute: MaterialPageRoute<void>(
-          builder: (_) => StudySessionStartPage(setId: setId),
-        ),
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _repository,
-      builder: (context, _) {
-        final set = _repository.getSetById(widget.setId);
-        final session = _repository.getInProgressStudySessionForSet(
-          widget.setId,
-        );
+    final repository = FlashMindRepository.instance;
 
-        if (set == null || session == null) {
-          if (set != null) _scheduleReplaceWithStart();
-          return const Scaffold(backgroundColor: _backgroundColor);
+    return AnimatedBuilder(
+      animation: repository,
+      builder: (context, _) {
+        final set = repository.getSetById(widget.setId);
+
+        if (set == null) {
+          return const Scaffold(
+            backgroundColor: _backgroundColor,
+            body: Center(child: Text('Set tidak ditemukan.')),
+          );
         }
 
-        final completedSessions = _repository.getCompletedStudySessionsForSet(
-          set.id,
-        );
-        final highestAccuracy = _highestAccuracySession(completedSessions);
-        final fastestSession = _fastestSession(completedSessions);
+        final completedSessions =
+            repository.getCompletedStudySessionsForSet(set.id);
 
         return Scaffold(
           backgroundColor: _backgroundColor,
           appBar: _buildAppBar(context),
-          body: _buildBody(
-            context,
-            set,
-            session,
-            highestAccuracy,
-            fastestSession,
-          ),
-          floatingActionButton: null,
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerFloat,
+          body: _buildBody(context, set, completedSessions),
         );
       },
     );
@@ -195,7 +166,7 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
       title: Text(
         'Sesi Belajar',
         style: TextStyle(
-          fontSize: 25 * s,
+          fontSize: 24 * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
           color: _primaryColor,
@@ -208,10 +179,13 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
   Widget _buildBody(
     BuildContext context,
     FlashcardSet set,
-    StudySession session,
-    StudySession? highestAccuracy,
-    StudySession? fastestSession,
+    List<StudySession> completedSessions,
   ) {
+    final averageDuration = _averageDuration(completedSessions);
+    final averageAccuracy = _averageAccuracy(completedSessions);
+    final highestAccuracy = _highestAccuracySession(completedSessions);
+    final fastestSession  = _fastestSession(completedSessions);
+
     return SafeArea(
       top: false,
       bottom: false,
@@ -220,16 +194,19 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 34, 20, 88),
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 34,
-              ),
+              constraints:
+                  BoxConstraints(minHeight: constraints.maxHeight - 34),
               child: Column(
                 children: [
                   _buildSummaryCard(
                     set: set,
-                    duration: _formatDuration(_currentSessionDuration(session)),
-                    accuracy: _formatAccuracy(session.accuracy),
-                    lastStudied: _formatLastStudied(session.lastPausedAt),
+                    averageDuration: completedSessions.isEmpty
+                        ? '-'
+                        : _formatAverageDuration(averageDuration),
+                    averageAccuracy: completedSessions.isEmpty
+                        ? '-'
+                        : _formatAccuracy(averageAccuracy),
+                    lastStudied: _formatLastStudied(set.lastStudiedAt),
                     highestAccuracy: highestAccuracy == null
                         ? '-'
                         : _formatAccuracy(highestAccuracy.accuracy),
@@ -242,11 +219,9 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
                     fastestAccuracy: fastestSession == null
                         ? '-'
                         : _formatAccuracy(fastestSession.accuracy),
-                    cardProgress:
-                        '${session.completedCardCount}/${session.totalCardCount} kartu',
                   ),
                   const SizedBox(height: 30),
-                  _buildContinueButton(context, session),
+                  _buildStartButton(context),
                 ],
               ),
             ),
@@ -258,14 +233,13 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
 
   Widget _buildSummaryCard({
     required FlashcardSet set,
-    required String duration,
-    required String accuracy,
+    required String averageDuration,
+    required String averageAccuracy,
     required String lastStudied,
     required String highestAccuracy,
     required String highestAccuracyDuration,
     required String fastestDuration,
     required String fastestAccuracy,
-    required String cardProgress,
   }) {
     final double s = ResponsiveScale.of(context);
     return Container(
@@ -293,24 +267,18 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
           ),
           const SizedBox(height: 8),
           Text(
-            set.description.isEmpty
-                ? 'Tidak ada deskripsi set.'
-                : set.description,
+            set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
-            style: TextStyle(
-              fontSize: 13 * s,
-              color: Colors.grey,
-              height: 1.25,
-            ),
+            style: TextStyle(fontSize: 13 * s, color: Colors.grey, height: 1.25),
           ),
           const SizedBox(height: 25),
           Text('Riwayat Pembelajaran', style: _sectionStyle),
           const SizedBox(height: 10),
-          _buildStatRow('Durasi pengerjaan', duration),
+          _buildStatRow('Durasi rata-rata', averageDuration),
           const SizedBox(height: 10),
-          _buildStatRow('Persentase jawaban benar', accuracy),
+          _buildStatRow('Rata-rata jawaban benar', averageAccuracy),
           const SizedBox(height: 10),
           _buildStatRow('Waktu terakhir dipelajari', lastStudied),
           const SizedBox(height: 30),
@@ -330,7 +298,7 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
           const SizedBox(height: 30),
           Align(
             alignment: Alignment.centerRight,
-            child: Text(cardProgress, style: _valueStyle),
+            child: Text('${set.cardCount} kartu', style: _valueStyle),
           ),
         ],
       ),
@@ -346,14 +314,9 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
             Expanded(child: Text(label, style: _valueStyle)),
             const SizedBox(width: 10),
             ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: constraints.maxWidth * 0.55,
-              ),
-              child: Text(
-                value,
-                textAlign: TextAlign.right,
-                style: _valueStyle,
-              ),
+              constraints:
+                  BoxConstraints(maxWidth: constraints.maxWidth * 0.55),
+              child: Text(value, textAlign: TextAlign.right, style: _valueStyle),
             ),
           ],
         );
@@ -378,11 +341,8 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
             Text(accuracy, textAlign: TextAlign.left, style: _valueStyle),
             const SizedBox(width: 10),
             Flexible(
-              child: Text(
-                duration,
-                textAlign: TextAlign.right,
-                style: _valueStyle,
-              ),
+              child: Text(duration,
+                  textAlign: TextAlign.right, style: _valueStyle),
             ),
           ],
         ),
@@ -390,35 +350,78 @@ class _StudySessionContinuePageState extends State<StudySessionContinuePage> {
     );
   }
 
-  Widget _buildContinueButton(BuildContext context, StudySession session) {
+  Future<void> _startSession(BuildContext context) async {
+    if (_isStarting) return;
+    setState(() => _isStarting = true);
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final session = await FlashMindRepository.instance
+          .startStudySession(widget.setId);
+
+      if (!mounted) return;
+
+      if (session == null) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Sesi belajar tidak dapat dimulai.'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+          ),
+        );
+        return;
+      }
+
+      navigator.pushReplacement<void, void>(
+        MaterialPageRoute<void>(
+          builder: (_) => StudySessionContinueScreen(setId: widget.setId),
+        ),
+      );
+      navigator.push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => StudySessionScreen(
+              setId: widget.setId, sessionId: session.id),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isStarting = false);
+    }
+  }
+
+  Widget _buildStartButton(BuildContext context) {
     final double s = ResponsiveScale.of(context);
     return SizedBox(
       height: 40 * s,
       child: ElevatedButton(
-        onPressed: () async {
-          await Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (_) =>
-                  StudySessionPage(setId: widget.setId, sessionId: session.id),
-            ),
-          );
-        },
+        onPressed: _isStarting ? null : () => _startSession(context),
         style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_accentColor),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return _accentColor.withValues(alpha: 0.55);
+            }
+            return _accentColor;
+          }),
           foregroundColor: const WidgetStatePropertyAll(_primaryColor),
           elevation: const WidgetStatePropertyAll(0),
           padding: WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 24 * s),
-          ),
+              EdgeInsets.symmetric(horizontal: 22 * s)),
           minimumSize: WidgetStatePropertyAll(Size(120 * s, 40 * s)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           ),
           textStyle: WidgetStatePropertyAll(
-            TextStyle(fontSize: 16 * s, fontWeight: FontWeight.w700),
-          ),
+              TextStyle(fontSize: 16 * s, fontWeight: FontWeight.w700)),
         ),
-        child: const Text('Lanjut'),
+        child: _isStarting
+            ? SizedBox(
+                width: 18 * s,
+                height: 18 * s,
+                child: const CircularProgressIndicator(
+                    strokeWidth: 2, color: _primaryColor),
+              )
+            : const Text('Mulai'),
       ),
     );
   }

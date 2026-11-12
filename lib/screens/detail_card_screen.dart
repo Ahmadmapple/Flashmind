@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../models/flashcard.dart';
 import '../repositories/flash_mind_repository.dart';
-import 'edit_card_page.dart';
+import 'edit_card_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/responsive_scale.dart';
 
-class DetailCardPage extends StatefulWidget {
-  const DetailCardPage({super.key, required this.setId, required this.cardId});
+class DetailCardScreen extends StatefulWidget {
+  const DetailCardScreen({super.key, required this.setId, required this.cardId});
 
   final String setId;
   final String cardId;
 
   @override
-  State<DetailCardPage> createState() => _DetailCardPageState();
+  State<DetailCardScreen> createState() => _DetailCardScreenState();
 }
 
-class _DetailCardPageState extends State<DetailCardPage> {
+class _DetailCardScreenState extends State<DetailCardScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
@@ -83,7 +83,7 @@ class _DetailCardPageState extends State<DetailCardPage> {
 
     final result = await Navigator.of(context).push<EditCardResult>(
       MaterialPageRoute<EditCardResult>(
-        builder: (_) => EditCardPage(setId: widget.setId, card: card),
+        builder: (_) => EditCardScreen(setId: widget.setId, card: card),
       ),
     );
 

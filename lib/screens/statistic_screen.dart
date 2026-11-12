@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
-import 'detail_set_page.dart';
-import 'study_history_page.dart'; ////
+import 'detail_set_screen.dart';
+import 'study_history_screen.dart'; ////
 
 enum _Filter { tujuhHari, tigaPuluhHari, keseluruhan }
 
-class StatisticPage extends StatefulWidget {
-  const StatisticPage({super.key});
+class StatisticScreen extends StatefulWidget {
+  const StatisticScreen({super.key});
 
   @override
-  State<StatisticPage> createState() => _StatisticPageState();
+  State<StatisticScreen> createState() => _StatisticScreenState();
 }
 
-class _StatisticPageState extends State<StatisticPage> {
+class _StatisticScreenState extends State<StatisticScreen> {
   _Filter _filter = _Filter.tujuhHari;
 
   static const Color _primary = Color(0xFF192A3A);
@@ -343,7 +343,7 @@ class _StatisticPageState extends State<StatisticPage> {
                 TextButton(
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                        builder: (_) => const StudyHistoryPage()),
+                        builder: (_) => const StudyHistoryScreen()),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: _orange,
@@ -401,7 +401,7 @@ class _StatisticPageState extends State<StatisticPage> {
                     isInProgress: inProg != null,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                          builder: (_) => DetailSetPage(setId: set.id)),
+                          builder: (_) => DetailSetScreen(setId: set.id)),
                     ),
                   ),
                 );

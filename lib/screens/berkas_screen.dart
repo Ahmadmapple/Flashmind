@@ -4,8 +4,8 @@ import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 import '../services/review_recommendation.dart';
-import 'add_set_page.dart';
-import 'detail_set_page.dart';
+import 'add_set_screen.dart';
+import 'detail_set_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_filter_chip.dart';
 import '../widgets/responsive_scale.dart';
@@ -13,22 +13,30 @@ import '../widgets/study_history_card.dart';
 import '../widgets/word_ellipsis_text.dart';
 
 // Filter pada halaman berkas
-enum _BerkasFilter { semua, sesiTerhenti, perluDiulas }
+enum BerkasFilter { semua, sesiTerhenti, perluDiulas }
 
-class BerkasPage extends StatefulWidget {
-  const BerkasPage({super.key});
+class BerkasScreen extends StatefulWidget {
+  const BerkasScreen({super.key});
 
   @override
-  State<BerkasPage> createState() => _BerkasPageState();
+  State<BerkasScreen> createState() => BerkasScreenState();
 }
 
-class _BerkasPageState extends State<BerkasPage> {
+class BerkasScreenState extends State<BerkasScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor  = Color(0xFFF3C279);
 
   static final FlashMindRepository _repository = FlashMindRepository.instance;
 
-  _BerkasFilter _filter = _BerkasFilter.semua;
+  BerkasFilter _filter = BerkasFilter.semua;
+
+  // Dipanggil dari Beranda untuk membuka daftar dengan filter Perlu Diulas.
+  void showReviewFilter() {
+    if (_filter != BerkasFilter.perluDiulas) {
+      setState(() => _filter = BerkasFilter.perluDiulas);
+    }
+  }
+
   String _searchQuery = '';
 
   final TextEditingController _searchController = TextEditingController();
@@ -50,14 +58,14 @@ class _BerkasPageState extends State<BerkasPage> {
   // Menentukan daftar set sesuai filter yang dipilih
   List<FlashcardSet> _applyFilter(List<FlashcardSet> allSets) {
     switch (_filter) {
-      case _BerkasFilter.semua:
+      case BerkasFilter.semua:
         return allSets;
-      case _BerkasFilter.sesiTerhenti:
+      case BerkasFilter.sesiTerhenti:
         return allSets
             .where((set) =>
                 _repository.getInProgressStudySessionForSet(set.id) != null)
             .toList(growable: false);
-      case _BerkasFilter.perluDiulas:
+      case BerkasFilter.perluDiulas:
         return ReviewRecommendation.dueSets(_repository);
     }
   }
@@ -75,7 +83,7 @@ class _BerkasPageState extends State<BerkasPage> {
 
   // Daftar set pada filter "Perlu Diulas"
   Widget _buildSetItem(BuildContext context, FlashcardSet set) {
-    if (_filter == _BerkasFilter.perluDiulas) {
+    if (_filter == BerkasFilter.perluDiulas) {
       final latest = _latestCompleted(set.id);
       return StudyHistoryCard(
         title: set.title,
@@ -204,12 +212,12 @@ class _BerkasPageState extends State<BerkasPage> {
       message = 'Tidak ada set yang cocok\ndengan "$_searchQuery"';
     } else {
       switch (_filter) {
-        case _BerkasFilter.sesiTerhenti:
+        case BerkasFilter.sesiTerhenti:
           message =
               'Tidak ada sesi belajar yang terhenti.\nSemua sesi sudah selesai!';
-        case _BerkasFilter.perluDiulas:
+        case BerkasFilter.perluDiulas:
           message = 'Tidak ada set yang perlu diulas saat ini.';
-        case _BerkasFilter.semua:
+        case BerkasFilter.semua:
           message =
               'Belum ada set flashcard.\nTekan "+ Tambah Set" untuk mulai.';
       }
@@ -240,7 +248,7 @@ class _BerkasPageState extends State<BerkasPage> {
 
   Future<void> _openDetail(BuildContext context, String setId) async {
     final deleted = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => DetailSetPage(setId: setId)),
+      MaterialPageRoute<bool>(builder: (_) => DetailSetScreen(setId: setId)),
     );
 
     if (deleted == true && context.mounted) {
@@ -290,7 +298,7 @@ class _BerkasPageState extends State<BerkasPage> {
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const AddSetPage()),
+              MaterialPageRoute<void>(builder: (_) => const AddSetScreen()),
             ),
             icon: const Icon(Icons.add, size: 16),
             label: const Text('Tambah Set'),
@@ -320,24 +328,24 @@ class _BerkasPageState extends State<BerkasPage> {
       children: [
         AppFilterChip(
           label: 'Semua',
-          selected: _filter == _BerkasFilter.semua,
-          onPressed: () => _setFilter(_BerkasFilter.semua),
+          selected: _filter == BerkasFilter.semua,
+          onPressed: () => _setFilter(BerkasFilter.semua),
         ),
         AppFilterChip(
           label: 'Sesi Terhenti',
-          selected: _filter == _BerkasFilter.sesiTerhenti,
-          onPressed: () => _setFilter(_BerkasFilter.sesiTerhenti),
+          selected: _filter == BerkasFilter.sesiTerhenti,
+          onPressed: () => _setFilter(BerkasFilter.sesiTerhenti),
         ),
         AppFilterChip(
           label: 'Perlu Diulas',
-          selected: _filter == _BerkasFilter.perluDiulas,
-          onPressed: () => _setFilter(_BerkasFilter.perluDiulas),
+          selected: _filter == BerkasFilter.perluDiulas,
+          onPressed: () => _setFilter(BerkasFilter.perluDiulas),
         ),
       ],
     );
   }
 
-  void _setFilter(_BerkasFilter next) {
+  void _setFilter(BerkasFilter next) {
     if (_filter != next) setState(() => _filter = next);
   }
 }
