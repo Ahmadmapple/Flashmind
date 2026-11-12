@@ -28,13 +28,13 @@ class _RegisterPageState extends State<RegisterPage> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       final auth = context.read<AuthProvider>();
-      final success = await auth.register(
+      final errorMessage = await auth.register(
         _namaController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
 
-      if (success && mounted) {
+      if (errorMessage == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Pendaftaran berhasil! Silakan masuk.'),
@@ -45,10 +45,10 @@ class _RegisterPageState extends State<RegisterPage> {
         Navigator.pop(context);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pendaftaran gagal, coba lagi'),
+          SnackBar(
+            content: Text(errorMessage ?? 'Pendaftaran gagal'),
             behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           ),
         );
       }
@@ -79,7 +79,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo
                   Center(
                     child: Container(
                       width: 80,
@@ -97,8 +96,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Judul
                   const Text(
                     'Daftar Akun',
                     style: TextStyle(
@@ -116,8 +113,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-
-                  // Kolom Nama
                   TextFormField(
                     controller: _namaController,
                     cursorColor: const Color(0xFF192A3A),
@@ -148,8 +143,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  // Kolom Email
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -181,8 +174,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  // Kolom Password
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_passwordVisible,
@@ -225,8 +216,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 40),
-
-                  // Tombol Daftar
                   ElevatedButton(
                     onPressed: isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
@@ -240,17 +229,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     child: isLoading
                         ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFFF3C279),
-                            ),
-                          )
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFF3C279),
+                      ),
+                    )
                         : const Text(
-                            'Daftar Sekarang',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                      'Daftar Sekarang',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
