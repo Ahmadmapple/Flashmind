@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,7 +21,15 @@ class AuthProvider extends ChangeNotifier {
 
     if (firebaseUser != null) {
       try {
-        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+        final doc = await _firestore
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .get()
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () => throw TimeoutException('Firestore read timeout'),
+            );
+
         final data = doc.data();
 
         _currentUser = User(
@@ -28,6 +38,7 @@ class AuthProvider extends ChangeNotifier {
           email: firebaseUser.email ?? '',
         );
       } catch (e) {
+        // Fallback jika Firestore gagal
         _currentUser = User(
           id: firebaseUser.uid,
           nama: firebaseUser.email?.split('@').first ?? 'Pengguna',
@@ -51,26 +62,33 @@ class AuthProvider extends ChangeNotifier {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        await _firestore.collection('users').doc(firebaseUser.uid).set({
-          'id': firebaseUser.uid,
-          'nama': nama,
-          'email': email,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-
-        _currentUser = User(
-          id: firebaseUser.uid,
-          nama: nama,
-          email: email,
-        );
+        // Set timeout 10 detik untuk Firestore write
+        await _firestore
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .set({
+              'id': firebaseUser.uid,
+              'nama': nama,
+              'email': email,
+              'createdAt': FieldValue.serverTimestamp(),
+            })
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () => throw TimeoutException('Firestore write timeout'),
+            );
       }
 
-      _isLoading = false;
-      notifyListeners();
+      // Sign out setelah register agar pengguna login manual
+      await _firebaseAuth.signOut();
+      _currentUser = null;
+
       return null;
     } on auth.FirebaseAuthException catch (e) {
-      _isLoading = false;
-      notifyListeners();
+      // Rollback: hapus user dari Auth jika Firestore gagal
+      try {
+        await _firebaseAuth.currentUser?.delete();
+      } catch (_) {}
+
       if (e.code == 'weak-password') {
         return 'Kata sandi terlalu lemah.';
       } else if (e.code == 'email-already-in-use') {
@@ -79,10 +97,21 @@ class AuthProvider extends ChangeNotifier {
         return 'Format email tidak valid.';
       }
       return 'Gagal mendaftar: ${e.message}';
+    } on TimeoutException {
+      // Rollback: hapus user dari Auth jika Firestore timeout
+      try {
+        await _firebaseAuth.currentUser?.delete();
+      } catch (_) {}
+      return 'Koneksi Firestore timeout. Pastikan database sudah dibuat di Firebase Console.';
     } catch (e) {
+      // Rollback: hapus user dari Auth jika error lain
+      try {
+        await _firebaseAuth.currentUser?.delete();
+      } catch (_) {}
+      return 'Terjadi kesalahan: ${e.toString()}';
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return 'Terjadi kesalahan sistem.';
     }
   }
 
@@ -99,7 +128,16 @@ class AuthProvider extends ChangeNotifier {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+        // Set timeout 10 detik untuk Firestore read
+        final doc = await _firestore
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .get()
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () => throw TimeoutException('Firestore read timeout'),
+            );
+
         final data = doc.data();
 
         _currentUser = User(
@@ -109,20 +147,21 @@ class AuthProvider extends ChangeNotifier {
         );
       }
 
-      _isLoading = false;
-      notifyListeners();
       return null;
     } on auth.FirebaseAuthException catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+      if (e.code == 'user-not-found' ||
+          e.code == 'wrong-password' ||
+          e.code == 'invalid-credential') {
         return 'Email atau kata sandi salah.';
       }
       return 'Gagal masuk: ${e.message}';
+    } on TimeoutException {
+      return 'Koneksi Firestore timeout. Pastikan database sudah dibuat di Firebase Console.';
     } catch (e) {
+      return 'Terjadi kesalahan: ${e.toString()}';
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return 'Terjadi kesalahan sistem.';
     }
   }
 
@@ -149,13 +188,12 @@ class AuthProvider extends ChangeNotifier {
         email: _currentUser!.email,
       );
 
-      _isLoading = false;
-      notifyListeners();
       return null;
     } catch (e) {
+      return 'Gagal memperbarui profil.';
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return 'Gagal memperbarui profil.';
     }
   }
 

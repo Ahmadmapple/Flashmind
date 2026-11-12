@@ -18,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _passwordVisible = false;
+  bool _isSubmitting = false; // Local loading state
 
   @override
   void dispose() {
@@ -27,43 +28,44 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      final auth = context.read<AuthProvider>();
-      final errorMessage = await auth.login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() => _isSubmitting = true);
 
-      if (errorMessage == null && mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-            const IntermediaryScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-              (route) => false,
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage ?? 'Terjadi kesalahan sistem'),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-          ),
-        );
-      }
+    final authProvider = context.read<AuthProvider>();
+    final errorMessage = await authProvider.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    if (!mounted) return;
+    
+    setState(() => _isSubmitting = false);
+
+    if (errorMessage == null) {
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const IntermediaryScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 600),
+        ),
+        (route) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthProvider>().isLoading;
-
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F6),
       body: SafeArea(
@@ -112,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 48),
                   TextFormField(
                     controller: _emailController,
+                    enabled: !_isSubmitting,
                     keyboardType: TextInputType.emailAddress,
                     cursorColor: const Color(0xFF192A3A),
                     decoration: InputDecoration(
@@ -122,20 +125,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
-                        const BorderSide(color: Color(0xFF192A3A), width: 2),
+                            const BorderSide(color: Color(0xFF192A3A), width: 2),
                       ),
                       prefixIcon:
-                      const Icon(Icons.email_outlined, color: Colors.black54),
+                          const Icon(Icons.email_outlined, color: Colors.black54),
                     ),
                     validator: (value) {
                       if (value == null ||
@@ -149,6 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _passwordController,
+                    enabled: !_isSubmitting,
                     obscureText: !_passwordVisible,
                     cursorColor: const Color(0xFF192A3A),
                     decoration: InputDecoration(
@@ -159,20 +163,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
-                        const BorderSide(color: Color(0xFFE8E4DB), width: 2),
+                            const BorderSide(color: Color(0xFFE8E4DB), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
-                        const BorderSide(color: Color(0xFF192A3A), width: 2),
+                            const BorderSide(color: Color(0xFF192A3A), width: 2),
                       ),
                       prefixIcon:
-                      const Icon(Icons.lock_outline, color: Colors.black54),
+                          const Icon(Icons.lock_outline, color: Colors.black54),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _passwordVisible
@@ -180,11 +184,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               : Icons.visibility_off,
                           color: Colors.black45,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _passwordVisible = !_passwordVisible;
-                          });
-                        },
+                        onPressed: _isSubmitting
+                            ? null
+                            : () {
+                                setState(() {
+                                  _passwordVisible = !_passwordVisible;
+                                });
+                              },
                       ),
                     ),
                     validator: (value) {
@@ -197,14 +203,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: _isSubmitting
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ForgotPasswordScreen(),
+                                ),
+                              );
+                            },
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFE87A5D),
                         padding: const EdgeInsets.symmetric(
@@ -222,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: isLoading ? null : _submit,
+                    onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF192A3A),
                       foregroundColor: Colors.white,
@@ -232,20 +240,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: isLoading
+                    child: _isSubmitting
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFFF3C279),
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFFF3C279),
+                            ),
+                          )
                         : const Text(
-                      'Masuk',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                            'Masuk',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -256,18 +264,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(color: Colors.black54),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const RegisterScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
+                        onTap: _isSubmitting
+                            ? null
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const RegisterScreen(),
+                                  ),
+                                );
+                              },
+                        child: Text(
                           'Daftar di sini',
                           style: TextStyle(
-                            color: Color(0xFFE87A5D),
+                            color: _isSubmitting
+                                ? Colors.grey
+                                : const Color(0xFFE87A5D),
                             fontWeight: FontWeight.bold,
                           ),
                         ),

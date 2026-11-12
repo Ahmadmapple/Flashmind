@@ -16,6 +16,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
 
   bool _passwordVisible = false;
+  bool _isSubmitting = false; // Local loading state
 
   @override
   void dispose() {
@@ -26,39 +27,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      final auth = context.read<AuthProvider>();
-      final errorMessage = await auth.register(
-        _namaController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() => _isSubmitting = true);
 
-      if (errorMessage == null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pendaftaran berhasil! Silakan masuk.'),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
-          ),
-        );
-        Navigator.pop(context);
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage ?? 'Pendaftaran gagal'),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-          ),
-        );
-      }
+    final authProvider = context.read<AuthProvider>();
+    final email = _emailController.text.trim();
+
+    final errorMessage = await authProvider.register(
+      _namaController.text.trim(),
+      email,
+      _passwordController.text,
+    );
+
+    if (!mounted) return;
+    
+    setState(() => _isSubmitting = false);
+
+    if (errorMessage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Akun berhasil dibuat! Silakan masuk.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+        ),
+      );
+      Navigator.of(context).pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthProvider>().isLoading;
-
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F6),
       appBar: AppBar(
@@ -66,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF192A3A)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
@@ -115,6 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 40),
                   TextFormField(
                     controller: _namaController,
+                    enabled: !_isSubmitting,
                     cursorColor: const Color(0xFF192A3A),
                     decoration: InputDecoration(
                       labelText: 'Nama Lengkap',
@@ -145,6 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _emailController,
+                    enabled: !_isSubmitting,
                     keyboardType: TextInputType.emailAddress,
                     cursorColor: const Color(0xFF192A3A),
                     decoration: InputDecoration(
@@ -176,6 +185,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _passwordController,
+                    enabled: !_isSubmitting,
                     obscureText: !_passwordVisible,
                     cursorColor: const Color(0xFF192A3A),
                     decoration: InputDecoration(
@@ -201,11 +211,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _passwordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.black45,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _passwordVisible = !_passwordVisible;
-                          });
-                        },
+                        onPressed: _isSubmitting
+                            ? null
+                            : () {
+                                setState(() {
+                                  _passwordVisible = !_passwordVisible;
+                                });
+                              },
                       ),
                     ),
                     validator: (value) {
@@ -217,7 +229,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 40),
                   ElevatedButton(
-                    onPressed: isLoading ? null : _submit,
+                    onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF192A3A),
                       foregroundColor: Colors.white,
@@ -227,19 +239,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: isLoading
+                    child: _isSubmitting
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFFF3C279),
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFFF3C279),
+                            ),
+                          )
                         : const Text(
-                      'Daftar Sekarang',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                            'Daftar Sekarang',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ],
               ),
