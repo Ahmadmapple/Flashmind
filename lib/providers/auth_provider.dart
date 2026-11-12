@@ -161,8 +161,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> checkEmailExists(String email) async {
     try {
-      final methods = await _firebaseAuth.fetchSignInMethodsForEmail(email);
-      return methods.isNotEmpty;
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      return querySnapshot.docs.isNotEmpty;
     } catch (e) {
       return false;
     }
