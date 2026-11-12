@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'email_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -28,31 +29,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isSubmitting = true);
 
     final authProvider = context.read<AuthProvider>();
-    final email = _emailController.text.trim();
+    final email    = _emailController.text.trim();
+    final password = _passwordController.text;
 
     final errorMessage = await authProvider.register(
       _namaController.text.trim(),
       email,
-      _passwordController.text,
+      password,
     );
 
     if (!mounted) return;
-    
     setState(() => _isSubmitting = false);
 
     if (errorMessage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Akun berhasil dibuat! Silakan masuk.'),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+      // Navigasi ke screen verifikasi email, hapus semua stack sebelumnya
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => EmailVerificationScreen(
+            email: email,
+            password: password,
+          ),
         ),
+        (route) => false,
       );
-      Navigator.of(context).pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

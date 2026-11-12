@@ -62,7 +62,7 @@ class AuthProvider extends ChangeNotifier {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        // Set timeout 10 detik untuk Firestore write
+        // Simpan profil ke Firestore
         await _firestore
             .collection('users')
             .doc(firebaseUser.uid)
@@ -76,38 +76,27 @@ class AuthProvider extends ChangeNotifier {
               const Duration(seconds: 10),
               onTimeout: () => throw TimeoutException('Firestore write timeout'),
             );
+
+        // Kirim email verifikasi
+        await firebaseUser.sendEmailVerification();
       }
 
-      // Sign out setelah register agar pengguna login manual
+      // Sign out — user harus verifikasi email dulu sebelum bisa login
       await _firebaseAuth.signOut();
       _currentUser = null;
 
       return null;
     } on auth.FirebaseAuthException catch (e) {
-      // Rollback: hapus user dari Auth jika Firestore gagal
-      try {
-        await _firebaseAuth.currentUser?.delete();
-      } catch (_) {}
-
-      if (e.code == 'weak-password') {
-        return 'Kata sandi terlalu lemah.';
-      } else if (e.code == 'email-already-in-use') {
-        return 'Email ini sudah terdaftar.';
-      } else if (e.code == 'invalid-email') {
-        return 'Format email tidak valid.';
-      }
+      try { await _firebaseAuth.currentUser?.delete(); } catch (_) {}
+      if (e.code == 'weak-password') return 'Kata sandi terlalu lemah.';
+      if (e.code == 'email-already-in-use') return 'Email ini sudah terdaftar.';
+      if (e.code == 'invalid-email') return 'Format email tidak valid.';
       return 'Gagal mendaftar: ${e.message}';
     } on TimeoutException {
-      // Rollback: hapus user dari Auth jika Firestore timeout
-      try {
-        await _firebaseAuth.currentUser?.delete();
-      } catch (_) {}
-      return 'Koneksi Firestore timeout. Pastikan database sudah dibuat di Firebase Console.';
+      try { await _firebaseAuth.currentUser?.delete(); } catch (_) {}
+      return 'Koneksi timeout. Pastikan database Firestore sudah aktif.';
     } catch (e) {
-      // Rollback: hapus user dari Auth jika error lain
-      try {
-        await _firebaseAuth.currentUser?.delete();
-      } catch (_) {}
+      try { await _firebaseAuth.currentUser?.delete(); } catch (_) {}
       return 'Terjadi kesalahan: ${e.toString()}';
     } finally {
       _isLoading = false;
@@ -128,6 +117,12 @@ class AuthProvider extends ChangeNotifier {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
+        // Cek apakah email sudah diverifikasi
+        if (!firebaseUser.emailVerified) {
+          await _firebaseAuth.signOut();
+          return 'Email belum diverifikasi. Silakan cek inbox kamu dan klik link verifikasi.';
+        }
+
         // Set timeout 10 detik untuk Firestore read
         final doc = await _firestore
             .collection('users')
@@ -156,12 +151,32 @@ class AuthProvider extends ChangeNotifier {
       }
       return 'Gagal masuk: ${e.message}';
     } on TimeoutException {
-      return 'Koneksi Firestore timeout. Pastikan database sudah dibuat di Firebase Console.';
+      return 'Koneksi timeout. Pastikan database Firestore sudah aktif.';
     } catch (e) {
       return 'Terjadi kesalahan: ${e.toString()}';
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Kirim ulang email verifikasi — untuk user yang belum verifikasi.
+  Future<String?> resendVerificationEmail(String email, String kataSandi) async {
+    try {
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: kataSandi,
+      );
+      final firebaseUser = userCredential.user;
+      if (firebaseUser != null && !firebaseUser.emailVerified) {
+        await firebaseUser.sendEmailVerification();
+        await _firebaseAuth.signOut();
+      }
+      return null;
+    } on auth.FirebaseAuthException catch (e) {
+      return 'Gagal kirim ulang: ${e.message}';
+    } catch (e) {
+      return 'Terjadi kesalahan.';
     }
   }
 
