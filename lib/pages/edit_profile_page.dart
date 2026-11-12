@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../providers/auth_provider.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -35,20 +34,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _isSaving = true);
 
     final newName = _namaController.text.trim();
-    await context.read<AuthProvider>().updateProfile(newName);
+    final errorMessage = await context.read<AuthProvider>().updateProfile(newName);
 
     if (!mounted) return;
 
     setState(() => _isSaving = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profil berhasil diperbarui.'),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
-      ),
-    );
-    Navigator.of(context).pop();
+    if (errorMessage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profil berhasil diperbarui.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+        ),
+      );
+      Navigator.of(context).pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        ),
+      );
+    }
   }
 
   @override
@@ -147,7 +156,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     backgroundColor: const Color(0xFF192A3A),
                     foregroundColor: Colors.white,
                     disabledBackgroundColor:
-                        const Color(0xFF192A3A).withValues(alpha: 0.5),
+                    const Color(0xFF192A3A).withValues(alpha: 0.5),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
@@ -156,17 +165,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   child: _isSaving
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFFF3C279)),
-                        )
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFF3C279)),
+                  )
                       : const Text(
-                          'Simpan Perubahan',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
+                    'Simpan Perubahan',
+                    style: TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
