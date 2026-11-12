@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'models/flashcard_set.dart';
 import 'pages/all_review_sets_page.dart';
@@ -15,7 +16,11 @@ import 'providers/auth_provider.dart';
 import 'repositories/flash_mind_repository.dart';
 import 'widgets/app_bottom_nav.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+
   runApp(
     MultiProvider(
       providers: [
