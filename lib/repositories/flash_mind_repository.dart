@@ -87,6 +87,29 @@ class FlashMindRepository extends ChangeNotifier {
       List.unmodifiable(_studySessions.where(
         (s) => s.setId == setId && s.status == StudySessionStatus.completed,
       ));
+  
+  // Sesi selesai terbaru milik set berdasarkan waktu selesai.
+  StudySession? getLatestCompletedSessionForSet(String setId) {
+    StudySession? latest;
+    for (final s in _studySessions) {
+      if (s.setId != setId || s.status != StudySessionStatus.completed) continue;
+      if (latest == null ||
+          (s.finishedAt ?? s.startedAt)
+              .isAfter(latest.finishedAt ?? latest.startedAt)) {
+        latest = s;
+      }
+    }
+    return latest;
+  }
+
+  // Rata-rata tingkat kebenaran seluruh sesi selesai milik set.
+  // null bila set belum pernah diselesaikan.
+  double? getAverageAccuracyForSet(String setId) {
+    final sessions = getCompletedStudySessionsForSet(setId);
+    if (sessions.isEmpty) return null;
+    return sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
+        sessions.length;
+  }
 
   StudySession? getInProgressStudySessionForSet(String setId) {
     for (final s in _studySessions.reversed) {
@@ -682,9 +705,7 @@ class FlashMindRepository extends ChangeNotifier {
 
   List<FlashcardSet> recentStudiedSets({int limit = 3}) {
     final list = _sets
-        .where((s) =>
-            getCompletedStudySessionsForSet(s.id).isNotEmpty ||
-            getInProgressStudySessionForSet(s.id) != null)
+        .where((s) => getCompletedStudySessionsForSet(s.id).isNotEmpty) // DIUBAH
         .toList()
       ..sort((a, b) => (b.lastStudiedAt ?? DateTime(1970))
           .compareTo(a.lastStudiedAt ?? DateTime(1970)));

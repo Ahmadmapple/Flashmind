@@ -1,3 +1,4 @@
+import 'package:flashmind/widgets/app_item_card.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/formatter.dart';
@@ -362,69 +363,21 @@ class _FlashcardSetCard extends StatelessWidget {
   final FlashcardSet set;
   final VoidCallback onViewDetail;
 
-  static const Color _primaryColor = Color(0xFF192A3A);
-
   @override
   Widget build(BuildContext context) {
     final double s = ResponsiveScale.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 10, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: WordEllipsisText(
-                  set.title,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: _primaryColor,
-                    fontSize: 17 * s,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${set.cardCount} kartu',
-                style: TextStyle(color: Colors.grey, fontSize: 11 * s),
-              ),
-            ],
-          ),
-          if (set.description.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            WordEllipsisText(
+    return AppItemCard(
+      header: AppSetCardHeader(title: set.title, cardCount: set.cardCount),
+      body: set.description.isEmpty
+          ? null
+          : WordEllipsisText(
               set.description,
               maxLines: 2,
-              style: TextStyle(color: Colors.grey, fontSize: 12 * s, height: 1.3),
+              style: TextStyle(color: Colors.grey, fontSize: 13 * s, height: 1.3),
             ),
-          ],
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onViewDetail,
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFE87A5D),
-                padding: EdgeInsets.symmetric(horizontal: 8 * s, vertical: 6 * s),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                'Lihat Detail →',
-                style: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
+      footer: Align(
+        alignment: Alignment.centerRight,
+        child: AppDetailLink(onPressed: onViewDetail),
       ),
     );
   }

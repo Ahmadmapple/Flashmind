@@ -12,6 +12,7 @@ import 'ai_card_review_screen.dart';
 
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/responsive_scale.dart';
+import '../widgets/app_item_card.dart';
 enum _AddCardMode { manual, ai }
 
 class DetailSetScreen extends StatefulWidget {
@@ -451,93 +452,68 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style.merge(bodyStyle);
     final TextScaler textScaler        = MediaQuery.textScalerOf(context);
 
-    return Container(
-      width: double.infinity,
+    return AppItemCard(
       height: 155 * s,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
-        borderRadius: BorderRadius.circular(20),
+      headerGap: 5,
+      footerGap: _bodyToActionsGap,
+      header: Text(
+        sideLabel,
+        style: TextStyle(
+          fontSize: 12 * s,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'serif',
+          color: const Color(0xFF9A9894),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final double lineHeight =
+              effectiveBodyStyle.fontSize! * (effectiveBodyStyle.height ?? 1.0);
+          final int availableLines =
+              (constraints.maxHeight / lineHeight).floor().clamp(1, 10);
+          final String displayText = _truncateToFitWords(
+            text,
+            effectiveBodyStyle,
+            constraints.maxWidth,
+            textScaler,
+            maxLines: availableLines,
+          );
+          return Text(
+            displayText,
+            maxLines: availableLines,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.justify,
+            style: bodyStyle,
+          );
+        },
+      ),
+      footer: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            sideLabel,
-            style: TextStyle(
-              fontSize: 12 * s,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'serif',
-              color: const Color(0xFF9A9894),
-            ),
-          ),
-          const SizedBox(height: 5),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final double lineHeight =
-                    effectiveBodyStyle.fontSize! * (effectiveBodyStyle.height ?? 1.0);
-                final int availableLines =
-                    (constraints.maxHeight / lineHeight).floor().clamp(1, 10);
-                final String displayText = _truncateToFitWords(
-                  text,
-                  effectiveBodyStyle,
-                  constraints.maxWidth,
-                  textScaler,
-                  maxLines: availableLines,
-                );
-                return Text(
-                  displayText,
-                  maxLines: availableLines,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.justify,
-                  style: bodyStyle,
-                );
+          Tooltip(
+            message: flipTooltip,
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  if (isBackVisible) {
+                    _backVisibleCardIds.remove(card.id);
+                  } else {
+                    _backVisibleCardIds.add(card.id);
+                  }
+                });
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF9A9894),
+                padding: EdgeInsets.symmetric(horizontal: 2 * s, vertical: 2 * s),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: Icon(Icons.swap_horiz, size: 24 * s),
+              label: Text('Balikkan Kartu', style: TextStyle(fontSize: 13 * s)),
             ),
           ),
-          const SizedBox(height: _bodyToActionsGap),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Tooltip(
-                message: flipTooltip,
-                child: TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      if (isBackVisible) {
-                        _backVisibleCardIds.remove(card.id);
-                      } else {
-                        _backVisibleCardIds.add(card.id);
-                      }
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF9A9894),
-                    padding: EdgeInsets.symmetric(horizontal: 2 * s, vertical: 2 * s),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  icon: Icon(Icons.swap_horiz, size: 24 * s),
-                  label: Text('Balikkan Kartu', style: TextStyle(fontSize: 13 * s)),
-                ),
-              ),
-              TextButton(
-                onPressed: () => _openDetailCard(card),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFD97745),
-                  padding: EdgeInsets.symmetric(horizontal: 2 * s, vertical: 2 * s),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'Lihat Detail →',
-                  style: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
+          AppDetailLink(onPressed: () => _openDetailCard(card)), // DIUBAH
         ],
       ),
     );
