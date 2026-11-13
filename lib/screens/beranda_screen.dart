@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../providers/auth_provider.dart';
 import '../repositories/flash_mind_repository.dart';
+
 import 'detail_set_screen.dart';
 import 'study_history_screen.dart';
 import 'profile_screen.dart';
@@ -61,23 +63,6 @@ class _BerandaScreenState extends State<BerandaScreen> {
     ];
     final now = DateTime.now();
     return '${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}';
-  }
-
-  static String _fmtDuration(Duration d) {
-    final h = d.inHours.toString().padLeft(2, '0');
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$h:$m:$s';
-  }
-
-  static String _fmtRelative(DateTime? dt) {
-    if (dt == null) return 'Baru saja';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'Baru saja';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
-    if (diff.inHours < 24) return '${diff.inHours} jam lalu';
-    if (diff.inDays == 1) return 'Kemarin';
-    return '${diff.inDays} hari lalu';
   }
 
   @override
@@ -313,16 +298,10 @@ class _BerandaScreenState extends State<BerandaScreen> {
                         mainAxisSpacing: 10,
                         childAspectRatio: 2.2,
                         children: [
-                          _StatBox(label: 'Jumlah Set', value: '$weekSets'),
-                          _StatBox(label: 'Jumlah Kartu', value: '$weekCards'),
-                          _StatBox(
-                            label: 'Durasi Belajar',
-                            value: _fmtDuration(weekDur),
-                          ),
-                          _StatBox(
-                            label: 'Akurasi',
-                            value: '${weekAcc.toStringAsFixed(0)}%',
-                          ),
+                          _StatBox(label: 'Jumlah set', value: '$weekSets'),
+                          _StatBox(label: 'Jumlah kartu', value: '$weekCards'),
+                          _StatBox(label: 'Durasi belajar', value: Formatter.duration(weekDur)),
+                          _StatBox(label: 'Tingkat kebenaran', value: Formatter.percent(weekAcc)),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -437,7 +416,9 @@ class _BerandaScreenState extends State<BerandaScreen> {
                       child: _ReviewCard(
                         set: set,
                         lastAcc: lastAcc,
-                        lastStudied: _fmtRelative(set.lastStudiedAt),
+                        lastStudied: set.lastStudiedAt == null
+                            ? 'Belum pernah'
+                            : Formatter.relativeTime(set.lastStudiedAt!),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => DetailSetScreen(setId: set.id),
@@ -556,7 +537,7 @@ class _ReviewCard extends StatelessWidget {
           ),
           if (lastAcc != null)
             Text(
-              'Tingkat kebenaran: ${lastAcc!.toStringAsFixed(0)}%',
+              'Tingkat kebenaran: ${Formatter.percent(lastAcc!)}',
               style: TextStyle(
                 fontSize: 11,
                 color: lastAcc! < 70 ? _orange : const Color(0xFF2F776F),

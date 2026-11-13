@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+
 import 'study_session_screen.dart';
 import 'study_session_start_screen.dart';
 
@@ -42,62 +44,6 @@ class _StudySessionContinueScreenState extends State<StudySessionContinueScreen>
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
   bool _isReplacing = false;
-
-  static String _formatDuration(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
-  }
-
-  static String _formatRecordDuration(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
-    if (hours > 0) {
-      return '$hours jam${minutes > 0 ? ' $minutes menit' : ''}';
-    }
-    if (minutes > 0) {
-      return '$minutes menit${seconds > 0 ? ' $seconds detik' : ''}';
-    }
-    return '$seconds detik';
-  }
-
-  static String _formatAccuracy(double accuracy) {
-    final value = accuracy.clamp(0, 100);
-    return '${value.toStringAsFixed(2)}%';
-  }
-
-  static String _formatLastStudied(DateTime? lastPausedAt) {
-    if (lastPausedAt == null) return '-';
-
-    final difference = DateTime.now().difference(lastPausedAt);
-    if (difference.isNegative) return _formatDate(lastPausedAt);
-
-    if (difference < const Duration(minutes: 1)) {
-      return '${difference.inSeconds} detik lalu';
-    }
-    if (difference < const Duration(hours: 1)) {
-      return '${difference.inMinutes} menit lalu';
-    }
-    if (difference < const Duration(days: 1)) {
-      return '${difference.inHours} jam lalu';
-    }
-
-    return _formatDate(lastPausedAt);
-  }
-
-  static String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
 
   static StudySession? _highestAccuracySession(List<StudySession> sessions) {
     if (sessions.isEmpty) return null;
@@ -227,21 +173,21 @@ class _StudySessionContinueScreenState extends State<StudySessionContinueScreen>
                 children: [
                   _buildSummaryCard(
                     set: set,
-                    duration: _formatDuration(_currentSessionDuration(session)),
-                    accuracy: _formatAccuracy(session.accuracy),
-                    lastStudied: _formatLastStudied(session.lastPausedAt),
+                    duration: Formatter.duration(_currentSessionDuration(session)),
+                    accuracy: Formatter.percent(session.accuracy),
+                    lastStudied: Formatter.relativeTime(session.lastPausedAt!),
                     highestAccuracy: highestAccuracy == null
                         ? '-'
-                        : _formatAccuracy(highestAccuracy.accuracy),
+                        : Formatter.percent(highestAccuracy.accuracy),
                     highestAccuracyDuration: highestAccuracy == null
                         ? '-'
-                        : _formatRecordDuration(highestAccuracy.totalDuration),
+                        : Formatter.duration(highestAccuracy.totalDuration),
                     fastestDuration: fastestSession == null
                         ? '-'
-                        : _formatRecordDuration(fastestSession.totalDuration),
+                        : Formatter.duration(fastestSession.totalDuration),
                     fastestAccuracy: fastestSession == null
                         ? '-'
-                        : _formatAccuracy(fastestSession.accuracy),
+                        : Formatter.percent(fastestSession.accuracy),
                     cardProgress:
                         '${session.completedCardCount}/${session.totalCardCount} kartu',
                   ),

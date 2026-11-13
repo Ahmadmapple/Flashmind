@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 import '../services/review_recommendation.dart';
+
 import 'add_set_screen.dart';
 import 'detail_set_screen.dart';
+
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_filter_chip.dart';
 import '../widgets/responsive_scale.dart';
@@ -90,7 +93,7 @@ class BerkasScreenState extends State<BerkasScreen> {
         cardCount: set.cardCount,
         lastStudiedLabel: latest == null
             ? 'Belum pernah'
-            : formatLastStudied(latest.finishedAt ?? latest.startedAt),
+            : Formatter.relativeTime(latest.finishedAt ?? latest.startedAt),
         accuracy: latest?.accuracy,
         onViewDetail: () => _openDetail(context, set.id),
       );
