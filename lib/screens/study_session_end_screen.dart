@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../utils/formatter.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 import '../widgets/responsive_scale.dart';
@@ -32,35 +33,6 @@ class StudySessionEndScreen extends StatelessWidget {
 
   final String setId;
   final String sessionId;
-
-  static String _formatDuration(Duration duration) {
-    final int totalSeconds = duration.inSeconds;
-    final int hours        = totalSeconds ~/ 3600;
-    final int minutes      = (totalSeconds % 3600) ~/ 60;
-    final int seconds      = totalSeconds % 60;
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
-  }
-
-  static String _formatRecordDuration(Duration duration) {
-    final int totalSeconds = duration.inSeconds;
-    final int hours        = totalSeconds ~/ 3600;
-    final int minutes      = (totalSeconds % 3600) ~/ 60;
-    final int seconds      = totalSeconds % 60;
-    if (hours > 0) {
-      return '$hours jam${minutes > 0 ? ' $minutes menit' : ''}';
-    }
-    if (minutes > 0) {
-      return '$minutes menit${seconds > 0 ? ' $seconds detik' : ''}';
-    }
-    return '$seconds detik';
-  }
-
-  static String _formatAccuracy(double accuracy) {
-    final num value = accuracy.clamp(0, 100);
-    return '${value.toStringAsFixed(2)}%';
-  }
 
   static StudySession? _highestAccuracySession(List<StudySession> sessions) {
     if (sessions.isEmpty) return null;
@@ -170,22 +142,22 @@ class StudySessionEndScreen extends StatelessWidget {
                     s: s,
                     title: title,
                     description: description,
-                    duration: _formatDuration(currentSession.totalDuration),
-                    accuracy: _formatAccuracy(currentSession.accuracy),
+                    duration: Formatter.duration(currentSession.totalDuration),
+                    accuracy: Formatter.percent(currentSession.accuracy),
                     cardProgress:
                         '${currentSession.completedCardCount}/${currentSession.totalCardCount} kartu',
                     highestAccuracy: highestAccuracy == null
                         ? '-'
-                        : _formatAccuracy(highestAccuracy.accuracy),
+                        : Formatter.percent(highestAccuracy.accuracy),
                     highestAccuracyDuration: highestAccuracy == null
                         ? '-'
-                        : _formatRecordDuration(highestAccuracy.totalDuration),
+                        : Formatter.duration(highestAccuracy.totalDuration),
                     fastestDuration: fastestSession == null
                         ? '-'
-                        : _formatRecordDuration(fastestSession.totalDuration),
+                        : Formatter.duration(fastestSession.totalDuration),
                     fastestAccuracy: fastestSession == null
                         ? '-'
-                        : _formatAccuracy(fastestSession.accuracy),
+                        : Formatter.percent(fastestSession.accuracy),
                   ),
                   const SizedBox(height: 30),
                   _buildBackButton(context, s),

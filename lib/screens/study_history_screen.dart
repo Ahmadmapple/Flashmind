@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_filter_chip.dart';
 import '../widgets/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
+
+
 import 'study_session_end_screen.dart';
 
 enum _HistoryRange {
@@ -102,7 +106,7 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
                             return StudyHistoryCard(
                               title: e.title,
                               cardCount: e.cardCount,
-                              lastStudiedLabel: formatLastStudied(e.finishedAt),
+                              lastStudiedLabel: Formatter.relativeTime(e.finishedAt),
                               accuracy: e.session.accuracy,
                               onViewDetail: () => _openSessionResult(e),
                             );

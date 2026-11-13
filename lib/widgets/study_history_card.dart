@@ -2,21 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'responsive_scale.dart';
 import 'word_ellipsis_text.dart';
-
-// Format waktu terakhir dipelajari
-//  < 1 menit  -> "baru saja"
-//  < 1 jam    -> "[n] menit lalu"
-//  < 1 hari   -> "[n] jam lalu"
-//  1 hari     -> "kemarin"
-//  > 1 hari   -> "[n] hari lalu"
-String formatLastStudied(DateTime finishedAt, {DateTime? now}) {
-  final Duration diff = (now ?? DateTime.now()).difference(finishedAt);
-  if (diff.isNegative || diff.inMinutes < 1) return 'baru saja';
-  if (diff.inHours < 1) return '${diff.inMinutes} menit lalu';
-  if (diff.inDays < 1) return '${diff.inHours} jam lalu';
-  if (diff.inDays == 1) return 'kemarin';
-  return '${diff.inDays} hari lalu';
-}
+import '../utils/formatter.dart';
 
 // Antarmuka set untuk layar Riwayat Belajar dan filter "Perlu Diulas" di Berkas.
 class StudyHistoryCard extends StatelessWidget {
@@ -38,14 +24,14 @@ class StudyHistoryCard extends StatelessWidget {
 
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _goodColor = Color(0xFF2E7D32);
-  static const Color _badColor = Color(0xFFB71C1C); 
+  static const Color _badColor = Color(0xFFB71C1C);
 
   @override
   Widget build(BuildContext context) {
     final double s = ResponsiveScale.of(context);
 
     final int? rounded = accuracy?.round();
-    final String accuracyText = rounded == null ? '-' : '$rounded%';
+    final String accuracyText = accuracy == null ? '-' : Formatter.percent(accuracy!);
     final Color accuracyColor = rounded == null
         ? Colors.grey
         : (rounded <= 60 ? _badColor : _goodColor);
@@ -89,11 +75,7 @@ class StudyHistoryCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Terakhir dipelajari  : $lastStudiedLabel',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 13 * s,
-              height: 1.3,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 13 * s, height: 1.3),
           ),
           const SizedBox(height: 2),
           Text(
@@ -112,8 +94,10 @@ class StudyHistoryCard extends StatelessWidget {
               onPressed: onViewDetail,
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFFE87A5D),
-                padding:
-                    EdgeInsets.symmetric(horizontal: 8 * s, vertical: 6 * s),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8 * s,
+                  vertical: 6 * s,
+                ),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+
 import 'detail_set_screen.dart';
-import 'study_history_screen.dart'; ////
+import 'study_history_screen.dart';
 
 enum _Filter { tujuhHari, tigaPuluhHari, keseluruhan }
 
@@ -21,34 +23,6 @@ class _StatisticScreenState extends State<StatisticScreen> {
   static const Color _primary = Color(0xFF192A3A);
   static const Color _orange  = Color(0xFFE87A5D);
   static const Color _green   = Color(0xFF2F776F);
-
-  static String _fmtDuration(Duration d) {
-    final h = d.inHours.toString().padLeft(2, '0');
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$h:$m:$s';
-  }
-
-  static String _fmtRelative(DateTime? dt) {
-    if (dt == null) return 'Belum pernah';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'Baru saja';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
-    if (diff.inHours < 24) return '${diff.inHours} jam lalu';
-    if (diff.inDays == 1) return 'Kemarin';
-    return '${diff.inDays} hari lalu';
-  }
-
-  static String _fmtDate(DateTime? dt) {
-    if (dt == null) return '-';
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-    ];
-    return '${dt.day.toString().padLeft(2, '0')} ${months[dt.month - 1]} ${dt.year}';
-  }
-
-  static String _fmtAccuracy(double a) => '${a.toStringAsFixed(0)}%';
 
   List<StudySession> _filteredSessions(FlashMindRepository repo) {
     final now = DateTime.now();
@@ -156,8 +130,8 @@ class _StatisticScreenState extends State<StatisticScreen> {
                 children: [
                   _SummaryBox(label: 'Total sesi selesai', value: '$totalSessions'),
                   _SummaryBox(label: 'Total kartu diulas', value: '$totalCards'),
-                  _SummaryBox(label: 'Total durasi belajar', value: _fmtDuration(totalDur)),
-                  _SummaryBox(label: 'Akurasi', value: _fmtAccuracy(accuracy)),
+                  _SummaryBox(label: 'Total durasi belajar', value: Formatter.duration(totalDur)),
+                  _SummaryBox(label: 'Tingkat kebenaran', value: Formatter.percent(accuracy)),
                 ],
               ),
             ),
@@ -215,7 +189,7 @@ class _StatisticScreenState extends State<StatisticScreen> {
                     label: 'Jumlah Benar',
                     value:
                         '${sessions.fold<int>(0, (s, x) => s + x.correctCount)} '
-                        '(${_fmtAccuracy(accuracy)})',
+                        '(${Formatter.percent(accuracy)})',
                     valueColor: _green,
                   ),
                   const SizedBox(height: 6),
@@ -223,7 +197,7 @@ class _StatisticScreenState extends State<StatisticScreen> {
                     label: 'Jumlah Salah',
                     value:
                         '${sessions.fold<int>(0, (s, x) => s + x.wrongCount)} '
-                        '(${_fmtAccuracy(sessions.isEmpty ? 0 : 100 - accuracy)})',
+                        '(${Formatter.percent(sessions.isEmpty ? 0 : 100 - accuracy)})',
                     valueColor: _orange,
                   ),
                   const Padding(
@@ -233,13 +207,13 @@ class _StatisticScreenState extends State<StatisticScreen> {
                   if (sessions.isNotEmpty) ...[
                     _PerformRow(
                       label: 'Rata-rata durasi per sesi',
-                      value: _fmtDuration(Duration(
+                      value: Formatter.duration(Duration(
                           microseconds: totalDur.inMicroseconds ~/ sessions.length)),
                     ),
                     const SizedBox(height: 6),
                     _PerformRow(
                       label: 'Rata-rata durasi per kartu',
-                      value: _fmtDuration(totalCards == 0
+                      value: Formatter.duration(totalCards == 0
                           ? Duration.zero
                           : Duration(
                               microseconds: totalDur.inMicroseconds ~/ totalCards)),
@@ -289,12 +263,12 @@ class _StatisticScreenState extends State<StatisticScreen> {
                     const SizedBox(height: 6),
                     _InsightSetBox(
                       setTitle: best.title,
-                      duration: _fmtDuration(
+                      duration: Formatter.duration(
                         repo.getCompletedStudySessionsForSet(best.id).isEmpty
                             ? Duration.zero
                             : repo.getCompletedStudySessionsForSet(best.id).last.totalDuration,
                       ),
-                      detail: 'Akurasi: ${_fmtAccuracy(repo.bestMasteredAccuracy(best.id))}',
+                      detail: 'Akurasi: ${Formatter.percent(repo.bestMasteredAccuracy(best.id))}',
                     ),
                   ],
                   if (worst != null) ...[
@@ -309,12 +283,12 @@ class _StatisticScreenState extends State<StatisticScreen> {
                     const SizedBox(height: 6),
                     _InsightSetBox(
                       setTitle: worst.title,
-                      duration: _fmtDuration(
+                      duration: Formatter.duration(
                         repo.getCompletedStudySessionsForSet(worst.id).isEmpty
                             ? Duration.zero
                             : repo.getCompletedStudySessionsForSet(worst.id).last.totalDuration,
                       ),
-                      detail: 'Akurasi: ${_fmtAccuracy(repo.worstSetAccuracy(worst.id))}',
+                      detail: 'Akurasi: ${Formatter.percent(repo.worstSetAccuracy(worst.id))}',
                     ),
                   ],
                   if (best == null && worst == null)
@@ -396,8 +370,9 @@ class _StatisticScreenState extends State<StatisticScreen> {
                   child: _HistoryCard(
                     set: set,
                     lastAcc: lastAcc,
-                    lastStudied: _fmtRelative(set.lastStudiedAt),
-                    lastStudiedDate: _fmtDate(set.lastStudiedAt),
+                    lastStudied: set.lastStudiedAt == null
+                        ? 'Belum pernah'
+                        : Formatter.relativeTime(set.lastStudiedAt!),
                     isInProgress: inProg != null,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -615,7 +590,6 @@ class _HistoryCard extends StatelessWidget {
     required this.set,
     required this.lastAcc,
     required this.lastStudied,
-    required this.lastStudiedDate,
     required this.isInProgress,
     required this.onTap,
   });
@@ -623,7 +597,6 @@ class _HistoryCard extends StatelessWidget {
   final FlashcardSet set;
   final double? lastAcc;
   final String lastStudied;
-  final String lastStudiedDate;
   final bool isInProgress;
   final VoidCallback onTap;
 
@@ -682,12 +655,12 @@ class _HistoryCard extends StatelessWidget {
           ],
           const SizedBox(height: 3),
           Text(
-            'Terakhir dipelajari: $lastStudiedDate',
+            'Terakhir dipelajari: $lastStudied',
             style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
           if (lastAcc != null)
             Text(
-              'Tingkat kebenaran: ${lastAcc!.toStringAsFixed(0)}%',
+              'Tingkat kebenaran: ${Formatter.percent(lastAcc!)}',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

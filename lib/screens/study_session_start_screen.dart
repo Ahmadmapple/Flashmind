@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+
 import 'study_session_continue_screen.dart';
 import 'study_session_screen.dart';
 
@@ -38,58 +40,6 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
   );
 
   bool _isStarting = false;
-
-  static String _formatAverageDuration(Duration duration) {
-    final int totalSeconds = duration.inSeconds;
-    final int hours        = totalSeconds ~/ 3600;
-    final int minutes      = (totalSeconds % 3600) ~/ 60;
-    final int seconds      = totalSeconds % 60;
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
-  }
-
-  static String _formatRecordDuration(Duration duration) {
-    final int totalSeconds = duration.inSeconds;
-    final int hours        = totalSeconds ~/ 3600;
-    final int minutes      = (totalSeconds % 3600) ~/ 60;
-    final int seconds      = totalSeconds % 60;
-    if (hours > 0) {
-      return '$hours jam${minutes > 0 ? ' $minutes menit' : ''}';
-    }
-    if (minutes > 0) {
-      return '$minutes menit${seconds > 0 ? ' $seconds detik' : ''}';
-    }
-    return '$seconds detik';
-  }
-
-  static String _formatAccuracy(double accuracy) {
-    final num value = accuracy.clamp(0, 100);
-    return '${value.toStringAsFixed(2)}%';
-  }
-
-  static String _formatLastStudied(DateTime? lastStudiedAt) {
-    if (lastStudiedAt == null) return '-';
-    final DateTime now        = DateTime.now();
-    final Duration difference = now.difference(lastStudiedAt);
-    if (difference.isNegative) return _formatDate(lastStudiedAt);
-    if (difference < const Duration(minutes: 1)) {
-      return '${difference.inSeconds} detik lalu';
-    }
-    if (difference < const Duration(hours: 1)) {
-      return '${difference.inMinutes} menit lalu';
-    }
-    if (difference < const Duration(days: 1)) {
-      return '${difference.inHours} jam lalu';
-    }
-    return _formatDate(lastStudiedAt);
-  }
-
-  static String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
 
   static Duration _averageDuration(List<StudySession> sessions) {
     if (sessions.isEmpty) return Duration.zero;
@@ -202,23 +152,23 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
                     set: set,
                     averageDuration: completedSessions.isEmpty
                         ? '-'
-                        : _formatAverageDuration(averageDuration),
+                        : Formatter.duration(averageDuration),
                     averageAccuracy: completedSessions.isEmpty
                         ? '-'
-                        : _formatAccuracy(averageAccuracy),
-                    lastStudied: _formatLastStudied(set.lastStudiedAt),
+                        : Formatter.percent(averageAccuracy),
+                    lastStudied: Formatter.relativeTime(set.lastStudiedAt!),
                     highestAccuracy: highestAccuracy == null
                         ? '-'
-                        : _formatAccuracy(highestAccuracy.accuracy),
+                        : Formatter.percent(highestAccuracy.accuracy),
                     highestAccuracyDuration: highestAccuracy == null
                         ? '-'
-                        : _formatRecordDuration(highestAccuracy.totalDuration),
+                        : Formatter.duration(highestAccuracy.totalDuration),
                     fastestDuration: fastestSession == null
                         ? '-'
-                        : _formatRecordDuration(fastestSession.totalDuration),
+                        : Formatter.duration(fastestSession.totalDuration),
                     fastestAccuracy: fastestSession == null
                         ? '-'
-                        : _formatAccuracy(fastestSession.accuracy),
+                        : Formatter.percent(fastestSession.accuracy),
                   ),
                   const SizedBox(height: 30),
                   _buildStartButton(context),
