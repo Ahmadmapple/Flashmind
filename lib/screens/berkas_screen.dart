@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
-import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 import '../services/review_recommendation.dart';
 
@@ -15,6 +14,7 @@ import '../widgets/app_filter_chip.dart';
 import '../widgets/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
 import '../widgets/word_ellipsis_text.dart';
+import '../widgets/app_button.dart';
 
 // Filter pada halaman berkas
 enum BerkasFilter { semua, sesiTerhenti, perluDiulas }
@@ -28,7 +28,6 @@ class BerkasScreen extends StatefulWidget {
 
 class BerkasScreenState extends State<BerkasScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor  = Color(0xFFF3C279);
 
   static final FlashMindRepository _repository = FlashMindRepository.instance;
 
@@ -74,28 +73,17 @@ class BerkasScreenState extends State<BerkasScreen> {
     }
   }
 
-  // Sesi selesai terbaru dari sebuah set
-  StudySession? _latestCompleted(String setId) {
-    final sessions = _repository.getCompletedStudySessionsForSet(setId);
-    if (sessions.isEmpty) return null;
-    return sessions.reduce(
-      (a, b) => (a.finishedAt ?? a.startedAt).isAfter(b.finishedAt ?? b.startedAt)
-          ? a
-          : b,
-    );
-  }
-
   // Daftar set pada filter "Perlu Diulas"
   Widget _buildSetItem(BuildContext context, FlashcardSet set) {
     if (_filter == BerkasFilter.perluDiulas) {
-      final latest = _latestCompleted(set.id);
+      final latest = _repository.getLatestCompletedSessionForSet(set.id);
       return StudyHistoryCard(
         title: set.title,
         cardCount: set.cardCount,
         lastStudiedLabel: latest == null
             ? 'Belum pernah'
             : Formatter.relativeTime(latest.finishedAt ?? latest.startedAt),
-        accuracy: latest?.accuracy,
+        accuracy: _repository.getAverageAccuracyForSet(set.id),
         onViewDetail: () => _openDetail(context, set.id),
       );
     }
@@ -300,23 +288,11 @@ class BerkasScreenState extends State<BerkasScreen> {
               ],
             ),
           ),
-          ElevatedButton.icon(
+          AppButton(
+            label: 'Tambah Set',
+            icon: Icons.add,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const AddSetScreen()),
-            ),
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Tambah Set'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _accentColor,
-              foregroundColor: _primaryColor,
-              elevation: 0,
-              minimumSize: Size(0, 44 * s),
-              padding: EdgeInsets.symmetric(
-                  horizontal: 15 * s, vertical: 9 * s),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              textStyle: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.w700),
             ),
           ),
         ],

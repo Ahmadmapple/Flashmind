@@ -13,6 +13,13 @@ enum HistoryRange {
   final String label;
   final int? days;
 
+  // Teks keadaan kosong pada layar Riwayat Belajar.
+  String get emptyTitle => switch (this) {
+    HistoryRange.week => 'Belum ada sesi yang selesai dalam 7 hari terakhir.',
+    HistoryRange.month => 'Belum ada sesi yang selesai dalam 30 hari terakhir.',
+    HistoryRange.all => 'Belum ada sesi yang pernah diselesaikan.',
+  };
+
   // Batas awal rentang dengan null berarti tanpa batas.
   DateTime? cutoff({DateTime? now}) {
     final int? d = days;

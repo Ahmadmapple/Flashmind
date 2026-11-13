@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../repositories/flash_mind_repository.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_input_footer.dart';
 
 class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key, required this.setId});
@@ -14,12 +16,8 @@ class AddCardScreen extends StatefulWidget {
 
 class _AddCardScreenState extends State<AddCardScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _borderColor = Color(0xFFB8B5AF);
-  static const Color _errorColor = Color(0xFFD32F2F);
-
-  static const double _fieldFooterHeight = 22;
 
   static const int _cardMaxLength = 999;
 
@@ -229,12 +227,18 @@ class _AddCardScreenState extends State<AddCardScreen> {
               ),
             ),
           ),
-          _buildFieldFooter(isBack: isBack, controller: controller),
+          AppInputFooter(
+            controller: controller,
+            maxLength: _cardMaxLength,
+            errorTextFor: (_) => _footerError(isBack),
+          ),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
-            child: _buildActionButton(
+            child: AppButton(
               label: 'Buat Kartu',
+              size: AppButtonSize.large,
+              isLoading: _isSaving,
               onPressed: _isSaving ? null : _tryCreateCard,
             ),
           ),
@@ -302,103 +306,13 @@ class _AddCardScreenState extends State<AddCardScreen> {
     );
   }
 
-  Widget _buildFieldFooter({
-    required bool isBack,
-    required TextEditingController controller,
-  }) {
-    return SizedBox(
-      height: _fieldFooterHeight,
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
-        builder: (context, value, _) {
-          final showError = isBack ? _showBackError : _showFrontError;
-          final bothEmpty =
-              _frontController.text.trim().isEmpty &&
-              _backController.text.trim().isEmpty;
-          final errorText = bothEmpty
-              ? 'Sisi depan dan belakang perlu diisi.'
-              : isBack
-              ? 'Sisi belakang perlu diisi.'
-              : 'Sisi depan perlu diisi.';
-
-          return Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 8),
-                    child: showError
-                        ? Text(
-                            errorText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: _errorColor,
-                              fontSize: 12,
-                              height: 1.2,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Text(
-                    '${value.text.length}/$_cardMaxLength',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF9A9894),
-                      height: 1.6,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required VoidCallback? onPressed,
-  }) {
-    return SizedBox(
-      height: 40,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_accentColor),
-          foregroundColor: const WidgetStatePropertyAll(_primaryColor),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 20),
-          ),
-          minimumSize: const WidgetStatePropertyAll(Size(110, 40)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Color(0xFFD7A957), width: 0.7),
-            ),
-          ),
-          textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-          ),
-        ),
-        child: _isSaving
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: _primaryColor,
-                ),
-              )
-            : Text(label),
-      ),
-    );
+  // Pesan eror untuk sisi yang tampil (null bila tidak ada eror)
+  String? _footerError(bool isBack) {
+    final bool showError = isBack ? _showBackError : _showFrontError;
+    if (!showError) return null;
+    final bool bothEmpty = _frontController.text.trim().isEmpty &&
+        _backController.text.trim().isEmpty;
+    if (bothEmpty) return 'Sisi depan dan belakang perlu diisi.';
+    return isBack ? 'Sisi belakang perlu diisi.' : 'Sisi depan perlu diisi.';
   }
 }

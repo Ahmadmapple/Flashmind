@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../repositories/flash_mind_repository.dart';
 import 'detail_set_screen.dart';
 import '../models/flashcard_set.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_input_footer.dart';
 
 class AddSetScreen extends StatefulWidget {
   const AddSetScreen({super.key});
@@ -13,12 +15,8 @@ class AddSetScreen extends StatefulWidget {
 
 class _AddSetScreenState extends State<AddSetScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _borderColor = Color(0xFFB8B5AF);
-  static const Color _errorColor = Color(0xFFD32F2F);
-
-  static const double _fieldFooterHeight = 22;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -103,12 +101,12 @@ class _AddSetScreenState extends State<AddSetScreen> {
                 maxLines: 2,
                 textInputAction: TextInputAction.next,
               ),
-              _buildFieldFooter(
+              AppInputFooter(
                 controller: _titleController,
                 maxLength: FlashcardSet.titleMaxLength,
-                errorText: 'Nama set minimal 3 karakter.',
-                showError: (text) =>
-                    _titleValidationRequested && text.trim().length < 3,
+                errorTextFor: (text) => _titleValidationRequested && text.trim().length < 3
+                    ? 'Nama set minimal 3 karakter.'
+                    : null,
               ),
               const SizedBox(height: 24),
 
@@ -129,19 +127,20 @@ class _AddSetScreenState extends State<AddSetScreen> {
                 minLines: 6,
                 maxLines: 6,
               ),
-              _buildFieldFooter(
+              AppInputFooter(
                 controller: _descriptionController,
                 maxLength: FlashcardSet.descriptionMaxLength,
               ),
               const SizedBox(height: 20),
 
-              // -- Tombol Buat Set --
+              // -- Tombol Buat Set
               Align(
                 alignment: Alignment.centerRight,
-                child: _buildActionButton(
+                child: AppButton(
                   label: 'Buat Set',
-                  onPressed: _isSaving ? null : _createSet,
+                  size: AppButtonSize.large,
                   isLoading: _isSaving,
+                  onPressed: _isSaving ? null : _createSet,
                 ),
               ),
             ],
@@ -212,104 +211,6 @@ class _AddSetScreenState extends State<AddSetScreen> {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: _primaryColor, width: 1.2),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFieldFooter({
-    required TextEditingController controller,
-    required int maxLength,
-    String? errorText,
-    bool Function(String text)? showError,
-  }) {
-    return SizedBox(
-      height: _fieldFooterHeight,
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
-        builder: (context, value, _) {
-          final bool hasError =
-              errorText != null && (showError?.call(value.text) ?? false);
-
-          return Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 8),
-                    child: hasError
-                        ? Text(
-                            errorText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: _errorColor,
-                              fontSize: 12,
-                              height: 1.2,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Text(
-                    '${value.text.length}/$maxLength',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF9A9894),
-                      height: 1.6,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required VoidCallback? onPressed,
-    bool isLoading = false,
-  }) {
-    return SizedBox(
-      height: 32,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return _accentColor.withValues(alpha: 0.55);
-            }
-            return _accentColor;
-          }),
-          foregroundColor: const WidgetStatePropertyAll(_primaryColor),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 18),
-          ),
-          minimumSize: const WidgetStatePropertyAll(Size(100, 32)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-              side: const BorderSide(color: Color(0xFFD7A957), width: 0.7),
-            ),
-          ),
-          textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(strokeWidth: 1.5),
-              )
-            : Text(label),
       ),
     );
   }

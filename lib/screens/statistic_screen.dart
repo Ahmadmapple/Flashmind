@@ -7,6 +7,9 @@ import '../repositories/flash_mind_repository.dart';
 
 import 'detail_set_screen.dart';
 import 'study_history_screen.dart';
+import 'study_session_end_screen.dart';
+import '../widgets/app_empty_card.dart';
+import '../widgets/app_section_header.dart';
 import '../widgets/history_range_filter.dart';
 import '../widgets/study_history_card.dart';
 
@@ -27,11 +30,30 @@ class _StatisticScreenState extends State<StatisticScreen> {
   List<StudySession> _filteredSessions(FlashMindRepository repo) =>
       _range.filter(repo.allCompletedSessions);
 
+  static DateTime _endOf(StudySession s) => s.finishedAt ?? s.startedAt;
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: FlashMindRepository.instance,
       builder: (context, _) => _buildContent(context),
+    );
+  }
+
+  Widget _buildInsightSetCard(
+      BuildContext context, FlashMindRepository repo, FlashcardSet set) {
+    final latest = repo.getLatestCompletedSessionForSet(set.id);
+    return StudyHistoryCard(
+      title: set.title,
+      cardCount: set.cardCount,
+      lastStudiedLabel: latest == null
+          ? 'Belum pernah'
+          : Formatter.relativeTime(latest.finishedAt ?? latest.startedAt),
+      accuracy: repo.getAverageAccuracyForSet(set.id),
+      onViewDetail: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+            builder: (_) => DetailSetScreen(setId: set.id)),
+      ),
     );
   }
 
@@ -63,7 +85,12 @@ class _StatisticScreenState extends State<StatisticScreen> {
     final FlashcardSet? best  = repo.bestMasteredSet;
     final FlashcardSet? worst = repo.worstSet;
 
-    final recentSets = repo.recentStudiedSets(limit: 3);
+    // Riwayat Belajar menampilkan sesi terbaru dahulu, maksimal 3.
+    final List<StudySession> recentSessions = (repo.allCompletedSessions
+            .toList()
+          ..sort((a, b) => _endOf(b).compareTo(_endOf(a))))
+        .take(3)
+        .toList();
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -121,18 +148,11 @@ class _StatisticScreenState extends State<StatisticScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 25),
 
-            const Text(
-              'Performa Pengguna',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'serif',
-                color: _primary,
-              ),
-            ),
-            const SizedBox(height: 10),
+            // Performa Pengguna
+            const AppSectionHeader(title: 'Performa Pengguna'),
+            const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -202,18 +222,11 @@ class _StatisticScreenState extends State<StatisticScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 25),
 
-            const Text(
-              'Wawasan Belajar',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'serif',
-                color: _primary,
-              ),
-            ),
-            const SizedBox(height: 10),
+            // Wawasan Belajar
+            const AppSectionHeader(title: 'Wawasan Belajar'),
+            const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -222,149 +235,79 @@ class _StatisticScreenState extends State<StatisticScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _InsightRow(
-                    label: 'Konsistensi tertinggi',
-                    value: '$highestStreak hari',
-                  ),
-                  if (best != null) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Divider(color: Color(0xFFE8E4DB), height: 1),
-                    ),
-                    Text(
-                      'Set yang paling dikuasai',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                    ),
-                    const SizedBox(height: 6),
-                    _InsightSetBox(
-                      setTitle: best.title,
-                      duration: Formatter.duration(
-                        repo.getCompletedStudySessionsForSet(best.id).isEmpty
-                            ? Duration.zero
-                            : repo.getCompletedStudySessionsForSet(best.id).last.totalDuration,
-                      ),
-                      detail: 'Akurasi: ${Formatter.percent(repo.bestMasteredAccuracy(best.id))}',
-                    ),
-                  ],
-                  if (worst != null) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Divider(color: Color(0xFFE8E4DB), height: 1),
-                    ),
-                    Text(
-                      'Set yang perlu diperhatikan',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                    ),
-                    const SizedBox(height: 6),
-                    _InsightSetBox(
-                      setTitle: worst.title,
-                      duration: Formatter.duration(
-                        repo.getCompletedStudySessionsForSet(worst.id).isEmpty
-                            ? Duration.zero
-                            : repo.getCompletedStudySessionsForSet(worst.id).last.totalDuration,
-                      ),
-                      detail: 'Akurasi: ${Formatter.percent(repo.worstSetAccuracy(worst.id))}',
-                    ),
-                  ],
-                  if (best == null && worst == null)
-                    const Text(
-                      'Belum ada data. Mulai belajar untuk melihat wawasan.',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                ],
+              child: _InsightRow(
+                label: 'Konsistensi tertinggi',
+                value: '$highestStreak hari',
               ),
             ),
-            const SizedBox(height: 18),
+            if (best != null) ...[
+              const SizedBox(height: 14),
+              const _InsightLabel('Set yang paling dikuasai'),
+              const SizedBox(height: 8),
+              _buildInsightSetCard(context, repo, best),
+            ],
+            // Set terburuk hanya tampil bila berbeda dari set terbaik.
+            if (worst != null && worst.id != best?.id) ...[
+              const SizedBox(height: 14),
+              const _InsightLabel('Set yang paling perlu diperhatikan'),
+              const SizedBox(height: 8),
+              _buildInsightSetCard(context, repo, worst),
+            ],
+            if (best == null) ...[
+              const SizedBox(height: 12),
+              const AppEmptyCard(
+                icon: Icons.insights_rounded,
+                title: 'Belum ada wawasan belajar.',
+                subtitle: 'Selesaikan sesi belajar untuk melihat set\nyang paling dikuasai dan perlu diperhatikan.',
+              ),
+            ],
+            const SizedBox(height: 25),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text(
-                  'Riwayat Belajar',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'serif',
-                    color: _primary,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                        builder: (_) => const StudyHistoryScreen()),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _orange,
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text(
-                    'Lihat semua',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
+            // Riwayat Belajar
+            AppSectionHeader(
+              title: 'Riwayat Belajar',
+              actionLabel: 'Lihat semua →',
+              onAction: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const StudyHistoryScreen()),
+              ),
             ),
-            const SizedBox(height: 10),
-            if (recentSets.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.menu_book_rounded, size: 36, color: Colors.grey.shade300),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Belum ada riwayat belajar.',
-                      style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Buka set kartu dan mulai belajar\nuntuk melihat riwayat di sini.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 12),
+            if (recentSessions.isEmpty)
+              const AppEmptyCard(
+                icon: Icons.menu_book_rounded,
+                title: 'Belum ada sesi yang selesai.',
+                subtitle: 'Selesaikan sesi belajar agar\nriwayatnya muncul di sini.',
               )
             else
-              ...recentSets.map((set) {
-                final latest = repo.getLatestCompletedSessionForSet(set.id);
+              ...recentSessions.map((session) {
+                final set = repo.getSetById(session.setId);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: StudyHistoryCard(
-                    title: set.title,
-                    cardCount: set.cardCount,
-                    lastStudiedLabel: latest == null
-                        ? 'Belum pernah'
-                        : Formatter.relativeTime(
-                            latest.finishedAt ?? latest.startedAt),
-                    accuracy: latest?.accuracy,
+                    title: set?.title ?? session.setTitle ?? 'Set yang dihapus',
+                    cardCount: set?.cardCount ?? session.totalCardCount,
+                    lastStudiedLabel: Formatter.relativeTime(_endOf(session)),
+                    accuracy: session.accuracy,
+                    // [DIUBAH] mengarah ke layar sesi belajar akhir pada sesi ini.
                     onViewDetail: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                          builder: (_) => DetailSetScreen(setId: set.id)),
+                        builder: (_) => StudySessionEndScreen(
+                          setId: session.setId,
+                          sessionId: session.id,
+                        ),
+                      ),
                     ),
                   ),
                 );
-              }
-            ),
+              }),
           ],
         ),
       ),
     );
   }
 }
+
 class _SummaryBox extends StatelessWidget {
   const _SummaryBox({required this.label, required this.value});
 
@@ -461,63 +404,23 @@ class _InsightRow extends StatelessWidget {
   }
 }
 
-class _InsightSetBox extends StatelessWidget {
-  const _InsightSetBox({
-    required this.setTitle,
-    required this.duration,
-    required this.detail,
-  });
+// Label kecil di atas kartu set pada Wawasan Belajar.
+class _InsightLabel extends StatelessWidget {
+  const _InsightLabel(this.text);
 
-  final String setTitle;
-  final String duration;
-  final String detail;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3C279),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  setTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF192A3A),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                detail,
-                style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF192A3A)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(
-            'Durasi penyelesaian: $duration',
-            style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF192A3A),
-                fontWeight: FontWeight.w400),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade600,
+        ),
       ),
     );
   }

@@ -13,6 +13,8 @@ import 'ai_card_review_screen.dart';
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/responsive_scale.dart';
 import '../widgets/app_item_card.dart';
+import '../widgets/app_button.dart';
+
 enum _AddCardMode { manual, ai }
 
 class DetailSetScreen extends StatefulWidget {
@@ -32,7 +34,6 @@ class DetailSetScreen extends StatefulWidget {
 class _DetailSetScreenState extends State<DetailSetScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
   static const Color _accentColor  = Color(0xFFF3C279);
-  static const Color _dangerColor  = Color(0xFFEF5350);
 
   static TextStyle _cardBodyStyle(double s) => TextStyle(
     fontSize: 15 * s,
@@ -345,28 +346,16 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
       centerTitle: false,
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 14, top: 10, bottom: 10),
-          child: TextButton(
+          padding: const EdgeInsets.only(right: 14, top: 8, bottom: 8),
+          child: AppButton(
+            label: 'Edit Set',
+            size: AppButtonSize.medium,
             onPressed: _isDeleting
                 ? null
                 : () {
                     final set = _repository.getSetById(widget.setId);
                     if (set != null) _openEditSet(set);
                   },
-            style: TextButton.styleFrom(
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-              minimumSize: Size(100 * s, 35 * s),
-              padding: EdgeInsets.symmetric(horizontal: 15 * s),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              textStyle: TextStyle(
-                fontSize: 14 * s,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            child: const Text('Edit Set'),
           ),
         ),
       ],
@@ -406,14 +395,23 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
             const SizedBox(height: 28),
             Row(
               children: [
-                Expanded(child: _buildDeleteButton(set, s)),
+                Expanded(
+                  child: AppButton(
+                    label: 'Hapus Set',
+                    tone: AppButtonTone.danger,
+                    expand: true,
+                    isLoading: _isDeleting,
+                    onPressed: _isDeleting ? null : () => _confirmDelete(set),
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildStudyButton(
-                    s: s,
-                    enabled: !isEmpty,
-                    hasInProgressSession:
-                        _repository.getInProgressStudySessionForSet(set.id) != null,
+                  child: AppButton(
+                    label: _repository.getInProgressStudySessionForSet(set.id) != null
+                        ? 'Lanjut Belajar'
+                        : 'Mulai Belajar',
+                    expand: true,
+                    onPressed: (!isEmpty && !_isDeleting) ? _openStudySessionStart : null,
                   ),
                 ),
               ],
@@ -533,71 +531,6 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
           side: const BorderSide(color: _primaryColor, width: 1.3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22 * s)),
           textStyle: TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeleteButton(FlashcardSet set, double s) {
-    return SizedBox(
-      height: 40 * s,
-      child: ElevatedButton(
-        onPressed: _isDeleting ? null : () => _confirmDelete(set),
-        style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_dangerColor),
-          foregroundColor: const WidgetStatePropertyAll(Colors.white),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 12)),
-          minimumSize: WidgetStatePropertyAll(Size(0, 40 * s)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
-          textStyle: WidgetStatePropertyAll(
-              TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
-        ),
-        child: _isDeleting
-            ? SizedBox(
-                width: 14 * s,
-                height: 14 * s,
-                child: const CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
-              )
-            : const Text('Hapus Set'),
-      ),
-    );
-  }
-
-  Widget _buildStudyButton({
-    required double s,
-    required bool enabled,
-    required bool hasInProgressSession,
-  }) {
-    return SizedBox(
-      height: 40 * s,
-      child: ElevatedButton(
-        onPressed: enabled && !_isDeleting ? _openStudySessionStart : null,
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (!enabled || states.contains(WidgetState.disabled)) {
-              return Colors.grey.shade200;
-            }
-            return _accentColor;
-          }),
-          foregroundColor: WidgetStateProperty.resolveWith((states) {
-            if (!enabled || states.contains(WidgetState.disabled)) {
-              return Colors.grey.shade400;
-            }
-            return _primaryColor;
-          }),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 12)),
-          minimumSize: WidgetStatePropertyAll(Size(0, 40 * s)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-          textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(hasInProgressSession ? 'Lanjut Belajar' : 'Mulai Belajar'),
         ),
       ),
     );

@@ -9,6 +9,7 @@ import '../widgets/app_bottom_nav.dart';
 import '../widgets/history_range_filter.dart';
 import '../widgets/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
+import '../widgets/app_empty_card.dart';
 
 import 'study_session_end_screen.dart';
 
@@ -89,7 +90,18 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
                 const SizedBox(height: 16),
                 Expanded(
                   child: entries.isEmpty
-                      ? _buildEmptyState()
+                      ? Align(
+                          alignment: Alignment.topCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: AppEmptyCard(
+                              icon: Icons.history_rounded,
+                              title: _range.emptyTitle,
+                              subtitle:
+                                  'Selesaikan sesi belajar untuk melihat riwayatnya di sini.',
+                            ),
+                          ),
+                        )
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                           itemCount: entries.length,
@@ -150,27 +162,6 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
         ),
       ),
       centerTitle: false,
-    );
-  }
-
-  Widget _buildEmptyState() {
-    final double s = ResponsiveScale.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.history_rounded, size: 44 * s, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            Text(
-              'Tidak ada set yang dipelajari pada rentang waktu ini.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 15 * s),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

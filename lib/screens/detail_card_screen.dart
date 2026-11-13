@@ -7,6 +7,7 @@ import '../widgets/app_bottom_nav.dart';
 
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/responsive_scale.dart';
+import '../widgets/app_button.dart';
 
 class DetailCardScreen extends StatefulWidget {
   const DetailCardScreen({super.key, required this.setId, required this.cardId});
@@ -20,9 +21,7 @@ class DetailCardScreen extends StatefulWidget {
 
 class _DetailCardScreenState extends State<DetailCardScreen> {
   static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _dangerColor = Color(0xFFEF5350);
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
@@ -266,71 +265,20 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildDeleteButton(card, s),
-                _buildEditButton(card, s),
+                AppButton(
+                  label: 'Hapus Kartu',
+                  tone: AppButtonTone.danger,
+                  isLoading: _isDeleting,
+                  onPressed: _isDeleting ? null : () => _confirmDelete(card),
+                ),
+                AppButton(
+                  label: 'Edit Kartu',
+                  onPressed: _isDeleting ? null : () => _openEditCard(card),
+                ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDeleteButton(Flashcard card, double s) {
-    return SizedBox(
-      height: 40 * s,
-      child: ElevatedButton(
-        onPressed: _isDeleting ? null : () => _confirmDelete(card),
-        style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_dangerColor),
-          foregroundColor: const WidgetStatePropertyAll(Colors.white),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 15 * s),
-          ),
-          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-          textStyle: WidgetStatePropertyAll(
-            TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
-          ),
-        ),
-        child: _isDeleting
-            ? SizedBox(
-                width: 14 * s,
-                height: 14 * s,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : const Text('Hapus Kartu'),
-      ),
-    );
-  }
-
-  Widget _buildEditButton(Flashcard card, double s) {
-    return SizedBox(
-      height: 40 * s,
-      child: ElevatedButton(
-        onPressed: _isDeleting ? null : () => _openEditCard(card),
-        style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_accentColor),
-          foregroundColor: const WidgetStatePropertyAll(_primaryColor),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 15 * s),
-          ),
-          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
-          textStyle: WidgetStatePropertyAll(
-            TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
-          ),
-        ),
-        child: const Text('Edit Kartu'),
       ),
     );
   }

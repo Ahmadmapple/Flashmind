@@ -5,6 +5,7 @@ import '../models/study_session.dart';
 import '../providers/auth_provider.dart';
 import '../utils/formatter.dart';
 import 'responsive_scale.dart';
+import 'app_button.dart';
 
 // Desain dasar pada layar:
 //  - Sesi Belajar awal
@@ -362,44 +363,11 @@ class StudySessionPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double s = ResponsiveScale.of(context);
-    return SizedBox(
-      height: 40 * s,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return StudySessionStyle.accent.withValues(alpha: 0.55);
-            }
-            return StudySessionStyle.accent;
-          }),
-          foregroundColor: const WidgetStatePropertyAll(
-            StudySessionStyle.primary,
-          ),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 22 * s),
-          ),
-          minimumSize: WidgetStatePropertyAll(Size(120 * s, 40 * s)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          ),
-          textStyle: WidgetStatePropertyAll(
-            TextStyle(fontSize: 16 * s, fontWeight: FontWeight.w700),
-          ),
-        ),
-        child: isLoading
-            ? SizedBox(
-                width: 18 * s,
-                height: 18 * s,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: StudySessionStyle.primary,
-                ),
-              )
-            : Text(label),
-      ),
+    return AppButton(
+      label: label,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      size: AppButtonSize.large,
     );
   }
 }
