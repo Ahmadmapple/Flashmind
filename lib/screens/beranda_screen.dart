@@ -11,6 +11,10 @@ import 'profile_screen.dart';
 import 'study_session_continue_screen.dart';
 import 'study_session_start_screen.dart';
 import '../services/review_recommendation.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_empty_card.dart';
+import '../widgets/app_item_card.dart';
+import '../widgets/app_section_header.dart';
 import '../widgets/study_history_card.dart';
 
 // Layar Beranda
@@ -27,8 +31,6 @@ class BerandaScreen extends StatefulWidget {
 class _BerandaScreenState extends State<BerandaScreen> {
   static const Color _primary = Color(0xFF192A3A);
   static const Color _cardBg = Color(0xFF192A3A);
-  static const Color _accent = Color(0xFFF3C279);
-  static const Color _orange = Color(0xFFE87A5D);
 
   static String _greeting() {
     final int h = DateTime.now().hour;
@@ -160,7 +162,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Banner Pelajar Sekarang ───────────────────────────────
+                // Banner Pelajari Sekarang
                 if (recSet != null) ...[
                   Container(
                     width: double.infinity,
@@ -205,77 +207,26 @@ class _BerandaScreenState extends State<BerandaScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        SizedBox(
-                          height: 38,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (isResume) {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => StudySessionContinueScreen(
-                                      setId: recSet.id,
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => StudySessionStartScreen(
-                                      setId: recSet.id,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _accent,
-                              foregroundColor: _primary,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: Text(
-                              isResume ? 'Lanjut Belajar' : 'Mulai Belajar',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        AppButton(
+                          label: isResume ? 'Lanjut Belajar' : 'Mulai Belajar',
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => isResume
+                                  ? StudySessionContinueScreen(setId: recSet.id)
+                                  : StudySessionStartScreen(setId: recSet.id),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 25),
                 ],
 
-                // ── Statistik Mingguan ────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Statistik mingguan',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'serif',
-                        color: _primary,
-                      ),
-                    ),
-                    Text(
-                      streak > 0 ? '$streak hari beruntun' : 'Mulai streak!',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: _orange,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                // Statistik Mingguan
+                AppSectionHeader(
+                  title: 'Statistik Mingguan',
+                  infoText: streak > 0 ? '$streak hari beruntun' : 'Mulai hari ini!',
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -309,26 +260,10 @@ class _BerandaScreenState extends State<BerandaScreen> {
                       const SizedBox(height: 6),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: TextButton(
+                        child: AppDetailLink(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) => const StudyHistoryScreen(),
-                            ),
-                          ),
-                          style: TextButton.styleFrom(
-                            foregroundColor: _orange,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 2,
-                            ),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'Lihat Detail →',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -336,85 +271,20 @@ class _BerandaScreenState extends State<BerandaScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 25),
 
-                // ── Ulas Kembali ──────────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Ulas Kembali',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'serif',
-                        color: _primary,
-                      ),
-                    ),
-                    if (dueSets.isNotEmpty)
-                      TextButton(
-                        onPressed: widget.onViewAllReviews,
-                        style: TextButton.styleFrom(
-                          foregroundColor: _orange,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          'Lihat semua',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
+                // Ulas Kembali
+                AppSectionHeader(
+                  title: 'Ulas Kembali',
+                  actionLabel: dueSets.isNotEmpty ? 'Lihat semua →' : null,
+                  onAction: widget.onViewAllReviews,
                 ),
                 const SizedBox(height: 12),
                 if (reviewSets.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 24,
-                      horizontal: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFE8E4DB),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          size: 32,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Tidak ada set yang perlu diulas hari ini.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _primary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Set akan muncul di sini saat sudah waktunya diulas.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
+                  const AppEmptyCard(
+                    icon: Icons.check_circle_outline,
+                    title: 'Tidak ada set yang perlu diulas hari ini.',
+                    subtitle: 'Set akan muncul di sini saat sudah waktunya diulas.',
                   )
                 else
                   ...reviewSets.map((set) {
@@ -428,7 +298,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                             ? 'Belum pernah'
                             : Formatter.relativeTime(
                                 latest.finishedAt ?? latest.startedAt),
-                        accuracy: latest?.accuracy,
+                        accuracy: repo.getAverageAccuracyForSet(set.id),
                         onViewDetail: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => DetailSetScreen(setId: set.id),

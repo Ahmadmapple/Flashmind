@@ -611,48 +611,77 @@ class FlashMindRepository extends ChangeNotifier {
         sessions.length;
   }
 
-  FlashcardSet? get bestMasteredSet {
-    FlashcardSet? best;
-    double bestAcc = -1;
-    for (final set in _sets) {
-      final sessions = getCompletedStudySessionsForSet(set.id);
-      if (sessions.isEmpty) continue;
-      final double avg =
-          sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
-      if (avg > bestAcc) {
-        bestAcc = avg;
-        best = set;
-      }
-    }
-    return best;
-  }
-
   double bestMasteredAccuracy(String setId) {
     final sessions = getCompletedStudySessionsForSet(setId);
     if (sessions.isEmpty) return 0;
     return sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
   }
 
-  FlashcardSet? get worstSet {
-    FlashcardSet? worst;
-    double worstAcc = 101;
-    for (final set in _sets) {
-      final sessions = getCompletedStudySessionsForSet(set.id);
-      if (sessions.isEmpty) continue;
-      final double avg =
-          sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
-      if (avg < worstAcc) {
-        worstAcc = avg;
-        worst = set;
-      }
-    }
-    return worst;
-  }
-
   double worstSetAccuracy(String setId) {
     final sessions = getCompletedStudySessionsForSet(setId);
     if (sessions.isEmpty) return 0;
     return sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
+  }
+
+  // Aturan Peringkat set untuk Wawasan Belajar 
+  // Skor = 50% rata-rata tingkat kebenaran + 50% kecepatan relatif
+  // (rata-rata durasi penyelesaian tercepat = 1, terlama = 0, dinormalisasi
+  // antar set yang pernah selesai dipelajari).
+  // Skor dibulatkan ke bilangan bulat sehingga nilai yang kurang lebih setara
+  // dianggap seri, lalu tie-breaker memakai waktu terakhir dipelajari
+  // Hasil terurut dari terbaik ke terburuk.
+  List<FlashcardSet> _rankedSetsByPerformance() {
+    final entries = <({FlashcardSet set, double acc, int durMs, DateTime last})>[];
+
+    for (final set in _sets) {
+      final sessions = getCompletedStudySessionsForSet(set.id);
+      if (sessions.isEmpty) continue;
+      final double acc =
+          sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
+      final int durMs = sessions.fold<int>(
+              0, (s, x) => s + x.totalDuration.inMilliseconds) ~/
+          sessions.length;
+      final StudySession latest = getLatestCompletedSessionForSet(set.id)!;
+      entries.add((
+        set: set,
+        acc: acc,
+        durMs: durMs,
+        last: latest.finishedAt ?? latest.startedAt,
+      ));
+    }
+    if (entries.isEmpty) return const <FlashcardSet>[];
+
+    final int minDur = entries.map((e) => e.durMs).reduce(min);
+    final int maxDur = entries.map((e) => e.durMs).reduce(max);
+
+    final scored = [
+      for (final e in entries) (
+        set: e.set,
+        score: ((e.acc.clamp(0, 100) / 100 * 0.5 +
+          (maxDur == minDur
+              ? 1.0
+              : (maxDur - e.durMs) / (maxDur - minDur)) * 0.5) * 100).round(),
+        last: e.last),
+    ];
+
+    scored.sort((a, b) {
+      final int byScore = b.score.compareTo(a.score);
+      return byScore != 0 ? byScore : b.last.compareTo(a.last);
+    });
+    return scored.map((e) => e.set).toList();
+  }
+
+  // Set paling dikuasai, yaitu set dengan peringkat teratas.
+  FlashcardSet? get bestMasteredSet {
+    final ranked = _rankedSetsByPerformance();
+    return ranked.isEmpty ? null : ranked.first;
+  }
+
+  // Set paling perlu diperhatikan, yaitu set dengan peringkat terbawah.
+  // Null bila baru ada satu set agar tidak sama dengan set terbaik.
+  FlashcardSet? get worstSet {
+    final ranked = _rankedSetsByPerformance();
+    return ranked.length < 2 ? null : ranked.last;
   }
 
   StudySession? get latestInProgressSession {

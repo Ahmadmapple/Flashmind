@@ -107,12 +107,12 @@ class AppSetCardHeader extends StatelessWidget {
   }
 }
 
-// Tautan "Lihat Detail →" yang dipakai semua kartu.
+// Tautan "Lihat detail →" yang dipakai semua kartu.
 class AppDetailLink extends StatelessWidget {
   const AppDetailLink({
     super.key,
     required this.onPressed,
-    this.label = 'Lihat Detail →',
+    this.label = 'Lihat detail →',
   });
 
   final VoidCallback onPressed;

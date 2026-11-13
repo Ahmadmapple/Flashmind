@@ -73,7 +73,7 @@ class StudySessionEndScreen extends StatelessWidget {
           child: StudySessionScaffold(
             greeting: 'Selamat',
             message:
-                'Sesi belajar sudah selesai! Terima kasih karena telah belajar hari ini.',
+                'Sesi belajar sudah selesai! Terima kasih karena telah belajar.',
             onBack: () => _goBack(context, setExists: setExists),
             card: StudySessionSummaryCard(
               title: title,

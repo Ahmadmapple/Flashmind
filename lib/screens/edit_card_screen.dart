@@ -5,6 +5,8 @@ import '../repositories/flash_mind_repository.dart';
 
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/responsive_scale.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_input_footer.dart';
 
 enum EditCardResult { saved, deleted }
 
@@ -20,11 +22,8 @@ class EditCardScreen extends StatefulWidget {
 
 class _EditCardScreenState extends State<EditCardScreen> {
   static const Color _primaryColor    = Color(0xFF192A3A);
-  static const Color _accentColor     = Color(0xFFF3C279);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
   static const Color _borderColor     = Color(0xFFB8B5AF);
-  static const Color _errorColor      = Color(0xFFD32F2F);
-  static const Color _dangerColor     = Color(0xFFEF5350);
 
   static const int _cardMaxLength = 999;
   static const double _inputBoxHeight = 360;
@@ -182,12 +181,16 @@ class _EditCardScreenState extends State<EditCardScreen> {
               _buildHeadingRow(s),
               const SizedBox(height: 8),
               SizedBox(height: _inputBoxHeight, child: _buildInputArea(s)),
-              _buildFieldFooter(s),
+              AppInputFooter(
+                controller: _activeController,
+                maxLength: _cardMaxLength,
+                errorTextFor: (_) => _footerError(),
+              ),
               const SizedBox(height: 15),
               Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: _actionsHorizontalPadding),
-                child: _buildActionRow(s),
+                child: _buildActionRow(),
               ),
             ],
           ),
@@ -294,132 +297,33 @@ class _EditCardScreenState extends State<EditCardScreen> {
     );
   }
 
-  Widget _buildFieldFooter(double s) {
-    return SizedBox(
-      height: 26 * s,
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: _activeController,
-        builder: (context, value, _) {
-          final bool frontEmpty = _frontController.text.trim().isEmpty;
-          final bool backEmpty  = _backController.text.trim().isEmpty;
-          final bool showError  = _isBackSide ? _showBackError : _showFrontError;
-          final String errorText = frontEmpty && backEmpty
-              ? 'Sisi depan dan belakang perlu diisi.'
-              : _isBackSide
-                  ? 'Sisi belakang perlu diisi.'
-                  : 'Sisi depan perlu diisi.';
-
-          return Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 8),
-                    child: showError
-                        ? Text(
-                            errorText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                color: _errorColor,
-                                fontSize: 13 * s,
-                                height: 1.2),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Text(
-                    '${value.text.length}/$_cardMaxLength',
-                    style: TextStyle(
-                        fontSize: 12 * s,
-                        color: const Color(0xFF9A9894),
-                        height: 1.4),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildActionRow(double s) {
+  Widget _buildActionRow() {
+    final bool busy = _isSaving || _isDeleting;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [_buildDeleteButton(s), _buildFinishButton(s)],
+      children: [
+        AppButton(
+          label: 'Hapus Kartu',
+          tone: AppButtonTone.danger,
+          isLoading: _isDeleting,
+          onPressed: busy ? null : _confirmDelete,
+        ),
+        AppButton(
+          label: 'Simpan',
+          isLoading: _isSaving,
+          onPressed: busy ? null : _saveChanges,
+        ),
+      ],
     );
   }
 
-  Widget _buildDeleteButton(double s) {
-    return SizedBox(
-      height: 40 * s,
-      child: ElevatedButton(
-        onPressed: (_isSaving || _isDeleting) ? null : _confirmDelete,
-        style: ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll(_dangerColor),
-          foregroundColor: const WidgetStatePropertyAll(Colors.white),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 18 * s)),
-          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
-          textStyle: WidgetStatePropertyAll(
-              TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
-        ),
-        child: _isDeleting
-            ? SizedBox(
-                width: 16 * s,
-                height: 16 * s,
-                child: const CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
-              )
-            : const Text('Hapus Kartu'),
-      ),
-    );
-  }
-
-  Widget _buildFinishButton(double s) {
-    return SizedBox(
-      height: 40 * s,
-      child: ElevatedButton(
-        onPressed: (_isSaving || _isDeleting) ? null : _saveChanges,
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return _accentColor.withValues(alpha: 0.55);
-            }
-            return _accentColor;
-          }),
-          foregroundColor: const WidgetStatePropertyAll(_primaryColor),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 18 * s)),
-          minimumSize: WidgetStatePropertyAll(Size(110 * s, 35 * s)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Color(0xFFD7A957), width: 0.7),
-            ),
-          ),
-          textStyle: WidgetStatePropertyAll(
-              TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700)),
-        ),
-        child: _isSaving
-            ? SizedBox(
-                width: 16 * s,
-                height: 16 * s,
-                child: const CircularProgressIndicator(
-                    strokeWidth: 2, color: _primaryColor),
-              )
-            : const Text('Simpan'),
-      ),
-    );
+  // Pesan error footer untuk sisi yang sedang tampil (null bila tidak ada error).
+  String? _footerError() {
+    final bool showError = _isBackSide ? _showBackError : _showFrontError;
+    if (!showError) return null;
+    final bool bothEmpty = _frontController.text.trim().isEmpty &&
+        _backController.text.trim().isEmpty;
+    if (bothEmpty) return 'Sisi depan dan belakang perlu diisi.';
+    return _isBackSide ? 'Sisi belakang perlu diisi.' : 'Sisi depan perlu diisi.';
   }
 }
