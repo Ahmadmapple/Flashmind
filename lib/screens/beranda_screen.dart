@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/formatter.dart';
-import '../models/flashcard_set.dart';
 import '../providers/auth_provider.dart';
 import '../repositories/flash_mind_repository.dart';
 
@@ -12,6 +11,7 @@ import 'profile_screen.dart';
 import 'study_session_continue_screen.dart';
 import 'study_session_start_screen.dart';
 import '../services/review_recommendation.dart';
+import '../widgets/study_history_card.dart';
 
 // Layar Beranda
 
@@ -417,30 +417,19 @@ class _BerandaScreenState extends State<BerandaScreen> {
                     ),
                   )
                 else
-                                    ...reviewSets.map((set) {
-                    final sessions =
-                        repo.getCompletedStudySessionsForSet(set.id);
-                    // Sesi selesai terbaru (berdasarkan waktu selesai), sama dengan Berkas
-                    final latest = sessions.isEmpty
-                        ? null
-                        : sessions.reduce(
-                            (a, b) => (a.finishedAt ?? a.startedAt)
-                                    .isAfter(b.finishedAt ?? b.startedAt)
-                                ? a
-                                : b,
-                          );
-                    final DateTime? lastTime =
-                        latest == null ? null : (latest.finishedAt ?? latest.startedAt);
-
+                  ...reviewSets.map((set) {
+                    final latest = repo.getLatestCompletedSessionForSet(set.id);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _ReviewCard(
-                        set: set,
-                        lastAcc: latest?.accuracy,
-                        lastStudied: lastTime == null
+                      child: StudyHistoryCard(
+                        title: set.title,
+                        cardCount: set.cardCount,
+                        lastStudiedLabel: latest == null
                             ? 'Belum pernah'
-                            : Formatter.relativeTime(lastTime),
-                        onTap: () => Navigator.of(context).push(
+                            : Formatter.relativeTime(
+                                latest.finishedAt ?? latest.startedAt),
+                        accuracy: latest?.accuracy,
+                        onViewDetail: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => DetailSetScreen(setId: set.id),
                           ),
@@ -494,93 +483,6 @@ class _StatBox extends StatelessWidget {
               fontWeight: FontWeight.bold,
               color: Color(0xFF192A3A),
               height: 1.1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({
-    required this.set,
-    required this.lastAcc,
-    required this.lastStudied,
-    required this.onTap,
-  });
-
-  final FlashcardSet set;
-  final double? lastAcc;
-  final String lastStudied;
-  final VoidCallback onTap;
-
-  static const Color _primary = Color(0xFF192A3A);
-  static const Color _orange = Color(0xFFE87A5D);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  set.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: _primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${set.cardCount} kartu',
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(
-            'Terakhir dipelajari: $lastStudied',
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          if (lastAcc != null)
-            Text(
-              'Tingkat kebenaran: ${Formatter.percent(lastAcc!)}',
-              style: TextStyle(
-                fontSize: 11,
-                color: lastAcc! < 70 ? _orange : const Color(0xFF2F776F),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onTap,
-              style: TextButton.styleFrom(
-                foregroundColor: _orange,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Lihat Detail →',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
             ),
           ),
         ],

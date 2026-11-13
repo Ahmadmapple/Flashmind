@@ -8,6 +8,7 @@ import '../repositories/flash_mind_repository.dart';
 import 'detail_set_screen.dart';
 import 'study_history_screen.dart';
 import '../widgets/history_range_filter.dart';
+import '../widgets/study_history_card.dart';
 
 class StatisticScreen extends StatefulWidget {
   const StatisticScreen({super.key});
@@ -339,25 +340,25 @@ class _StatisticScreenState extends State<StatisticScreen> {
               )
             else
               ...recentSets.map((set) {
-                final setSessions = repo.getCompletedStudySessionsForSet(set.id);
-                final lastAcc     = setSessions.isEmpty ? null : setSessions.last.accuracy;
-                final inProg      = repo.getInProgressStudySessionForSet(set.id);
+                final latest = repo.getLatestCompletedSessionForSet(set.id);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _HistoryCard(
-                    set: set,
-                    lastAcc: lastAcc,
-                    lastStudied: set.lastStudiedAt == null
+                  child: StudyHistoryCard(
+                    title: set.title,
+                    cardCount: set.cardCount,
+                    lastStudiedLabel: latest == null
                         ? 'Belum pernah'
-                        : Formatter.relativeTime(set.lastStudiedAt!),
-                    isInProgress: inProg != null,
-                    onTap: () => Navigator.of(context).push(
+                        : Formatter.relativeTime(
+                            latest.finishedAt ?? latest.startedAt),
+                    accuracy: latest?.accuracy,
+                    onViewDetail: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                           builder: (_) => DetailSetScreen(setId: set.id)),
                     ),
                   ),
                 );
-              }),
+              }
+            ),
           ],
         ),
       ),
@@ -515,111 +516,6 @@ class _InsightSetBox extends StatelessWidget {
                 fontSize: 11,
                 color: Color(0xFF192A3A),
                 fontWeight: FontWeight.w400),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({
-    required this.set,
-    required this.lastAcc,
-    required this.lastStudied,
-    required this.isInProgress,
-    required this.onTap,
-  });
-
-  final FlashcardSet set;
-  final double? lastAcc;
-  final String lastStudied;
-  final bool isInProgress;
-  final VoidCallback onTap;
-
-  static const Color _primary = Color(0xFF192A3A);
-  static const Color _orange  = Color(0xFFE87A5D);
-  static const Color _green   = Color(0xFF2F776F);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  set.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: _primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${set.cardCount} kartu',
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-            ],
-          ),
-          if (isInProgress) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: _orange.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'Terhenti',
-                style: TextStyle(
-                    fontSize: 10, color: _orange, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-          const SizedBox(height: 3),
-          Text(
-            'Terakhir dipelajari: $lastStudied',
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          if (lastAcc != null)
-            Text(
-              'Tingkat kebenaran: ${Formatter.percent(lastAcc!)}',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: lastAcc! < 70 ? _orange : _green,
-              ),
-            ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onTap,
-              style: TextButton.styleFrom(
-                foregroundColor: _orange,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Lihat Detail →',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ),
           ),
         ],
       ),
