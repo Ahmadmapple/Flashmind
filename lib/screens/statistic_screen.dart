@@ -7,8 +7,7 @@ import '../repositories/flash_mind_repository.dart';
 
 import 'detail_set_screen.dart';
 import 'study_history_screen.dart';
-
-enum _Filter { tujuhHari, tigaPuluhHari, keseluruhan }
+import '../widgets/history_range_filter.dart';
 
 class StatisticScreen extends StatefulWidget {
   const StatisticScreen({super.key});
@@ -18,23 +17,14 @@ class StatisticScreen extends StatefulWidget {
 }
 
 class _StatisticScreenState extends State<StatisticScreen> {
-  _Filter _filter = _Filter.tujuhHari;
+  HistoryRange _range = HistoryRange.week;
 
   static const Color _primary = Color(0xFF192A3A);
   static const Color _orange  = Color(0xFFE87A5D);
   static const Color _green   = Color(0xFF2F776F);
 
-  List<StudySession> _filteredSessions(FlashMindRepository repo) {
-    final now = DateTime.now();
-    switch (_filter) {
-      case _Filter.tujuhHari:
-        return repo.getSessionsInRange(now.subtract(const Duration(days: 7)), now);
-      case _Filter.tigaPuluhHari:
-        return repo.getSessionsInRange(now.subtract(const Duration(days: 30)), now);
-      case _Filter.keseluruhan:
-        return repo.allCompletedSessions.toList();
-    }
-  }
+  List<StudySession> _filteredSessions(FlashMindRepository repo) =>
+      _range.filter(repo.allCompletedSessions);
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +46,17 @@ class _StatisticScreenState extends State<StatisticScreen> {
         ? 0
         : sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
     final int totalSets     = sets.length;
+
+    // Data performa dihitung dari sesi pada rentang yang dipilih.
+    final int totalCorrect  = sessions.fold<int>(0, (s, x) => s + x.correctCount);
+    final int totalWrong    = sessions.fold<int>(0, (s, x) => s + x.wrongCount);
+    final int totalAnswered = totalCorrect + totalWrong;
+    final int correctPct = totalAnswered == 0
+        ? 0
+        : (totalCorrect / totalAnswered * 100).round();
+    final int wrongPct = totalAnswered == 0 ? 0 : 100 - correctPct;
+    final double correctFraction =
+        totalAnswered == 0 ? 0 : totalCorrect / totalAnswered;
 
     final int highestStreak   = repo.highestStreak;
     final FlashcardSet? best  = repo.bestMasteredSet;
@@ -90,27 +91,11 @@ class _StatisticScreenState extends State<StatisticScreen> {
             ),
             const SizedBox(height: 16),
 
-            Row(
-              children: [
-                _FilterChip(
-                  label: '7 Hari',
-                  selected: _filter == _Filter.tujuhHari,
-                  onTap: () => setState(() => _filter = _Filter.tujuhHari),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: '30 Hari',
-                  selected: _filter == _Filter.tigaPuluhHari,
-                  onTap: () => setState(() => _filter = _Filter.tigaPuluhHari),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Keseluruhan',
-                  selected: _filter == _Filter.keseluruhan,
-                  onTap: () => setState(() => _filter = _Filter.keseluruhan),
-                ),
-              ],
+            HistoryRangeFilter(
+              selected: _range,
+              onChanged: (r) => setState(() => _range = r),
             ),
+
             const SizedBox(height: 18),
 
             Container(
@@ -160,26 +145,22 @@ class _StatisticScreenState extends State<StatisticScreen> {
                 children: [
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      final int totalAnswered =
-                          sessions.fold<int>(0, (s, x) => s + x.correctCount) +
-                          sessions.fold<int>(0, (s, x) => s + x.wrongCount);
-                      final double correctFraction = totalAnswered == 0
-                          ? 0.5
-                          : sessions.fold<int>(0, (s, x) => s + x.correctCount) /
-                              totalAnswered;
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: SizedBox(
                           height: 8,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: constraints.maxWidth * correctFraction,
-                                color: _green,
-                              ),
-                              Expanded(child: Container(color: _orange)),
-                            ],
-                          ),
+                          child: totalAnswered == 0
+                              // Belum ada data pada rentang ini: bar netral
+                              ? Container(color: const Color(0xFFE8E4DB))
+                              : Row(
+                                  children: [
+                                    Container(
+                                      width: constraints.maxWidth * correctFraction,
+                                      color: _green,
+                                    ),
+                                    Expanded(child: Container(color: _orange)),
+                                  ],
+                                ),
                         ),
                       );
                     },
@@ -187,17 +168,13 @@ class _StatisticScreenState extends State<StatisticScreen> {
                   const SizedBox(height: 12),
                   _PerformRow(
                     label: 'Jumlah Benar',
-                    value:
-                        '${sessions.fold<int>(0, (s, x) => s + x.correctCount)} '
-                        '(${Formatter.percent(accuracy)})',
+                    value: '$totalCorrect (${Formatter.percent(correctPct)})',
                     valueColor: _green,
                   ),
                   const SizedBox(height: 6),
                   _PerformRow(
                     label: 'Jumlah Salah',
-                    value:
-                        '${sessions.fold<int>(0, (s, x) => s + x.wrongCount)} '
-                        '(${Formatter.percent(sessions.isEmpty ? 0 : 100 - accuracy)})',
+                    value: '$totalWrong (${Formatter.percent(wrongPct)})',
                     valueColor: _orange,
                   ),
                   const Padding(
@@ -387,46 +364,6 @@ class _StatisticScreenState extends State<StatisticScreen> {
     );
   }
 }
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF192A3A) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? const Color(0xFF192A3A) : const Color(0xFFE8E4DB),
-            width: 1.5,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : const Color(0xFF192A3A),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SummaryBox extends StatelessWidget {
   const _SummaryBox({required this.label, required this.value});
 

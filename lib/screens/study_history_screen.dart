@@ -6,22 +6,12 @@ import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 
 import '../widgets/app_bottom_nav.dart';
-import '../widgets/app_filter_chip.dart';
+import '../widgets/history_range_filter.dart';
 import '../widgets/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
 
-
 import 'study_session_end_screen.dart';
 
-enum _HistoryRange {
-  week('7 Hari', 7),
-  month('30 Hari', 30),
-  all('Keseluruhan', null);
-
-  const _HistoryRange(this.label, this.days);
-  final String label;
-  final int? days;
-}
 
 class _HistoryEntry {
   const _HistoryEntry(this.session, this.set, this.finishedAt);
@@ -45,19 +35,19 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
   static const Color _backgroundColor = Color(0xFFFBF9F6);
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
-  _HistoryRange _range = _HistoryRange.week;
+  HistoryRange _range = HistoryRange.week;
 
   List<_HistoryEntry> _buildEntries() {
-    final DateTime now = DateTime.now();
-    final int? days = _range.days;
-    final DateTime? cutoff = days == null ? null : now.subtract(Duration(days: days));
+    final sessions = _range.filter(_repository.allCompletedSessions);
 
-    final List<_HistoryEntry> entries = [];
-    for (final session in _repository.allCompletedSessions) {
-      final DateTime t = session.finishedAt ?? session.startedAt;
-      if (cutoff != null && t.isBefore(cutoff)) continue;
-      entries.add(_HistoryEntry(session, _repository.getSetById(session.setId), t));
-    }
+    final List<_HistoryEntry> entries = [
+      for (final session in sessions)
+        _HistoryEntry(
+          session,
+          _repository.getSetById(session.setId),
+          session.finishedAt ?? session.startedAt,
+        ),
+    ];
     entries.sort((a, b) => b.finishedAt.compareTo(a.finishedAt));
     return entries;
   }
@@ -91,7 +81,10 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: _buildFilterRow(),
+                  child: HistoryRangeFilter(
+                    selected: _range,
+                    onChanged: (r) => setState(() => _range = r),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -157,23 +150,6 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
         ),
       ),
       centerTitle: false,
-    );
-  }
-
-  Widget _buildFilterRow() {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 8,
-      children: [
-        for (final r in _HistoryRange.values)
-          AppFilterChip(
-            label: r.label,
-            selected: _range == r,
-            onPressed: () {
-              if (_range != r) setState(() => _range = r);
-            },
-          ),
-      ],
     );
   }
 
