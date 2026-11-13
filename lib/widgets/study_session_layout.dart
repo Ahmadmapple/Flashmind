@@ -7,9 +7,9 @@ import '../utils/formatter.dart';
 import 'responsive_scale.dart';
 
 // Desain dasar pada layar:
-//  - Sesi Belajar awal      
-//  - Lanjutkan Sesi Belajar 
-//  - Sesi Belajar akhir 
+//  - Sesi Belajar awal
+//  - Lanjutkan Sesi Belajar
+//  - Sesi Belajar akhir
 
 class StudySessionStyle {
   const StudySessionStyle._();
@@ -81,6 +81,7 @@ class StudySessionScaffold extends StatelessWidget {
     required this.message,
     required this.card,
     required this.button,
+    this.onBack,
   });
 
   // Kata salam diikuti kata pertama nama pengguna.
@@ -88,6 +89,7 @@ class StudySessionScaffold extends StatelessWidget {
   final String message;
   final Widget card;
   final Widget button;
+  final VoidCallback? onBack;
 
   static String _firstName(String? fullName) {
     final String name = (fullName ?? '').trim();
@@ -98,12 +100,13 @@ class StudySessionScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double s = ResponsiveScale.of(context);
-    final String firstName =
-        _firstName(context.watch<AuthProvider>().currentUser?.nama);
+    final String firstName = _firstName(
+      context.watch<AuthProvider>().currentUser?.nama,
+    );
 
     return Scaffold(
       backgroundColor: StudySessionStyle.background,
-      appBar: StudySessionAppBar(onBack: () => Navigator.of(context).pop()),
+      appBar: StudySessionAppBar(onBack: onBack ?? () => Navigator.of(context).pop(),),
       body: SafeArea(
         top: false,
         bottom: false,
@@ -173,8 +176,7 @@ class StudySessionSummaryCard extends StatelessWidget {
 
   static StudySession? _fastest(List<StudySession> sessions) {
     if (sessions.isEmpty) return null;
-    return sessions
-        .reduce((a, b) => b.totalDuration < a.totalDuration ? b : a);
+    return sessions.reduce((a, b) => b.totalDuration < a.totalDuration ? b : a);
   }
 
   @override
@@ -224,7 +226,11 @@ class StudySessionSummaryCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
-            style: TextStyle(fontSize: 13 * s, color: Colors.grey, height: 1.25),
+            style: TextStyle(
+              fontSize: 13 * s,
+              color: Colors.grey,
+              height: 1.25,
+            ),
           ),
           const SizedBox(height: 25),
           Text('Riwayat Pembelajaran', style: sectionStyle),
@@ -242,8 +248,9 @@ class StudySessionSummaryCard extends StatelessWidget {
           const SizedBox(height: 10),
           _RecordRow(
             label: 'Tingkat kebenaran tertinggi',
-            accuracy:
-                highest == null ? '-' : Formatter.percent(highest.accuracy),
+            accuracy: highest == null
+                ? '-'
+                : Formatter.percent(highest.accuracy),
             duration: highest == null
                 ? '-'
                 : Formatter.duration(highest.totalDuration),
@@ -252,8 +259,9 @@ class StudySessionSummaryCard extends StatelessWidget {
           const SizedBox(height: 20),
           _RecordRow(
             label: 'Durasi pengerjaan tercepat',
-            accuracy:
-                fastest == null ? '-' : Formatter.percent(fastest.accuracy),
+            accuracy: fastest == null
+                ? '-'
+                : Formatter.percent(fastest.accuracy),
             duration: fastest == null
                 ? '-'
                 : Formatter.duration(fastest.totalDuration),
@@ -291,8 +299,9 @@ class _StatRow extends StatelessWidget {
             Expanded(child: Text(label, style: style)),
             const SizedBox(width: 10),
             ConstrainedBox(
-              constraints:
-                  BoxConstraints(maxWidth: constraints.maxWidth * 0.55),
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth * 0.55,
+              ),
               child: Text(value, textAlign: TextAlign.right, style: style),
             ),
           ],
@@ -365,8 +374,9 @@ class StudySessionPrimaryButton extends StatelessWidget {
             }
             return StudySessionStyle.accent;
           }),
-          foregroundColor:
-              const WidgetStatePropertyAll(StudySessionStyle.primary),
+          foregroundColor: const WidgetStatePropertyAll(
+            StudySessionStyle.primary,
+          ),
           elevation: const WidgetStatePropertyAll(0),
           padding: WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 22 * s),

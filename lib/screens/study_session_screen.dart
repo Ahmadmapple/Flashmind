@@ -192,6 +192,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
           builder: (_) => StudySessionEndScreen(
             setId:     updatedSession.setId,
             sessionId: updatedSession.id,
+            returnToStart: true,
           ),
         ),
       );

@@ -117,9 +117,8 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
         return;
       }
 
-      // PERBAIKAN ALUR: layar awal diganti langsung oleh layar pelaksanaan.
-      // Bila sesi dihentikan, pengguna kembali ke Detail Set (yang kini
-      // menampilkan "Lanjutkan Sesi Belajar").
+      // Layar awal diganti langsung oleh layar pelaksanaan.
+      // Bila sesi dihentikan, pengguna kembali ke Detail Set menampilkan "Lanjutkan Sesi Belajar"
       navigator.pushReplacement<void, void>(
         MaterialPageRoute<void>(
           builder: (_) =>

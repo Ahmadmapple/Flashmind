@@ -11,6 +11,7 @@ import 'study_history_screen.dart';
 import 'profile_screen.dart';
 import 'study_session_continue_screen.dart';
 import 'study_session_start_screen.dart';
+import '../services/review_recommendation.dart';
 
 // Layar Beranda
 
@@ -86,7 +87,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
         final weekCards = repo.weeklyCardCount;
         final weekDur = repo.weeklyDuration;
         final weekAcc = repo.weeklyAccuracy;
-        final reviewSets = repo.reviewSets(limit: 3);
+        final dueSets = ReviewRecommendation.dueSets(repo);
+        final reviewSets = dueSets.take(3).toList();
 
         return SafeArea(
           child: SingleChildScrollView(
@@ -350,25 +352,26 @@ class _BerandaScreenState extends State<BerandaScreen> {
                         color: _primary,
                       ),
                     ),
-                    TextButton(
-                      onPressed: widget.onViewAllReviews,
-                      style: TextButton.styleFrom(
-                        foregroundColor: _orange,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
+                    if (dueSets.isNotEmpty)
+                      TextButton(
+                        onPressed: widget.onViewAllReviews,
+                        style: TextButton.styleFrom(
+                          foregroundColor: _orange,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text(
-                        'Lihat semua',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                        child: const Text(
+                          'Lihat semua',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -392,33 +395,51 @@ class _BerandaScreenState extends State<BerandaScreen> {
                         Icon(
                           Icons.check_circle_outline,
                           size: 32,
-                          color: Colors.grey.shade300,
+                          color: Colors.grey.shade400,
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Belum ada set untuk diulas.\nTambah set kartu dan mulai belajar!',
+                          'Tidak ada set yang perlu diulas hari ini.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _primary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Set akan muncul di sini saat sudah waktunya diulas.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
                     ),
                   )
                 else
-                  ...reviewSets.map((set) {
-                    final sessions = repo.getCompletedStudySessionsForSet(
-                      set.id,
-                    );
-                    final lastAcc = sessions.isEmpty
+                                    ...reviewSets.map((set) {
+                    final sessions =
+                        repo.getCompletedStudySessionsForSet(set.id);
+                    // Sesi selesai terbaru (berdasarkan waktu selesai), sama dengan Berkas
+                    final latest = sessions.isEmpty
                         ? null
-                        : sessions.last.accuracy;
+                        : sessions.reduce(
+                            (a, b) => (a.finishedAt ?? a.startedAt)
+                                    .isAfter(b.finishedAt ?? b.startedAt)
+                                ? a
+                                : b,
+                          );
+                    final DateTime? lastTime =
+                        latest == null ? null : (latest.finishedAt ?? latest.startedAt);
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _ReviewCard(
                         set: set,
-                        lastAcc: lastAcc,
-                        lastStudied: set.lastStudiedAt == null
+                        lastAcc: latest?.accuracy,
+                        lastStudied: lastTime == null
                             ? 'Belum pernah'
-                            : Formatter.relativeTime(set.lastStudiedAt!),
+                            : Formatter.relativeTime(lastTime),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => DetailSetScreen(setId: set.id),
@@ -426,7 +447,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
                         ),
                       ),
                     );
-                  }),
+                  }
+                ),
               ],
             ),
           ),
