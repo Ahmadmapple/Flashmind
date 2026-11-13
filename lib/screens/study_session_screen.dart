@@ -6,6 +6,7 @@ import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../widgets/study_session_layout.dart';
 import 'study_session_end_screen.dart';
 
 /// Layar pelaksanaan sesi belajar.
@@ -20,7 +21,7 @@ class StudySessionScreen extends StatefulWidget {
 }
 
 class _StudySessionScreenState extends State<StudySessionScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // ── Warna ──────────────────────────────────────────────────────────────────
   static const Color _primaryColor    = Color(0xFF192A3A);
   static const Color _backgroundColor = Color(0xFFFBF9F6);
@@ -49,6 +50,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _flipController = AnimationController(
       vsync: this,
@@ -63,8 +65,21 @@ class _StudySessionScreenState extends State<StudySessionScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _flipController.dispose();
     super.dispose();
+  }
+
+  // timer berhenti saat aplikasi masuk latar belakang, lanjut saat kembali.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final id = _sessionId;
+    if (id == null) return;
+    if (state == AppLifecycleState.paused) {
+      _repository.pauseStudySession(id);
+    } else if (state == AppLifecycleState.resumed) {
+      _ensureFrontTimestamp();
+    }
   }
 
   // ── Init sesi ─────────────────────────────────────────────────────────────
@@ -224,6 +239,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
     return PopScope<bool>(
       canPop: !_isEvaluating,
       onPopInvokedWithResult: (didPop, _) {
+        // Sesi dihentikan sebelum selesai: simpan dan hentikan timer.
         if (didPop) {
           final sid = _sessionId;
           if (sid != null) _repository.pauseStudySession(sid);
@@ -237,32 +253,12 @@ class _StudySessionScreenState extends State<StudySessionScreen>
     );
   }
 
-  // ── AppBar ────────────────────────────────────────────────────────────────
+  // AppBar
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
+    return StudySessionAppBar(
+      onBack: _isEvaluating ? null : () => Navigator.of(context).pop(),
       backgroundColor: _backgroundColor,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-      leading: IconButton(
-        onPressed: _isEvaluating ? null : () => Navigator.of(context).pop(),
-        icon: const Icon(Icons.arrow_back, size: 28),
-        color: _primaryColor,
-        tooltip: 'Kembali',
-      ),
-      title: Text(
-        'Sesi Belajar',
-        style: TextStyle(
-          fontSize: 25,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'serif',
-          color: _primaryColor,
-        ),
-      ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFE8E4DB)),
-      ),
+      showDivider: true,
     );
   }
 
