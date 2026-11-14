@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../repositories/flash_mind_repository.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_top_bar.dart';
 
 /// Model sementara untuk kartu yang dibuat AI dari PDF.
 class _AiCard {
@@ -27,12 +32,8 @@ class AiCardReviewScreen extends StatefulWidget {
 }
 
 class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
-  static const Color _primaryColor   = Color(0xFF192A3A);
-  static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _successColor   = Color(0xFF2D6A4F);
-
   bool _isLoading = true;
-  bool _isSaving  = false;
+  bool _isSaving = false;
 
   // Kartu dummy hasil "AI" — dalam produksi ini diganti dengan respons API
   final List<_AiCard> _cards = [];
@@ -100,9 +101,9 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
     final repo = FlashMindRepository.instance;
     for (final card in accepted) {
       await repo.addFlashcard(
-        setId:     widget.setId,
+        setId: widget.setId,
         frontText: card.front,
-        backText:  card.back,
+        backText: card.back,
       );
     }
 
@@ -126,51 +127,32 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
-      appBar: _buildAppBar(),
+      backgroundColor: AppColors.background,
+      appBar: AppTopBar(
+        title: 'Tinjau Kartu AI',
+        centerTitle: false,
+        onBack: _isSaving ? null : () => Navigator.of(context).pop(),
+      ),
       body: _isLoading ? _buildLoadingState() : _buildReviewBody(),
       bottomNavigationBar: _isLoading ? null : _buildBottomBar(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: _backgroundColor,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-      leading: IconButton(
-        onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-        icon: const Icon(Icons.arrow_back, size: 28),
-        color: _primaryColor,
-      ),
-      title: const Text(
-        'Tinjau Kartu AI',
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'serif',
-          color: _primaryColor,
-        ),
-      ),
-      centerTitle: false,
-    );
-  }
-
   // ── Loading ───────────────────────────────────────────────────────────────
   Widget _buildLoadingState() {
+    final double s = context.scale;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(color: _primaryColor),
+          const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'AI sedang membuat kartu\ndari dokumen kamu...',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
+              fontSize: AppFont.button * s,
+              color: AppColors.muted,
               height: 1.5,
             ),
           ),
@@ -181,117 +163,114 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
 
   // ── Body ─────────────────────────────────────────────────────────────────
   Widget _buildReviewBody() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header info
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Nama file
-              Row(
-                children: [
-                  const Icon(
-                    Icons.picture_as_pdf,
-                    color: Color(0xFFE87A5D),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      widget.fileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFFE87A5D),
-                        fontWeight: FontWeight.w600,
+    final double s = context.scale;
+    return AppContentFrame(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header info
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Nama file
+                Row(
+                  children: [
+                    Icon(Icons.picture_as_pdf, color: AppColors.link, size: 18 * s),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        widget.fileName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: AppFont.small * s,
+                          color: AppColors.link,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'AI membuat ${_cards.length} kartu. '
-                'Centang kartu yang ingin disimpan ke set.',
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'AI membuat ${_cards.length} kartu. '
+                  'Centang kartu yang ingin disimpan ke set.',
+                  style: TextStyle(fontSize: AppFont.body * s, color: AppColors.muted),
+                ),
+              ],
+            ),
           ),
-        ),
 
-        // Toggle pilih semua
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton.icon(
-                onPressed: () {
-                  final allAccepted = _acceptedCount == _cards.length;
-                  setState(() {
-                    for (final c in _cards) {
-                      c.accepted = !allAccepted;
-                    }
-                  });
-                },
-                icon: Icon(
-                  _acceptedCount == _cards.length
-                      ? Icons.deselect
-                      : Icons.select_all,
-                  size: 18,
-                  color: _primaryColor,
-                ),
-                label: Text(
-                  _acceptedCount == _cards.length
-                      ? 'Batalkan Semua'
-                      : 'Pilih Semua',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: _primaryColor,
-                    fontWeight: FontWeight.w600,
+          // Toggle pilih semua
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    final allAccepted = _acceptedCount == _cards.length;
+                    setState(() {
+                      for (final c in _cards) {
+                        c.accepted = !allAccepted;
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    _acceptedCount == _cards.length
+                        ? Icons.deselect
+                        : Icons.select_all,
+                    size: 20 * s,
+                    color: AppColors.primary,
+                  ),
+                  label: Text(
+                    _acceptedCount == _cards.length
+                        ? 'Batalkan Semua'
+                        : 'Pilih Semua',
+                    style: TextStyle(
+                      fontSize: AppFont.body * s,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                Text(
+                  '$_acceptedCount/${_cards.length} dipilih',
+                  style: TextStyle(fontSize: AppFont.small * s, color: AppColors.muted),
                 ),
-              ),
-              Text(
-                '$_acceptedCount/${_cards.length} dipilih',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        // Daftar kartu
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-            itemCount: _cards.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) =>
-                _buildCardItem(_cards[index], index),
+          // Daftar kartu
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+              itemCount: _cards.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) =>
+                  _buildCardItem(_cards[index], index, s),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildCardItem(_AiCard card, int index) {
+  Widget _buildCardItem(_AiCard card, int index, double s) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: card.accepted
-              ? const Color(0xFF2D6A4F)
-              : const Color(0xFFE8E4DB),
+          color: card.accepted ? AppColors.success : AppColors.border,
           width: card.accepted ? 2 : 1.5,
         ),
       ),
@@ -312,18 +291,18 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
                 padding: const EdgeInsets.only(top: 2, right: 12),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  width: 22,
-                  height: 22,
+                  width: 24 * s,
+                  height: 24 * s,
                   decoration: BoxDecoration(
-                    color: card.accepted ? _successColor : Colors.transparent,
+                    color: card.accepted ? AppColors.success : Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: card.accepted ? _successColor : Colors.grey.shade400,
+                      color: card.accepted ? AppColors.success : AppColors.inactive,
                       width: 2,
                     ),
                   ),
                   child: card.accepted
-                      ? const Icon(Icons.check, color: Colors.white, size: 14)
+                      ? Icon(Icons.check, color: Colors.white, size: 16 * s)
                       : null,
                 ),
               ),
@@ -334,76 +313,66 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Label + nomor
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3C279).withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'KARTU ${index + 1}',
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                              color: Color(0xFF8B6914),
-                            ),
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'KARTU ${index + 1}',
+                        style: TextStyle(
+                          fontSize: 11 * s,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                          color: AppColors.accentDark,
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 8),
 
                     // Depan
-                    const Text(
+                    Text(
                       'Depan',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: AppFont.caption * s,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        color: AppColors.muted,
                         letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       card.front,
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontSize: AppFont.bodyLarge * s,
                         fontWeight: FontWeight.w600,
-                        color: _primaryColor,
+                        color: AppColors.primary,
                         height: 1.3,
                       ),
                     ),
                     const SizedBox(height: 10),
 
                     // Divider tipis
-                    Container(
-                      height: 1,
-                      color: const Color(0xFFEEECE8),
-                    ),
+                    Container(height: 1, color: AppColors.border),
                     const SizedBox(height: 10),
 
                     // Belakang
-                    const Text(
+                    Text(
                       'Belakang',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: AppFont.caption * s,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        color: AppColors.muted,
                         letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       card.back,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
+                      style: TextStyle(
+                        fontSize: AppFont.body * s,
+                        color: AppColors.textSecondary,
                         height: 1.35,
                       ),
                     ),
@@ -422,39 +391,18 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
     final hasAccepted = _acceptedCount > 0;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: (_isSaving || !hasAccepted) ? null : _saveAcceptedCards,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: hasAccepted ? _primaryColor : Colors.grey.shade300,
-              foregroundColor: hasAccepted ? Colors.white : Colors.grey,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(26),
-              ),
-              textStyle: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    hasAccepted
-                        ? 'Simpan $_acceptedCount Kartu ke Set'
-                        : 'Pilih minimal 1 kartu',
-                  ),
+      child: AppContentFrame(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+          child: AppButton(
+            label: hasAccepted
+                ? 'Simpan $_acceptedCount Kartu ke Set'
+                : 'Pilih minimal 1 kartu',
+            tone: AppButtonTone.primary,
+            size: AppButtonSize.large,
+            expand: true,
+            isLoading: _isSaving,
+            onPressed: hasAccepted ? _saveAcceptedCards : null,
           ),
         ),
       ),

@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
-import 'responsive_scale.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 import 'word_ellipsis_text.dart';
 
 // Desain dasar untuk kartu set dan kartu flashcard.
 class AppItemCardStyle {
   const AppItemCardStyle._();
-  static const Color primary = Color(0xFF192A3A);
-  static const Color border = Color(0xFFE8E4DB);
-  static const Color link = Color(0xFFE87A5D);
+  static const Color primary = AppColors.primary;
+  static const Color border = AppColors.border;
+  static const Color link = AppColors.link;
   static const EdgeInsets padding = EdgeInsets.fromLTRB(18, 16, 10, 14);
 }
 
-// Kerangka kartu: 
+// Kerangka kartu:
 // kontainer + bagian atas (header), isi (body), dan bawah (footer).
 // Jika height diisi, tinggi kartu tetap dan body mengisi sisa ruang Expanded.
 // Jika tidak, tinggi mengikuti isi.
@@ -44,7 +45,7 @@ class AppItemCard extends StatelessWidget {
       height: height,
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         border: Border.all(color: AppItemCardStyle.border, width: 1.5),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -64,15 +65,15 @@ class AppItemCard extends StatelessWidget {
   }
 }
 
-// Bagian atas kartu set: 
+// Bagian atas kartu set:
 // nama set dipotong pada batas kata dan jumlah kartu.
 class AppSetCardHeader extends StatelessWidget {
   const AppSetCardHeader({
     super.key,
     required this.title,
     required this.cardCount,
-    this.titleSize = 20,  
-    this.countSize = 12,   
+    this.titleSize = AppFont.title,
+    this.countSize = AppFont.caption,
   });
 
   final String title;
@@ -92,7 +93,7 @@ class AppSetCardHeader extends StatelessWidget {
             maxLines: 1,
             style: TextStyle(
               color: AppItemCardStyle.primary,
-              fontSize: titleSize * s, // [DIUBAH]
+              fontSize: titleSize * s,
               fontWeight: FontWeight.bold,
               fontFamily: 'serif',
             ),
@@ -103,7 +104,7 @@ class AppSetCardHeader extends StatelessWidget {
           padding: const EdgeInsets.only(right: 8),
           child: Text(
             '$cardCount kartu',
-            style: TextStyle(color: Colors.grey, fontSize: countSize * s), // [DIUBAH]
+            style: TextStyle(color: AppColors.muted, fontSize: countSize * s),
           ),
         ),
       ],
@@ -135,7 +136,7 @@ class AppDetailLink extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 13 * s, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: AppFont.small * s, fontWeight: FontWeight.bold),
       ),
     );
   }

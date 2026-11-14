@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'providers/auth_provider.dart';
 import 'screens/splash_screen.dart';
+import 'utils/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,8 +28,8 @@ class FlashMindApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flash Mind',
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFFBF9F6),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF192A3A)),
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary), 
         fontFamily: 'sans-serif',
       ),
       home: const SplashScreen(),

@@ -1,6 +1,7 @@
 import 'package:flashmind/widgets/app_item_card.dart';
 import 'package:flutter/material.dart';
 
+import '../utils/app_colors.dart';
 import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
@@ -11,7 +12,7 @@ import 'detail_set_screen.dart';
 
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_filter_chip.dart';
-import '../widgets/responsive_scale.dart';
+import '../utils/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
 import '../widgets/word_ellipsis_text.dart';
 import '../widgets/app_button.dart';
@@ -27,8 +28,6 @@ class BerkasScreen extends StatefulWidget {
 }
 
 class BerkasScreenState extends State<BerkasScreen> {
-  static const Color _primaryColor = Color(0xFF192A3A);
-
   static final FlashMindRepository _repository = FlashMindRepository.instance;
 
   BerkasFilter _filter = BerkasFilter.semua;
@@ -95,64 +94,69 @@ class BerkasScreenState extends State<BerkasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildHeader(context),
-        Expanded(
-          child: SafeArea(
-            top: false,
-            minimum: EdgeInsets.only(bottom: _keyboardOverlap(context)),
-            child: AnimatedBuilder(
-              animation: _repository,
-              builder: (context, _) {
-                final allSets = _repository.sets;
+    // seluruh isi dibungkus AppContentFrame agar proporsional di layar lebar
+    return AppContentFrame(
+      child: Column(
+        children: [
+          _buildHeader(context),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              minimum: EdgeInsets.only(bottom: _keyboardOverlap(context)),
+              child: AnimatedBuilder(
+                animation: _repository,
+                builder: (context, _) {
+                  final allSets = _repository.sets;
 
-                var filtered = _applyFilter(allSets);
+                  var filtered = _applyFilter(allSets);
 
-                if (_searchQuery.isNotEmpty) {
-                  final q = _searchQuery.toLowerCase();
-                  filtered = filtered
-                      .where((s) => s.title.toLowerCase().contains(q))
-                      .toList(growable: false);
-                }
+                  if (_searchQuery.isNotEmpty) {
+                    final q = _searchQuery.toLowerCase();
+                    filtered = filtered
+                        .where((s) => s.title.toLowerCase().contains(q))
+                        .toList(growable: false);
+                  }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                      child: _buildSearchBar(),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                      child: _buildFilterRow(),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? _buildEmptyState()
-                          : SingleChildScrollView(
-                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: filtered
-                                    .map(
-                                      (set) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 14),
-                                        child: _buildSetItem(context, set),
-                                      ),
-                                    )
-                                    .toList(),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        child: _buildSearchBar(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                        child: _buildFilterRow(),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? _buildEmptyState()
+                            : SingleChildScrollView(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: filtered
+                                      .map(
+                                        (set) => Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 14),
+                                          child: _buildSetItem(context, set),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
                               ),
-                            ),
-                    ),
-                  ],
-                );
-              },
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -161,22 +165,22 @@ class BerkasScreenState extends State<BerkasScreen> {
     return Container(
       height: 45 * s,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(25 * s),
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
+        border: Border.all(color: AppColors.border, width: 1.5),
       ),
       child: TextField(
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value.trim()),
         textAlignVertical: TextAlignVertical.center,
-        style: TextStyle(fontSize: 15 * s, color: const Color(0xFF192A3A)),
+        style: TextStyle(fontSize: AppFont.bodyLarge * s, color: AppColors.primary),
         decoration: InputDecoration(
           hintText: 'Cari set flashcard',
-          hintStyle: TextStyle(fontSize: 15 * s, color: const Color(0xFFB4B1AC)),
-          prefixIcon: Icon(Icons.search, color: const Color(0xFF9A9894), size: 22 * s),
+          hintStyle: TextStyle(fontSize: AppFont.bodyLarge * s, color: AppColors.hint),
+          prefixIcon: Icon(Icons.search, color: AppColors.muted, size: 22 * s),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.close, color: const Color(0xFF9A9894), size: 18 * s),
+                  icon: Icon(Icons.close, color: AppColors.muted, size: 18 * s),
                   onPressed: () {
                     _searchController.clear();
                     setState(() => _searchQuery = '');
@@ -224,13 +228,13 @@ class BerkasScreenState extends State<BerkasScreen> {
             Icon(
               isSearching ? Icons.search_off : Icons.folder_open,
               size: 44 * s,
-              color: Colors.grey.shade300,
+              color: AppColors.inactive,
             ),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 15 * s),
+              style: TextStyle(color: AppColors.muted, fontSize: AppFont.bodyLarge * s),
             ),
           ],
         ),
@@ -270,8 +274,8 @@ class BerkasScreenState extends State<BerkasScreen> {
                 Text(
                   'Berkas',
                   style: TextStyle(
-                    color: _primaryColor,
-                    fontSize: 30 * s,
+                    color: AppColors.primary,
+                    fontSize: AppFont.page * s,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'serif',
                   ),
@@ -279,9 +283,9 @@ class BerkasScreenState extends State<BerkasScreen> {
                 Text(
                   'Daftar Set Flashcard',
                   style: TextStyle(
-                    fontSize: 12 * s,
+                    fontSize: AppFont.caption * s,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFFE87A5D),
+                    color: AppColors.link,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -349,7 +353,8 @@ class _FlashcardSetCard extends StatelessWidget {
           : WordEllipsisText(
               set.description,
               maxLines: 2,
-              style: TextStyle(color: Colors.grey, fontSize: 13 * s, height: 1.3),
+              style: TextStyle(
+                  color: AppColors.muted, fontSize: AppFont.small * s, height: 1.3),
             ),
       footer: Align(
         alignment: Alignment.centerRight,

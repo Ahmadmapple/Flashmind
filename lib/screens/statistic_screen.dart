@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../utils/app_colors.dart';
 import '../utils/formatter.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
@@ -10,7 +11,9 @@ import 'study_history_screen.dart';
 import 'study_session_end_screen.dart';
 import '../widgets/app_empty_card.dart';
 import '../widgets/app_section_header.dart';
+import '../widgets/app_stat_box.dart';
 import '../widgets/history_range_filter.dart';
+import '../utils/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
 
 class StatisticScreen extends StatefulWidget {
@@ -22,10 +25,6 @@ class StatisticScreen extends StatefulWidget {
 
 class _StatisticScreenState extends State<StatisticScreen> {
   HistoryRange _range = HistoryRange.week;
-
-  static const Color _primary = Color(0xFF192A3A);
-  static const Color _orange  = Color(0xFFE87A5D);
-  static const Color _green   = Color(0xFF2F776F);
 
   List<StudySession> _filteredSessions(FlashMindRepository repo) =>
       _range.filter(repo.allCompletedSessions);
@@ -48,11 +47,11 @@ class _StatisticScreenState extends State<StatisticScreen> {
       title: set.title,
       cardCount: set.cardCount,
       timeCaption: 'Durasi pengerjaan',
-      lastStudiedLabel: avgDuration == null ? '-' : Formatter.duration(avgDuration),
+      lastStudiedLabel:
+          avgDuration == null ? '-' : Formatter.duration(avgDuration),
       accuracy: repo.getAverageAccuracyForSet(set.id),
       onViewDetail: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-            builder: (_) => DetailSetScreen(setId: set.id)),
+        MaterialPageRoute<void>(builder: (_) => DetailSetScreen(setId: set.id)),
       ),
     );
   }
@@ -60,35 +59,36 @@ class _StatisticScreenState extends State<StatisticScreen> {
   // Garis pemisah antar komponen Wawasan Belajar.
   static const Widget _insightDivider = Padding(
     padding: EdgeInsets.symmetric(vertical: 14),
-    child: Divider(color: Color(0xFFE8E4DB), height: 1),
+    child: Divider(color: AppColors.border, height: 1),
   );
 
   Widget _buildContent(BuildContext context) {
-    final repo     = FlashMindRepository.instance;
+    final double s = context.scale;
+    final repo = FlashMindRepository.instance;
     final sessions = _filteredSessions(repo);
-    final sets     = repo.sets;
+    final sets = repo.sets;
 
     final int totalSessions = sessions.length;
-    final int totalCards    = sessions.fold(0, (s, x) => s + x.completedCardCount);
-    final Duration totalDur = sessions.fold(Duration.zero, (d, x) => d + x.totalDuration);
-    final double accuracy   = sessions.isEmpty
+    final int totalCards = sessions.fold(0, (s, x) => s + x.completedCardCount);
+    final Duration totalDur =
+        sessions.fold(Duration.zero, (d, x) => d + x.totalDuration);
+    final double accuracy = sessions.isEmpty
         ? 0
         : sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
-    final int totalSets     = sets.length;
+    final int totalSets = sets.length;
 
     // Data performa dihitung dari sesi pada rentang yang dipilih.
-    final int totalCorrect  = sessions.fold<int>(0, (s, x) => s + x.correctCount);
-    final int totalWrong    = sessions.fold<int>(0, (s, x) => s + x.wrongCount);
+    final int totalCorrect = sessions.fold<int>(0, (s, x) => s + x.correctCount);
+    final int totalWrong = sessions.fold<int>(0, (s, x) => s + x.wrongCount);
     final int totalAnswered = totalCorrect + totalWrong;
-    final int correctPct = totalAnswered == 0
-        ? 0
-        : (totalCorrect / totalAnswered * 100).round();
+    final int correctPct =
+        totalAnswered == 0 ? 0 : (totalCorrect / totalAnswered * 100).round();
     final int wrongPct = totalAnswered == 0 ? 0 : 100 - correctPct;
     final double correctFraction =
         totalAnswered == 0 ? 0 : totalCorrect / totalAnswered;
 
-    final int highestStreak   = repo.highestStreak;
-    final FlashcardSet? best  = repo.bestMasteredSet;
+    final int highestStreak = repo.highestStreak;
+    final FlashcardSet? best = repo.bestMasteredSet;
     final FlashcardSet? worst = repo.worstSet;
 
     // Riwayat Belajar menampilkan sesi terbaru dahulu, maksimal 3.
@@ -104,266 +104,222 @@ class _StatisticScreenState extends State<StatisticScreen> {
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Statistik',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'serif',
-                color: _primary,
+        child: AppContentFrame(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Statistik',
+                style: TextStyle(
+                  fontSize: AppFont.page * s,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'serif',
+                  color: AppColors.primary,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            const Text(
-              'Data Belajar Pengguna',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: _orange,
-                letterSpacing: 0.5,
+              const SizedBox(height: 2),
+              Text(
+                'Data Belajar Pengguna',
+                style: TextStyle(
+                  fontSize: AppFont.caption * s,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.link,
+                  letterSpacing: 1.2,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            HistoryRangeFilter(
-              selected: _range,
-              onChanged: (r) => setState(() => _range = r),
-            ),
-
-            const SizedBox(height: 18),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF192A3A),
-                borderRadius: BorderRadius.circular(20),
+              HistoryRangeFilter(
+                selected: _range,
+                onChanged: (r) => setState(() => _range = r),
               ),
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.7,
-                children: [
-                  _SummaryBox(label: 'Total sesi selesai', value: '$totalSessions'),
-                  _SummaryBox(label: 'Total kartu diulas', value: '$totalCards'),
-                  _SummaryBox(label: 'Total durasi belajar', value: Formatter.duration(totalDur)),
-                  _SummaryBox(label: 'Tingkat kebenaran', value: Formatter.percent(accuracy)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
 
-            // Performa Pengguna
-            const AppSectionHeader(title: 'Performa Pengguna'),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
+              const SizedBox(height: 18),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: AppStatGrid(
+                  items: [
+                    ('Total sesi selesai', '$totalSessions'),
+                    ('Total kartu diulas', '$totalCards'),
+                    ('Total durasi belajar', Formatter.duration(totalDur)),
+                    ('Tingkat kebenaran', Formatter.percent(accuracy)),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: SizedBox(
-                          height: 8,
-                          child: totalAnswered == 0
-                              // Belum ada data pada rentang ini: bar netral
-                              ? Container(color: const Color(0xFFE8E4DB))
-                              : Row(
-                                  children: [
-                                    Container(
-                                      width: constraints.maxWidth * correctFraction,
-                                      color: _green,
-                                    ),
-                                    Expanded(child: Container(color: _orange)),
-                                  ],
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _PerformRow(
-                    label: 'Jumlah Benar',
-                    value: '$totalCorrect (${Formatter.percent(correctPct)})',
-                    valueColor: _green,
-                  ),
-                  const SizedBox(height: 6),
-                  _PerformRow(
-                    label: 'Jumlah Salah',
-                    value: '$totalWrong (${Formatter.percent(wrongPct)})',
-                    valueColor: _orange,
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Divider(color: Color(0xFFE8E4DB), height: 1),
-                  ),
-                  if (sessions.isNotEmpty) ...[
+              const SizedBox(height: 25),
+
+              // Performa Pengguna
+              const AppSectionHeader(title: 'Performa Pengguna'),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border, width: 1.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: SizedBox(
+                            height: 8 * s,
+                            child: totalAnswered == 0
+                                // Belum ada data pada rentang ini: bar netral
+                                ? Container(color: AppColors.border)
+                                : Row(
+                                    children: [
+                                      Container(
+                                        width: constraints.maxWidth *
+                                            correctFraction,
+                                        color: AppColors.success,
+                                      ),
+                                      Expanded(
+                                          child: Container(
+                                              color: AppColors.danger)),
+                                    ],
+                                  ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
                     _PerformRow(
-                      label: 'Rata-rata durasi per sesi',
-                      value: Formatter.duration(Duration(
-                          microseconds: totalDur.inMicroseconds ~/ sessions.length)),
+                      label: 'Jumlah Benar',
+                      value: '$totalCorrect (${Formatter.percent(correctPct)})',
+                      valueColor: AppColors.success,
                     ),
                     const SizedBox(height: 6),
                     _PerformRow(
-                      label: 'Rata-rata durasi per kartu',
-                      value: Formatter.duration(totalCards == 0
-                          ? Duration.zero
-                          : Duration(
-                              microseconds: totalDur.inMicroseconds ~/ totalCards)),
+                      label: 'Jumlah Salah',
+                      value: '$totalWrong (${Formatter.percent(wrongPct)})',
+                      valueColor: AppColors.danger,
                     ),
-                    const SizedBox(height: 6),
-                  ],
-                  _PerformRow(label: 'Total set', value: '$totalSets set'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
-
-            // Wawasan Belajar
-            const AppSectionHeader(title: 'Wawasan Belajar'),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _InsightRow(
-                    label: 'Konsistensi tertinggi',
-                    value: '$highestStreak hari',
-                  ),
-                  if (best != null) ...[
-                    _insightDivider,
-                    const _InsightLabel('Set yang paling dikuasai'),
-                    const SizedBox(height: 10),
-                    _buildInsightSetCard(context, repo, best),
-                  ],
-                  if (showWorst) ...[
-                    _insightDivider,
-                    const _InsightLabel('Set yang paling perlu diperhatikan'),
-                    const SizedBox(height: 10),
-                    _buildInsightSetCard(context, repo, worst),
-                  ],
-                  if (best == null) ...[
-                    _insightDivider,
-                    const Text(
-                      'Belum ada wawasan belajar. Selesaikan sesi belajar untuk melihat set yang paling dikuasai dan perlu diperhatikan.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        height: 1.4,
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Divider(color: AppColors.border, height: 1),
+                    ),
+                    if (sessions.isNotEmpty) ...[
+                      _PerformRow(
+                        label: 'Rata-rata durasi per sesi',
+                        value: Formatter.duration(Duration(
+                            microseconds:
+                                totalDur.inMicroseconds ~/ sessions.length)),
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      _PerformRow(
+                        label: 'Rata-rata durasi per kartu',
+                        value: Formatter.duration(totalCards == 0
+                            ? Duration.zero
+                            : Duration(
+                                microseconds:
+                                    totalDur.inMicroseconds ~/ totalCards)),
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                    _PerformRow(label: 'Total set', value: '$totalSets set'),
                   ],
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 25),
+              const SizedBox(height: 25),
 
-            // Riwayat Belajar
-            AppSectionHeader(
-              title: 'Riwayat Belajar',
-              actionLabel: 'Lihat semua →',
-              onAction: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                    builder: (_) => const StudyHistoryScreen()),
+              // Wawasan Belajar
+              const AppSectionHeader(title: 'Wawasan Belajar'),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border, width: 1.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _InsightRow(
+                      label: 'Konsistensi tertinggi',
+                      value: '$highestStreak hari',
+                    ),
+                    if (best != null) ...[
+                      _insightDivider,
+                      const _InsightLabel('Set yang paling dikuasai'),
+                      const SizedBox(height: 10),
+                      _buildInsightSetCard(context, repo, best),
+                    ],
+                    if (showWorst) ...[
+                      _insightDivider,
+                      const _InsightLabel('Set yang paling perlu diperhatikan'),
+                      const SizedBox(height: 10),
+                      _buildInsightSetCard(context, repo, worst),
+                    ],
+                    if (best == null) ...[
+                      _insightDivider,
+                      Text(
+                        'Belum ada wawasan belajar. Selesaikan sesi belajar untuk melihat set yang paling dikuasai dan perlu diperhatikan.',
+                        style: TextStyle(
+                          fontSize: AppFont.body * s,
+                          color: AppColors.muted,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            if (recentSessions.isEmpty)
-              const AppEmptyCard(
-                icon: Icons.menu_book_rounded,
-                title: 'Belum ada sesi yang selesai.',
-                subtitle: 'Selesaikan sesi belajar agar\nriwayatnya muncul di sini.',
-              )
-            else
-              ...recentSessions.map((session) {
-                final set = repo.getSetById(session.setId);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: StudyHistoryCard(
-                    title: set?.title ?? session.setTitle ?? 'Set yang dihapus',
-                    cardCount: set?.cardCount ?? session.totalCardCount,
-                    timeCaption: 'Waktu diselesaikan',
-                    lastStudiedLabel: Formatter.relativeTime(_endOf(session)),
-                    accuracy: session.accuracy,
-                    onViewDetail: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => StudySessionEndScreen(
-                          setId: session.setId,
-                          sessionId: session.id,
+              const SizedBox(height: 25),
+
+              // Riwayat Belajar
+              AppSectionHeader(
+                title: 'Riwayat Belajar',
+                actionLabel: 'Lihat semua →',
+                onAction: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                      builder: (_) => const StudyHistoryScreen()),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (recentSessions.isEmpty)
+                const AppEmptyCard(
+                  icon: Icons.menu_book_rounded,
+                  title: 'Belum ada sesi yang selesai.',
+                  subtitle:
+                      'Selesaikan sesi belajar agar\nriwayatnya muncul di sini.',
+                )
+              else
+                ...recentSessions.map((session) {
+                  final set = repo.getSetById(session.setId);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: StudyHistoryCard(
+                      title: set?.title ?? session.setTitle ?? 'Set yang dihapus',
+                      cardCount: set?.cardCount ?? session.totalCardCount,
+                      timeCaption: 'Waktu diselesaikan',
+                      lastStudiedLabel: Formatter.relativeTime(_endOf(session)),
+                      accuracy: session.accuracy,
+                      onViewDetail: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StudySessionEndScreen(
+                            setId: session.setId,
+                            sessionId: session.id,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }),
-          ],
+                  );
+                }),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _SummaryBox extends StatelessWidget {
-  const _SummaryBox({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3C279),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF192A3A),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF192A3A),
-              height: 1.1,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -373,7 +329,7 @@ class _PerformRow extends StatelessWidget {
   const _PerformRow({
     required this.label,
     required this.value,
-    this.valueColor = const Color(0xFF192A3A),
+    this.valueColor = AppColors.primary,
   });
 
   final String label;
@@ -382,14 +338,21 @@ class _PerformRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double s = context.scale;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Flexible(
+          child: Text(label,
+              style: TextStyle(fontSize: AppFont.body * s, color: AppColors.muted)),
+        ),
+        const SizedBox(width: 8),
         Text(
           value,
           style: TextStyle(
-              fontSize: 12, fontWeight: FontWeight.w600, color: valueColor),
+              fontSize: AppFont.body * s,
+              fontWeight: FontWeight.w600,
+              color: valueColor),
         ),
       ],
     );
@@ -404,16 +367,18 @@ class _InsightRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double s = context.scale;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+        Text(label,
+            style: TextStyle(fontSize: AppFont.bodyLarge * s, color: AppColors.muted)),
         Text(
           value,
-          style: const TextStyle(
-              fontSize: 16,
+          style: TextStyle(
+              fontSize: AppFont.subtitle * s,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF192A3A)),
+              color: AppColors.primary),
         ),
       ],
     );
@@ -430,7 +395,7 @@ class _InsightLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 14, color: Colors.grey),
+      style: TextStyle(fontSize: AppFont.bodyLarge * context.scale, color: AppColors.muted),
     );
   }
 }

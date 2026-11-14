@@ -6,6 +6,8 @@ import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 import '../widgets/study_session_layout.dart';
 import 'study_session_end_screen.dart';
 
@@ -22,29 +24,20 @@ class StudySessionScreen extends StatefulWidget {
 
 class _StudySessionScreenState extends State<StudySessionScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  // ── Warna ──────────────────────────────────────────────────────────────────
-  static const Color _primaryColor    = Color(0xFF192A3A);
-  static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _cardFrontColor  = Color(0xFF192A3A);   // biru gelap
-  static const Color _cardBackColor   = Color(0xFFF3C279);   // kuning emas
-  static const Color _dangerColor     = Color(0xFFEF5350);
-  static const Color _successColor    = Color(0xFF2D6A4F);
-  static const Color _orangeColor     = Color(0xFFE87A5D);
-
-  // Ukuran area bawah berisikan petunjuk dan tombol dibuat tetap
+  // Ukuran area bawah berisikan petunjuk dan tombol
   static const double _bottomSectionHeight = 50;
 
   // ── Repository & state ────────────────────────────────────────────────────
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
-  String?  _sessionId;
-  bool     _isInitializing = true;
-  bool     _isEvaluating   = false;
-  bool     _answerVisible  = false;
+  String? _sessionId;
+  bool _isInitializing = true;
+  bool _isEvaluating = false;
+  bool _answerVisible = false;
 
   // ── Animasi flip ─────────────────────────────────────────────────────────
   late final AnimationController _flipController;
-  late final Animation<double>   _flipAnimation;
+  late final Animation<double> _flipAnimation;
   bool _isFrontFacing = true;
 
   @override
@@ -95,10 +88,10 @@ class _StudySessionScreenState extends State<StudySessionScreen>
 
     final alreadyRevealed = session?.currentCardAnswerRevealedAt != null;
     setState(() {
-      _sessionId       = session?.id;
-      _isInitializing  = false;
-      _answerVisible   = alreadyRevealed;
-      _isFrontFacing   = !alreadyRevealed;
+      _sessionId = session?.id;
+      _isInitializing = false;
+      _answerVisible = alreadyRevealed;
+      _isFrontFacing = !alreadyRevealed;
     });
 
     if (alreadyRevealed) {
@@ -126,7 +119,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
 
   Flashcard? get _currentCard {
     final session = _session;
-    final set     = _set;
+    final set = _set;
     if (session == null || set == null) return null;
     if (session.nextCardIndex >= session.cardOrder.length) return null;
     final cardId = session.cardOrder[session.nextCardIndex];
@@ -152,8 +145,8 @@ class _StudySessionScreenState extends State<StudySessionScreen>
       _repository.markAnswerRevealed(session.id);
       _flipController.forward();
       setState(() {
-        _isFrontFacing  = false;
-        _answerVisible  = true;
+        _isFrontFacing = false;
+        _answerVisible = true;
       });
     } else {
       // Belakang → depan
@@ -168,14 +161,14 @@ class _StudySessionScreenState extends State<StudySessionScreen>
   // ── Evaluasi ──────────────────────────────────────────────────────────────
   Future<void> _evaluateCard(bool isCorrect) async {
     final session = _session;
-    final card    = _currentCard;
+    final card = _currentCard;
     if (session == null || card == null || _isEvaluating) return;
 
     setState(() => _isEvaluating = true);
 
     final updatedSession = _repository.evaluateCurrentCard(
       sessionId: session.id,
-      cardId:    card.id,
+      cardId: card.id,
       isCorrect: isCorrect,
     );
 
@@ -190,7 +183,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
       await Navigator.of(context).pushReplacement<void, void>(
         MaterialPageRoute<void>(
           builder: (_) => StudySessionEndScreen(
-            setId:     updatedSession.setId,
+            setId: updatedSession.setId,
             sessionId: updatedSession.id,
             returnToStart: true,
           ),
@@ -204,7 +197,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
     setState(() {
       _answerVisible = false;
       _isFrontFacing = true;
-      _isEvaluating  = false;
+      _isEvaluating = false;
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -218,18 +211,18 @@ class _StudySessionScreenState extends State<StudySessionScreen>
   Widget build(BuildContext context) {
     if (_isInitializing) {
       return const Scaffold(
-        backgroundColor: _backgroundColor,
-        body: Center(child: CircularProgressIndicator(color: _primaryColor)),
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
     final session = _session;
-    final set     = _set;
-    final card    = _currentCard;
+    final set = _set;
+    final card = _currentCard;
 
     if (session == null || set == null || card == null) {
       return Scaffold(
-        backgroundColor: _backgroundColor,
+        backgroundColor: AppColors.background,
         appBar: _buildAppBar(context),
         body: const Center(
           child: Text('Sesi belajar tidak dapat ditampilkan.'),
@@ -247,7 +240,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: _backgroundColor,
+        backgroundColor: AppColors.background,
         appBar: _buildAppBar(context),
         body: _buildBody(context, session, set, card),
       ),
@@ -258,7 +251,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return StudySessionAppBar(
       onBack: _isEvaluating ? null : () => Navigator.of(context).pop(),
-      backgroundColor: _backgroundColor,
+      backgroundColor: AppColors.background,
       showDivider: true,
     );
   }
@@ -270,14 +263,15 @@ class _StudySessionScreenState extends State<StudySessionScreen>
     FlashcardSet set,
     Flashcard card,
   ) {
-    final totalCards    = session.cardOrder.length;
+    final double s = context.scale;
+    final totalCards = session.cardOrder.length;
     final currentNumber = session.nextCardIndex + 1;
 
     return SafeArea(
       top: false,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
+          constraints: BoxConstraints(maxWidth: 600 * s),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 45),
             child: Column(
@@ -288,11 +282,11 @@ class _StudySessionScreenState extends State<StudySessionScreen>
                   '${set.title.toUpperCase()} · KARTU $currentNumber',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
+                  style: TextStyle(
+                    fontSize: AppFont.caption * s,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
-                    color: _orangeColor,
+                    color: AppColors.link,
                   ),
                 ),
 
@@ -301,10 +295,10 @@ class _StudySessionScreenState extends State<StudySessionScreen>
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: currentNumber / totalCards,
-                    minHeight: 3,
-                    backgroundColor: const Color(0xFFE8E4DB),
+                    minHeight: 3 * s,
+                    backgroundColor: AppColors.border,
                     valueColor: const AlwaysStoppedAnimation<Color>(
-                      _orangeColor,
+                      AppColors.link,
                     ),
                   ),
                 ),
@@ -312,12 +306,12 @@ class _StudySessionScreenState extends State<StudySessionScreen>
                 const SizedBox(height: 20),
 
                 // Kartu flip akan mengisi seluruh sisa ruang
-                Expanded(child: _buildFlipCard(card)),
+                Expanded(child: _buildFlipCard(card, s)),
 
                 const SizedBox(height: 20),
 
                 // Area bawah berisikan Petunjuk dan tombol evaluasi
-                _buildBottomSection(),
+                _buildBottomSection(s),
               ],
             ),
           ),
@@ -327,7 +321,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
   }
 
   // ── Kartu flip 3D ────────────────────────────────────────────────────────
-  Widget _buildFlipCard(Flashcard card) {
+  Widget _buildFlipCard(Flashcard card, double s) {
     return GestureDetector(
       onTap: _isEvaluating ? null : _flipCard,
       child: AnimatedBuilder(
@@ -339,11 +333,12 @@ class _StudySessionScreenState extends State<StudySessionScreen>
           Widget face;
           if (isFront) {
             face = _buildCardFace(
-              faceId:    '${card.id}-front',
-              text:      card.frontText,
-              color:     _cardFrontColor,
+              s: s,
+              faceId: '${card.id}-front',
+              text: card.frontText,
+              color: AppColors.primary,
               textColor: Colors.white,
-              hint:      'KETUK UNTUK LIHAT JAWABAN',
+              hint: 'KETUK UNTUK LIHAT JAWABAN',
               hintColor: Colors.white38,
             );
           } else {
@@ -351,12 +346,13 @@ class _StudySessionScreenState extends State<StudySessionScreen>
               alignment: Alignment.center,
               transform: Matrix4.rotationY(pi),
               child: _buildCardFace(
-                faceId:    '${card.id}-back',
-                text:      card.backText,
-                color:     _cardBackColor,
-                textColor: _primaryColor,
-                hint:      'KETUK UNTUK LIHAT PERTANYAAN',
-                hintColor: const Color(0x66192A3A),
+                s: s,
+                faceId: '${card.id}-back',
+                text: card.backText,
+                color: AppColors.accent,
+                textColor: AppColors.primary,
+                hint: 'KETUK UNTUK LIHAT PERTANYAAN',
+                hintColor: AppColors.primary.withValues(alpha: 0.4),
               ),
             );
           }
@@ -374,6 +370,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
   }
 
   Widget _buildCardFace({
+    required double s,
     required String faceId,
     required String text,
     required Color color,
@@ -402,7 +399,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
             hint,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11 * s,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
               color: hintColor,
@@ -414,56 +411,59 @@ class _StudySessionScreenState extends State<StudySessionScreen>
   }
 
   // ── Bagian bawah ─────────────────────────────────────────────────────────
-  Widget _buildBottomSection() {
+  Widget _buildBottomSection(double s) {
     return SizedBox(
-      height: _bottomSectionHeight,
+      height: _bottomSectionHeight * s,
       child: _answerVisible
           ? Row(
               children: [
                 Expanded(
                   child: _buildEvaluationButton(
-                    label:           'Salah',
-                    backgroundColor: const Color(0xFFFDE8E8),
-                    textColor:       _dangerColor,
-                    onPressed:       _isEvaluating ? null : () => _evaluateCard(false),
+                    s: s,
+                    label: 'Salah',
+                    backgroundColor: AppColors.dangerSoft,
+                    textColor: AppColors.danger,
+                    onPressed: _isEvaluating ? null : () => _evaluateCard(false),
                   ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: _buildEvaluationButton(
-                    label:           'Benar',
-                    backgroundColor: _successColor,
-                    textColor:       Colors.white,
-                    onPressed:       _isEvaluating ? null : () => _evaluateCard(true),
+                    s: s,
+                    label: 'Benar',
+                    backgroundColor: AppColors.success,
+                    textColor: Colors.white,
+                    onPressed: _isEvaluating ? null : () => _evaluateCard(true),
                   ),
                 ),
               ],
             )
-          : const Center(
+          : Center(
               child: Text(
                 'Pikirkan jawabannya, lalu ketuk kartu untuk membalik.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(fontSize: AppFont.small * s, color: AppColors.muted),
               ),
             ),
     );
   }
 
   Widget _buildEvaluationButton({
+    required double s,
     required String label,
     required Color backgroundColor,
     required Color textColor,
     required VoidCallback? onPressed,
   }) {
     return SizedBox(
-      height: _bottomSectionHeight,
+      height: _bottomSectionHeight * s,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(backgroundColor),
           foregroundColor: WidgetStatePropertyAll(textColor),
-          elevation:        const WidgetStatePropertyAll(0),
-          padding:          const WidgetStatePropertyAll(
+          elevation: const WidgetStatePropertyAll(0),
+          padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 14),
           ),
           shape: const WidgetStatePropertyAll(
@@ -471,14 +471,14 @@ class _StudySessionScreenState extends State<StudySessionScreen>
               borderRadius: BorderRadius.all(Radius.circular(26)),
             ),
           ),
-          textStyle: const WidgetStatePropertyAll(
-            TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          textStyle: WidgetStatePropertyAll(
+            TextStyle(fontSize: AppFont.bodyLarge * s, fontWeight: FontWeight.w700),
           ),
         ),
         child: _isEvaluating
             ? SizedBox(
-                width: 18,
-                height: 18,
+                width: 18 * s,
+                height: 18 * s,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: textColor,
@@ -522,6 +522,7 @@ class _CardFaceTextState extends State<_CardFaceText> {
 
   @override
   Widget build(BuildContext context) {
+    final double s = context.scale;
     final String text = widget.text;
     final bool isLong = text.length > 120;
 
@@ -550,7 +551,7 @@ class _CardFaceTextState extends State<_CardFaceText> {
                       text,
                       textAlign: isLong ? TextAlign.justify : TextAlign.center,
                       style: TextStyle(
-                        fontSize: _fontSizeFor(text.length),
+                        fontSize: _fontSizeFor(text.length) * s,
                         fontWeight: isLong ? FontWeight.w600 : FontWeight.bold,
                         fontFamily: 'serif',
                         color: widget.textColor,
