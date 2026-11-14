@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../utils/app_colors.dart';
 import 'add_card_screen.dart';
 import 'edit_set_screen.dart';
 import 'detail_card_screen.dart';
@@ -10,8 +11,9 @@ import 'study_session_continue_screen.dart';
 import 'study_session_start_screen.dart';
 import 'ai_card_review_screen.dart';
 
+import '../widgets/app_top_bar.dart';
 import '../widgets/confirm_delete_dialog.dart';
-import '../widgets/responsive_scale.dart';
+import '../utils/responsive_scale.dart';
 import '../widgets/app_item_card.dart';
 import '../widgets/app_button.dart';
 
@@ -32,13 +34,10 @@ class DetailSetScreen extends StatefulWidget {
 }
 
 class _DetailSetScreenState extends State<DetailSetScreen> {
-  static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _accentColor  = Color(0xFFF3C279);
-
   static TextStyle _cardBodyStyle(double s) => TextStyle(
-    fontSize: 15 * s,
+    fontSize: AppFont.bodyLarge * s,
     fontWeight: FontWeight.w600,
-    color: _primaryColor,
+    color: AppColors.primary,
     height: 1.25,
   );
 
@@ -106,7 +105,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     final bool? confirmed = await showConfirmDeleteDialog(
       context,
       title: 'Hapus Set',
-      message:'Set dan kartu di dalamnya akan dihapus.',
+      message: 'Set dan kartu di dalamnya akan dihapus.',
       itemName: set.title,
       confirmLabel: 'Hapus',
     );
@@ -165,7 +164,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
 
     final _AddCardMode? choice = await showModalBottomSheet<_AddCardMode>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -178,7 +177,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
           child: Center(
             heightFactor: 1,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
+              constraints: BoxConstraints(maxWidth: 560 * s),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                     24, 20, 24, 28 + (bottomPadding > 0 ? 0 : 8)),
@@ -191,7 +190,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8E4DB),
+                          color: AppColors.border,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -200,69 +199,45 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                     Text(
                       'Tambah Kartu',
                       style: TextStyle(
-                        fontSize: 22 * s,
+                        fontSize: AppFont.heading * s,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'serif',
-                        color: _primaryColor,
+                        color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Pilih cara yang ingin kamu gunakan untuk membuat kartu.',
                       style: TextStyle(
-                        fontSize: 14 * s,
-                        color: Colors.grey,
+                        fontSize: AppFont.body * s,
+                        color: AppColors.muted,
                         height: 1.45,
                       ),
                     ),
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54 * s,
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            Navigator.of(ctx).pop(_AddCardMode.manual),
-                        icon: Icon(Icons.edit_outlined, size: 22 * s),
-                        label: const Text('Buat Kartu Sendiri'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _accentColor,
-                          foregroundColor: _primaryColor,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(27 * s),
-                          ),
-                          textStyle: TextStyle(
-                              fontSize: 16 * s, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                    AppButton(
+                      label: 'Buat Kartu Sendiri',
+                      icon: Icons.edit_outlined,
+                      size: AppButtonSize.large,
+                      expand: true,
+                      onPressed: () => Navigator.of(ctx).pop(_AddCardMode.manual),
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54 * s,
-                      child: ElevatedButton.icon(
-                        onPressed: () => Navigator.of(ctx).pop(_AddCardMode.ai),
-                        icon: Icon(Icons.auto_awesome, size: 22 * s),
-                        label: const Text('Gunakan Bantuan AI'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _primaryColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(27 * s),
-                          ),
-                          textStyle: TextStyle(
-                              fontSize: 16 * s, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                    AppButton(
+                      label: 'Gunakan Bantuan AI',
+                      icon: Icons.auto_awesome,
+                      tone: AppButtonTone.primary,
+                      size: AppButtonSize.large,
+                      expand: true,
+                      onPressed: () => Navigator.of(ctx).pop(_AddCardMode.ai),
                     ),
                     const SizedBox(height: 14),
                     Text(
                       'Bantuan AI membaca dokumen PDF dan membuat kartu secara otomatis. '
                       'Kamu bisa meninjau kartunya sebelum disimpan.',
                       style: TextStyle(
-                        fontSize: 12 * s,
-                        color: Colors.grey,
+                        fontSize: AppFont.small * s,
+                        color: AppColors.muted,
                         height: 1.45,
                       ),
                     ),
@@ -305,7 +280,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6),
+      backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: AnimatedBuilder(
         animation: _repository,
@@ -321,29 +296,10 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    final double s = ResponsiveScale.of(context);
-    return AppBar(
-      backgroundColor: const Color(0xFFFBF9F6),
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-      toolbarHeight: 60 * s,
-      leading: IconButton(
-        onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-        icon: Icon(Icons.arrow_back, size: 28 * s),
-        color: _primaryColor,
-        tooltip: 'Kembali',
-      ),
-      title: Text(
-        'Detail Set',
-        style: TextStyle(
-          fontSize: 25 * s,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'serif',
-          color: _primaryColor,
-        ),
-      ),
+    return AppTopBar(
+      title: 'Detail Set',
       centerTitle: false,
+      onBack: _isDeleting ? null : () => Navigator.of(context).pop(),
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 14, top: 8, bottom: 8),
@@ -371,59 +327,62 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
       bottom: false,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 22, 20, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              set.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 22 * s,
-                fontWeight: FontWeight.bold,
-                color: _primaryColor,
+        child: AppContentFrame(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                set.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: AppFont.heading * s,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.justify,
-              style: TextStyle(fontSize: 13 * s, color: Colors.grey, height: 1.25),
-            ),
-            const SizedBox(height: 28),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Hapus Set',
-                    tone: AppButtonTone.danger,
-                    expand: true,
-                    isLoading: _isDeleting,
-                    onPressed: _isDeleting ? null : () => _confirmDelete(set),
+              const SizedBox(height: 8),
+              Text(
+                set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.justify,
+                style: TextStyle(
+                    fontSize: AppFont.small * s, color: AppColors.muted, height: 1.25),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      label: 'Hapus Set',
+                      tone: AppButtonTone.danger,
+                      expand: true,
+                      isLoading: _isDeleting,
+                      onPressed: _isDeleting ? null : () => _confirmDelete(set),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppButton(
-                    label: _repository.getInProgressStudySessionForSet(set.id) != null
-                        ? 'Lanjut Belajar'
-                        : 'Mulai Belajar',
-                    expand: true,
-                    onPressed: (!isEmpty && !_isDeleting) ? _openStudySessionStart : null,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppButton(
+                      label: _repository.getInProgressStudySessionForSet(set.id) != null
+                          ? 'Lanjut Belajar'
+                          : 'Mulai Belajar',
+                      expand: true,
+                      onPressed: (!isEmpty && !_isDeleting) ? _openStudySessionStart : null,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildAddCardButton(s),
-            const SizedBox(height: 28),
-            if (isEmpty)
-              _buildEmptyState(s)
-            else
-              _buildCardList(set.cards, s),
-          ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildAddCardButton(),
+              const SizedBox(height: 28),
+              if (isEmpty)
+                _buildEmptyState(s)
+              else
+                _buildCardList(set.cards, s),
+            ],
+          ),
         ),
       ),
     );
@@ -441,14 +400,14 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
   }
 
   Widget _buildFlashcardCard(Flashcard card, double s) {
-    final bool isBackVisible  = _backVisibleCardIds.contains(card.id);
-    final String text         = isBackVisible ? card.backText : card.frontText;
-    final String sideLabel    = isBackVisible ? 'Sisi Belakang' : 'Sisi Depan';
-    final String flipTooltip  = isBackVisible ? 'Tampilkan sisi depan' : 'Balikkan kartu';
+    final bool isBackVisible = _backVisibleCardIds.contains(card.id);
+    final String text = isBackVisible ? card.backText : card.frontText;
+    final String sideLabel = isBackVisible ? 'Sisi Belakang' : 'Sisi Depan';
+    final String flipTooltip = isBackVisible ? 'Tampilkan sisi depan' : 'Balikkan kartu';
 
     final TextStyle bodyStyle = _cardBodyStyle(s);
     final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style.merge(bodyStyle);
-    final TextScaler textScaler        = MediaQuery.textScalerOf(context);
+    final TextScaler textScaler = MediaQuery.textScalerOf(context);
 
     return AppItemCard(
       height: 155 * s,
@@ -458,10 +417,10 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
       header: Text(
         sideLabel,
         style: TextStyle(
-          fontSize: 12 * s,
+          fontSize: AppFont.caption * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
-          color: const Color(0xFF9A9894),
+          color: AppColors.muted,
         ),
       ),
       body: LayoutBuilder(
@@ -502,37 +461,31 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                 });
               },
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF9A9894),
+                foregroundColor: AppColors.muted,
                 padding: EdgeInsets.symmetric(horizontal: 2 * s, vertical: 2 * s),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               icon: Icon(Icons.swap_horiz, size: 24 * s),
-              label: Text('Balikkan Kartu', style: TextStyle(fontSize: 13 * s)),
+              label: Text('Balikkan Kartu',
+                  style: TextStyle(fontSize: AppFont.small * s)),
             ),
           ),
-          AppDetailLink(onPressed: () => _openDetailCard(card)), // DIUBAH
+          AppDetailLink(onPressed: () => _openDetailCard(card)),
         ],
       ),
     );
   }
 
-  Widget _buildAddCardButton(double s) {
-    return SizedBox(
-      width: double.infinity,
-      height: 45 * s,
-      child: OutlinedButton.icon(
-        onPressed: _isDeleting ? null : _openAddCardOptions,
-        icon: Icon(Icons.add_rounded, size: 22 * s),
-        label: const Text('Tambah Kartu'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: _primaryColor,
-          backgroundColor: Colors.white,
-          side: const BorderSide(color: _primaryColor, width: 1.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22 * s)),
-          textStyle: TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
-        ),
-      ),
+  // "Tambah Kartu"
+  Widget _buildAddCardButton() {
+    return AppButton(
+      label: 'Tambah Kartu',
+      icon: Icons.add_rounded,
+      tone: AppButtonTone.primary,
+      size: AppButtonSize.large,
+      expand: true,
+      onPressed: _isDeleting ? null : _openAddCardOptions,
     );
   }
 
@@ -545,14 +498,14 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               'Belum ada kartu dalam set ini.',
-              style: TextStyle(fontSize: 14 * s, color: Colors.grey),
+              style: TextStyle(fontSize: AppFont.body * s, color: AppColors.muted),
             ),
           ),
           const Spacer(),
           Text(
             'Tekan tombol Tambah Kartu di atas untuk menambahkan kartu ke dalam set.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13 * s, color: const Color(0xFF9A9894), height: 1.35),
+            style: TextStyle(fontSize: AppFont.small * s, color: AppColors.muted, height: 1.35),
           ),
         ],
       ),

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../models/flashcard.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 import 'edit_card_screen.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/app_top_bar.dart';
 
 import '../widgets/confirm_delete_dialog.dart';
-import '../widgets/responsive_scale.dart';
 import '../widgets/app_button.dart';
 
 class DetailCardScreen extends StatefulWidget {
@@ -20,9 +22,6 @@ class DetailCardScreen extends StatefulWidget {
 }
 
 class _DetailCardScreenState extends State<DetailCardScreen> {
-  static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _backgroundColor = Color(0xFFFBF9F6);
-
   final FlashMindRepository _repository = FlashMindRepository.instance;
 
   bool _isBackSide = false;
@@ -112,9 +111,12 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
         .toDouble();
 
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: false,
-      appBar: _buildAppBar(),
+      appBar: AppTopBar(
+        title: 'Detail Kartu',
+        onBack: _isDeleting ? null : _goBack,
+      ),
       body: SafeArea(
         bottom: false,
         child: AnimatedBuilder(
@@ -130,7 +132,7 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
               return const Center(child: Text('Kartu tidak ditemukan.'));
             }
 
-            return _buildContent(card, extraBottomPadding);
+            return AppContentFrame(child: _buildContent(card, extraBottomPadding));
           },
         ),
       ),
@@ -150,34 +152,8 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    final double s = ResponsiveScale.of(context);
-    return AppBar(
-      backgroundColor: _backgroundColor,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-      leading: IconButton(
-        onPressed: _isDeleting ? null : _goBack,
-        icon: Icon(Icons.arrow_back, size: 28 * s),
-        color: _primaryColor,
-        tooltip: 'Kembali',
-      ),
-      title: Text(
-        'Detail Kartu',
-        style: TextStyle(
-          fontSize: 24 * s,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'serif',
-          color: _primaryColor,
-        ),
-      ),
-      centerTitle: true,
-    );
-  }
-
   Widget _buildContent(Flashcard card, double extraBottomPadding) {
-    final double s = ResponsiveScale.of(context);
+    final double s = context.scale;
     final String text = _isBackSide ? card.backText : card.frontText;
     final String sideLabel = _isBackSide ? 'Sisi Belakang' : 'Sisi Depan';
     final String flipTooltip = _isBackSide
@@ -196,10 +172,10 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
                 child: Text(
                   sideLabel,
                   style: TextStyle(
-                    fontSize: 20 * s,
+                    fontSize: AppFont.title * s,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'serif',
-                    color: _primaryColor,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -208,7 +184,7 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
                 child: TextButton.icon(
                   onPressed: _toggleCardSide,
                   style: TextButton.styleFrom(
-                    foregroundColor: _primaryColor,
+                    foregroundColor: AppColors.primary,
                     padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -216,7 +192,7 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
                   icon: Icon(Icons.swap_horiz, size: 25 * s),
                   label: Text(
                     'Balikkan Kartu',
-                    style: TextStyle(fontSize: 15 * s, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: AppFont.bodyLarge * s, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -229,8 +205,8 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: const Color(0xFFB8B5AF), width: 1),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.borderStrong, width: 1),
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: const [
                   BoxShadow(
@@ -248,8 +224,8 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
                     text,
                     textAlign: TextAlign.justify,
                     style: TextStyle(
-                      fontSize: 15 * s,
-                      color: _primaryColor,
+                      fontSize: AppFont.bodyLarge * s,
+                      color: AppColors.primary,
                       height: 1.45,
                     ),
                   ),

@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../models/study_session.dart';
 import '../providers/auth_provider.dart';
+import '../utils/app_colors.dart';
 import '../utils/formatter.dart';
-import 'responsive_scale.dart';
+import '../utils/responsive_scale.dart';
 import 'app_button.dart';
 
 // Desain dasar pada layar:
@@ -14,10 +15,10 @@ import 'app_button.dart';
 
 class StudySessionStyle {
   const StudySessionStyle._();
-  static const Color primary = Color(0xFF192A3A);
-  static const Color accent = Color(0xFFF3C279);
-  static const Color header = Color(0xFFFFE5B4);
-  static const Color background = Color(0xFFFBF9F6);
+  static const Color primary = AppColors.primary;
+  static const Color accent = AppColors.accent;
+  static const Color header = AppColors.accentSoft;
+  static const Color background = AppColors.background;
 }
 
 // AppBar "Sesi Belajar" dengan judul di tengah layar.
@@ -57,7 +58,7 @@ class StudySessionAppBar extends StatelessWidget
       title: Text(
         'Sesi Belajar',
         style: TextStyle(
-          fontSize: 25 * s,
+          fontSize: AppFont.appBar * s,
           fontWeight: FontWeight.bold,
           fontFamily: 'serif',
           color: StudySessionStyle.primary,
@@ -66,7 +67,7 @@ class StudySessionAppBar extends StatelessWidget
       bottom: showDivider
           ? PreferredSize(
               preferredSize: const Size.fromHeight(1),
-              child: Container(height: 1, color: const Color(0xFFE8E4DB)),
+              child: Container(height: 1, color: AppColors.border),
             )
           : null,
     );
@@ -107,7 +108,9 @@ class StudySessionScaffold extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: StudySessionStyle.background,
-      appBar: StudySessionAppBar(onBack: onBack ?? () => Navigator.of(context).pop(),),
+      appBar: StudySessionAppBar(
+        onBack: onBack ?? () => Navigator.of(context).pop(),
+      ),
       body: SafeArea(
         top: false,
         bottom: false,
@@ -115,14 +118,14 @@ class StudySessionScaffold extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 88),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
+              constraints: BoxConstraints(maxWidth: 560 * s),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     '$greeting, $firstName!',
                     style: TextStyle(
-                      fontSize: 20 * s,
+                      fontSize: AppFont.title * s,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'serif',
                       color: StudySessionStyle.primary,
@@ -132,8 +135,8 @@ class StudySessionScaffold extends StatelessWidget {
                   Text(
                     message,
                     style: TextStyle(
-                      fontSize: 13 * s,
-                      color: Colors.grey,
+                      fontSize: AppFont.small * s,
+                      color: AppColors.muted,
                       height: 1.4,
                     ),
                   ),
@@ -187,12 +190,12 @@ class StudySessionSummaryCard extends StatelessWidget {
     final StudySession? fastest = _fastest(completedSessions);
 
     final TextStyle valueStyle = TextStyle(
-      fontSize: 13 * s,
+      fontSize: AppFont.small * s,
       color: StudySessionStyle.primary,
       height: 1.2,
     );
     final TextStyle sectionStyle = TextStyle(
-      fontSize: 15 * s,
+      fontSize: AppFont.bodyLarge * s,
       fontWeight: FontWeight.bold,
       fontFamily: 'serif',
       color: StudySessionStyle.primary,
@@ -202,8 +205,8 @@ class StudySessionSummaryCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFB8B5AF), width: 1),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.borderStrong, width: 1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -215,7 +218,7 @@ class StudySessionSummaryCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
             style: TextStyle(
-              fontSize: 20 * s,
+              fontSize: AppFont.title * s,
               fontWeight: FontWeight.bold,
               fontFamily: 'serif',
               color: StudySessionStyle.primary,
@@ -228,8 +231,8 @@ class StudySessionSummaryCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
             style: TextStyle(
-              fontSize: 13 * s,
-              color: Colors.grey,
+              fontSize: AppFont.small * s,
+              color: AppColors.muted,
               height: 1.25,
             ),
           ),

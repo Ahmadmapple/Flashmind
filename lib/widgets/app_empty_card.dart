@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'responsive_scale.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 
 // Kartu keadaan kosong
 class AppEmptyCard extends StatelessWidget {
@@ -20,30 +21,30 @@ class AppEmptyCard extends StatelessWidget {
     final double s = ResponsiveScale.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: EdgeInsets.symmetric(vertical: 24 * s, horizontal: 16 * s),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
+        border: Border.all(color: AppColors.border, width: 1.5),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 36 * s, color: Colors.grey.shade400),
+          Icon(icon, size: 36 * s, color: AppColors.inactive),
           const SizedBox(height: 8),
           Text(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 15 * s,
+              fontSize: AppFont.bodyLarge * s,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF192A3A),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13 * s, color: Colors.grey),
+            style: TextStyle(fontSize: AppFont.small * s, color: AppColors.muted),
           ),
         ],
       ),

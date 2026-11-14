@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'app_item_card.dart';
-import 'responsive_scale.dart';
+import '../utils/app_colors.dart';
 import '../utils/formatter.dart';
+import 'app_item_card.dart';
+import '../utils/responsive_scale.dart';
 
 // Antarmuka set untuk layar:
 // Berkas (filter Perlu Diulas),
@@ -17,7 +18,7 @@ class StudyHistoryCard extends StatelessWidget {
     required this.accuracy,
     required this.onViewDetail,
     this.timeCaption = 'Terakhir dipelajari',
-    this.compact = false, 
+    this.compact = false,
   });
 
   final String title;
@@ -33,22 +34,18 @@ class StudyHistoryCard extends StatelessWidget {
   final double? accuracy;
   final VoidCallback onViewDetail;
 
-  static const Color _goodColor = Color(0xFF2E7D32);
-  static const Color _badColor = Color(0xFFB71C1C);
-
   @override
   Widget build(BuildContext context) {
     final double s = ResponsiveScale.of(context);
 
     final int? rounded = accuracy?.round();
-    final String accuracyText = accuracy == null
-        ? '-'
-        : Formatter.percent(accuracy!);
+    final String accuracyText =
+        accuracy == null ? '-' : Formatter.percent(accuracy!);
     final Color accuracyColor = rounded == null
-        ? Colors.grey
-        : (rounded <= 60 ? _badColor : _goodColor);
+        ? AppColors.muted
+        : (rounded <= 60 ? AppColors.danger : AppColors.success);
 
-    final double bodySize = (compact ? 12 : 13) * s;
+    final double bodySize = (compact ? AppFont.caption : AppFont.small) * s;
 
     return AppItemCard(
       // padding dan jarak dikecilkan pada mode compact
@@ -60,15 +57,15 @@ class StudyHistoryCard extends StatelessWidget {
       header: AppSetCardHeader(
         title: title,
         cardCount: cardCount,
-        titleSize: compact ? 16 : 20,
-        countSize: compact ? 11 : 12,
+        titleSize: compact ? 16 : AppFont.title,
+        countSize: compact ? 11 : AppFont.caption,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$timeCaption : $lastStudiedLabel', 
-            style: TextStyle(color: Colors.grey, fontSize: bodySize, height: 1.3),
+            '$timeCaption : $lastStudiedLabel',
+            style: TextStyle(color: AppColors.muted, fontSize: bodySize, height: 1.3),
           ),
           const SizedBox(height: 2),
           Text(

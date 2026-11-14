@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../repositories/flash_mind_repository.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_input_footer.dart';
+import '../widgets/app_text_field.dart';
+import '../widgets/app_top_bar.dart';
 
 class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key, required this.setId});
@@ -15,10 +18,6 @@ class AddCardScreen extends StatefulWidget {
 }
 
 class _AddCardScreenState extends State<AddCardScreen> {
-  static const Color _primaryColor = Color(0xFF192A3A);
-  static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _borderColor = Color(0xFFB8B5AF);
-
   static const int _cardMaxLength = 999;
 
   static const double _inputBoxHeightFactor = 0.45;
@@ -145,6 +144,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double s = context.scale;
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
     final extraBottomPadding =
@@ -152,156 +152,99 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
     final double inputBoxHeight =
         (media.size.height * _inputBoxHeightFactor)
-            .clamp(_inputBoxMinHeight, _inputBoxMaxHeight)
+            .clamp(_inputBoxMinHeight, _inputBoxMaxHeight * s)
             .toDouble();
 
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: false,
-      appBar: _buildAppBar(),
+      appBar: AppTopBar(title: 'Tambah Kartu', onBack: _goBack),
       body: SafeArea(
         bottom: false,
-        child: _buildContent(extraBottomPadding, inputBoxHeight),
+        child: _buildContent(s, extraBottomPadding, inputBoxHeight),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: _backgroundColor,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-      leading: IconButton(
-        onPressed: _goBack,
-        icon: const Icon(Icons.arrow_back, size: 28),
-        color: _primaryColor,
-        tooltip: 'Kembali',
-      ),
-      title: const Text(
-        'Tambah Kartu',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'serif',
-          color: _primaryColor,
-        ),
-      ),
-      centerTitle: true,
-    );
-  }
-
-  Widget _buildContent(double extraBottomPadding, double inputBoxHeight) {
+  Widget _buildContent(double s, double extraBottomPadding, double inputBoxHeight) {
     final isBack = _isBackSide;
     final controller = _activeController;
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + extraBottomPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  isBack ? 'Sisi Belakang' : 'Sisi Depan',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: _primaryColor,
+      child: AppContentFrame(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    isBack ? 'Sisi Belakang' : 'Sisi Depan',
+                    style: TextStyle(
+                      fontSize: AppFont.title * s,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                _buildFlipButton(s),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: inputBoxHeight,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: SizedBox.expand(
+                  key: ValueKey<bool>(isBack),
+                  child: AppTextField(
+                    controller: controller,
+                    maxLength: _cardMaxLength,
+                    expands: true,
+                    hintText: isBack
+                        ? 'Masukkan isi dari sisi belakang kartu.\nMinimal 1 karakter.'
+                        : 'Masukkan isi dari sisi depan kartu.\nMinimal 1 karakter.',
                   ),
                 ),
               ),
-              _buildFlipButton(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: inputBoxHeight,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: SizedBox.expand(
-                key: ValueKey<bool>(isBack),
-                child: _buildInputField(controller: controller, isBack: isBack),
+            ),
+            AppInputFooter(
+              controller: controller,
+              maxLength: _cardMaxLength,
+              errorTextFor: (_) => _footerError(isBack),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: AppButton(
+                label: 'Buat Kartu',
+                size: AppButtonSize.large,
+                isLoading: _isSaving,
+                onPressed: _isSaving ? null : _tryCreateCard,
               ),
             ),
-          ),
-          AppInputFooter(
-            controller: controller,
-            maxLength: _cardMaxLength,
-            errorTextFor: (_) => _footerError(isBack),
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: AppButton(
-              label: 'Buat Kartu',
-              size: AppButtonSize.large,
-              isLoading: _isSaving,
-              onPressed: _isSaving ? null : _tryCreateCard,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFlipButton() {
+  Widget _buildFlipButton(double s) {
     return Tooltip(
       message: 'Balikkan kartu',
       child: TextButton.icon(
         onPressed: _toggleCardSide,
         style: TextButton.styleFrom(
-          foregroundColor: _primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          foregroundColor: AppColors.primary,
+          padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          textStyle: TextStyle(fontSize: AppFont.body * s, fontWeight: FontWeight.w700),
         ),
-        icon: const Icon(Icons.swap_horiz, size: 23),
+        icon: Icon(Icons.swap_horiz, size: 24 * s),
         label: const Text('Balikkan Kartu'),
-      ),
-    );
-  }
-
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required bool isBack,
-  }) {
-    return TextField(
-      controller: controller,
-      maxLength: _cardMaxLength,
-      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-      expands: true,
-      minLines: null,
-      maxLines: null,
-      keyboardType: TextInputType.multiline,
-      textCapitalization: TextCapitalization.sentences,
-      textAlignVertical: TextAlignVertical.top,
-      textAlign: TextAlign.justify,
-      style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
-      decoration: InputDecoration(
-        hintText: isBack
-            ? 'Masukkan isi dari sisi belakang kartu.\nMinimal 1 karakter.'
-            : 'Masukkan isi dari sisi depan kartu.\nMinimal 1 karakter.',
-        hintStyle: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFFB4B1AC),
-          height: 1.25,
-        ),
-        contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-        counterText: '',
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _borderColor, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _primaryColor, width: 1.2),
-        ),
       ),
     );
   }

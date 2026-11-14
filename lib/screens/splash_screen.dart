@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 import 'intermediary_screen.dart';
 import 'login_screen.dart';
-
 
 // Splash screen
 class SplashScreen extends StatefulWidget {
@@ -40,38 +41,39 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double s = context.scale;
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 80 * s,
+              height: 80 * s,
               decoration: BoxDecoration(
-                color: const Color(0xFF192A3A),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.auto_awesome,
-                color: Color(0xFFF3C279),
-                size: 40,
+                color: AppColors.accent,
+                size: 40 * s,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Flash Mind',
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 32 * s,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'serif',
-                color: Color(0xFF192A3A),
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Small reviews. Lasting memory.',
-              style: TextStyle(fontSize: 14, color: Colors.black54),
+              style: TextStyle(fontSize: AppFont.body * s, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -79,4 +81,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

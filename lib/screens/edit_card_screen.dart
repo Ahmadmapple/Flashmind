@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../models/flashcard.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 
+import '../widgets/app_top_bar.dart';
 import '../widgets/confirm_delete_dialog.dart';
-import '../widgets/responsive_scale.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_input_footer.dart';
 
@@ -21,23 +23,18 @@ class EditCardScreen extends StatefulWidget {
 }
 
 class _EditCardScreenState extends State<EditCardScreen> {
-  static const Color _primaryColor    = Color(0xFF192A3A);
-  static const Color _backgroundColor = Color(0xFFFBF9F6);
-  static const Color _borderColor     = Color(0xFFB8B5AF);
-
   static const int _cardMaxLength = 999;
   static const double _inputBoxHeight = 360;
-  static const double _actionsHorizontalPadding = 0;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
   late final TextEditingController _frontController;
   late final TextEditingController _backController;
 
-  bool _isBackSide     = false;
+  bool _isBackSide = false;
   bool _showFrontError = false;
-  bool _showBackError  = false;
-  bool _isSaving       = false;
-  bool _isDeleting     = false;
+  bool _showBackError = false;
+  bool _isSaving = false;
+  bool _isDeleting = false;
 
   TextEditingController get _activeController =>
       _isBackSide ? _backController : _frontController;
@@ -46,7 +43,7 @@ class _EditCardScreenState extends State<EditCardScreen> {
   void initState() {
     super.initState();
     _frontController = TextEditingController(text: widget.card.frontText);
-    _backController  = TextEditingController(text: widget.card.backText);
+    _backController = TextEditingController(text: widget.card.backText);
     _frontController.addListener(_handleTextChanged);
     _backController.addListener(_handleTextChanged);
   }
@@ -63,7 +60,7 @@ class _EditCardScreenState extends State<EditCardScreen> {
   void _handleTextChanged() {
     if (!mounted) return;
     final bool frontValid = _frontController.text.trim().isNotEmpty;
-    final bool backValid  = _backController.text.trim().isNotEmpty;
+    final bool backValid = _backController.text.trim().isNotEmpty;
     if ((_showFrontError && frontValid) || (_showBackError && backValid)) {
       setState(() {
         if (frontValid) _showFrontError = false;
@@ -89,26 +86,26 @@ class _EditCardScreenState extends State<EditCardScreen> {
     FocusScope.of(context).unfocus();
 
     final bool frontEmpty = _frontController.text.trim().isEmpty;
-    final bool backEmpty  = _backController.text.trim().isEmpty;
+    final bool backEmpty = _backController.text.trim().isEmpty;
 
     if (frontEmpty && backEmpty) {
       setState(() {
-        _isBackSide     = false;
+        _isBackSide = false;
         _showFrontError = true;
-        _showBackError  = true;
+        _showBackError = true;
       });
       return;
     }
     if (frontEmpty) {
       setState(() {
-        _isBackSide     = false;
+        _isBackSide = false;
         _showFrontError = true;
       });
       return;
     }
     if (backEmpty) {
       setState(() {
-        _isBackSide    = true;
+        _isBackSide = true;
         _showBackError = true;
       });
       return;
@@ -117,10 +114,10 @@ class _EditCardScreenState extends State<EditCardScreen> {
     setState(() => _isSaving = true);
 
     await _repository.updateFlashcard(
-      id:        widget.card.id,
-      setId:     widget.setId,
+      id: widget.card.id,
+      setId: widget.setId,
       frontText: _frontController.text,
-      backText:  _backController.text,
+      backText: _backController.text,
     );
 
     if (!mounted) return;
@@ -163,64 +160,41 @@ class _EditCardScreenState extends State<EditCardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double s = ResponsiveScale.of(context);
+    final double s = context.scale;
     final double keyboardInset = MediaQuery.of(context).viewInsets.bottom;
     final double extraBottomPadding = keyboardInset.clamp(0.0, double.infinity);
 
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: false,
-      appBar: _buildAppBar(s),
+      appBar: AppTopBar(
+        title: 'Edit Kartu',
+        backTooltip: 'Batalkan pengeditan',
+        onBack: (_isSaving || _isDeleting) ? null : _cancelEditing,
+      ),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + extraBottomPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeadingRow(s),
-              const SizedBox(height: 8),
-              SizedBox(height: _inputBoxHeight, child: _buildInputArea(s)),
-              AppInputFooter(
-                controller: _activeController,
-                maxLength: _cardMaxLength,
-                errorTextFor: (_) => _footerError(),
-              ),
-              const SizedBox(height: 15),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: _actionsHorizontalPadding),
-                child: _buildActionRow(),
-              ),
-            ],
+          child: AppContentFrame(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeadingRow(s),
+                const SizedBox(height: 8),
+                SizedBox(height: _inputBoxHeight, child: _buildInputArea(s)),
+                AppInputFooter(
+                  controller: _activeController,
+                  maxLength: _cardMaxLength,
+                  errorTextFor: (_) => _footerError(),
+                ),
+                const SizedBox(height: 15),
+                _buildActionRow(),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(double s) {
-    return AppBar(
-      backgroundColor: _backgroundColor,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-      leading: IconButton(
-        onPressed: (_isSaving || _isDeleting) ? null : _cancelEditing,
-        icon: Icon(Icons.arrow_back, size: 28 * s),
-        color: _primaryColor,
-        tooltip: 'Batalkan pengeditan',
-      ),
-      title: Text(
-        'Edit Kartu',
-        style: TextStyle(
-          fontSize: 24 * s,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'serif',
-          color: _primaryColor,
-        ),
-      ),
-      centerTitle: true,
     );
   }
 
@@ -232,9 +206,9 @@ class _EditCardScreenState extends State<EditCardScreen> {
           child: Text(
             _isBackSide ? 'Sisi Belakang' : 'Sisi Depan',
             style: TextStyle(
-              fontSize: 20 * s,
+              fontSize: AppFont.title * s,
               fontWeight: FontWeight.bold,
-              color: _primaryColor,
+              color: AppColors.primary,
             ),
           ),
         ),
@@ -249,11 +223,11 @@ class _EditCardScreenState extends State<EditCardScreen> {
       child: TextButton.icon(
         onPressed: (_isSaving || _isDeleting) ? null : _toggleCardSide,
         style: TextButton.styleFrom(
-          foregroundColor: _primaryColor,
+          foregroundColor: AppColors.primary,
           padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: TextStyle(fontSize: 14 * s, fontWeight: FontWeight.w700),
+          textStyle: TextStyle(fontSize: AppFont.body * s, fontWeight: FontWeight.w700),
         ),
         icon: Icon(Icons.swap_horiz, size: 24 * s),
         label: const Text('Balikkan Kartu'),
@@ -265,8 +239,8 @@ class _EditCardScreenState extends State<EditCardScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: _borderColor, width: 1),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.borderStrong, width: 1),
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [
           BoxShadow(
@@ -282,7 +256,8 @@ class _EditCardScreenState extends State<EditCardScreen> {
         textCapitalization: TextCapitalization.sentences,
         textAlignVertical: TextAlignVertical.top,
         textAlign: TextAlign.justify,
-        style: TextStyle(fontSize: 15 * s, color: _primaryColor, height: 1.45),
+        style: TextStyle(
+            fontSize: AppFont.bodyLarge * s, color: AppColors.primary, height: 1.45),
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           counterText: '',
@@ -291,7 +266,7 @@ class _EditCardScreenState extends State<EditCardScreen> {
               ? 'Masukkan isi dari sisi belakang kartu.'
               : 'Masukkan isi dari sisi depan kartu.',
           hintStyle: TextStyle(
-              fontSize: 14 * s, color: const Color(0xFFB4B1AC), height: 1.45),
+              fontSize: AppFont.bodyLarge * s, color: AppColors.hint, height: 1.45),
         ),
       ),
     );

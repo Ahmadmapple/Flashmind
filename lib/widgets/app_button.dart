@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'responsive_scale.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 
 // Warna tombol.
 enum AppButtonTone { accent, danger, primary }
 
 // Ukuran tombol:
-//  - large  : Mulai, Lanjut, Kembali, Buat Set, Buat Kartu
+//  - large  : Mulai, Lanjut, Kembali, Buat Set, Buat Kartu, Tambah Kartu, Batal/Hapus pada dialog
 //  - medium : Tambah Set, Hapus Set, Mulai Belajar, Hapus Kartu, Edit Kartu, Edit Set, dst.
 enum AppButtonSize { large, medium }
 
@@ -35,23 +36,22 @@ class AppButton extends StatelessWidget {
   final bool expand;
   final IconData? icon;
 
-  static const Color _primary = Color(0xFF192A3A);
-  static const Color _accent = Color(0xFFF3C279);
-  static const Color _accentBorder = Color(0xFFD7A957);
-  static const Color _danger = Color(0xFFEF5350);
-
   @override
   Widget build(BuildContext context) {
     final double s = ResponsiveScale.of(context);
     final bool large = size == AppButtonSize.large;
     final bool locked = onPressed == null && !isLoading;
 
+    // warna dari AppColors
     final (Color bg, Color fg, Color border) = locked
-        ? (Colors.grey.shade200, Colors.grey.shade400, Colors.grey.shade200)
+        ? (AppColors.disabledBg, AppColors.inactive, AppColors.disabledBg)
         : switch (tone) {
-            AppButtonTone.accent => (_accent, _primary, _accentBorder),
-            AppButtonTone.danger => (_danger, Colors.white, _danger),
-            AppButtonTone.primary => (_primary, Colors.white, _primary),
+            AppButtonTone.accent =>
+              (AppColors.accent, AppColors.primary, AppColors.accentBorder),
+            AppButtonTone.danger =>
+              (AppColors.danger, Colors.white, AppColors.danger),
+            AppButtonTone.primary =>
+              (AppColors.primary, Colors.white, AppColors.primary),
           };
 
     final double height = (large ? 44 : 40) * s;
@@ -95,7 +95,7 @@ class AppButton extends StatelessWidget {
           ),
           textStyle: WidgetStatePropertyAll(
             TextStyle(
-              fontSize: (large ? 16 : 14) * s,
+              fontSize: (large ? AppFont.button : AppFont.body) * s,
               fontWeight: FontWeight.w700,
             ),
           ),

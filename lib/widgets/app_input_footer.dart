@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'responsive_scale.dart';
+import '../utils/app_colors.dart';
+import '../utils/responsive_scale.dart';
 
 // Footer di bawah kolom input
 // pesan error merah di kiri dan penghitung jumlah karakter di kanan.
@@ -17,9 +18,6 @@ class AppInputFooter extends StatelessWidget {
   final TextEditingController controller;
   final int maxLength;
   final String? Function(String text)? errorTextFor;
-
-  static const Color _errorColor = Color(0xFFD32F2F);
-  static const Color _counterColor = Color(0xFF9A9894);
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +45,8 @@ class AppInputFooter extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: _errorColor,
-                              fontSize: 13 * s,
+                              color: AppColors.danger,
+                              fontSize: AppFont.small * s,
                               height: 1.2,
                             ),
                           ),
@@ -59,8 +57,8 @@ class AppInputFooter extends StatelessWidget {
                   child: Text(
                     '${value.text.length}/$maxLength',
                     style: TextStyle(
-                      fontSize: 12 * s,
-                      color: _counterColor,
+                      fontSize: AppFont.caption * s,
+                      color: AppColors.muted,
                       height: 1.2,
                     ),
                   ),
