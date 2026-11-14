@@ -71,10 +71,14 @@ class AppSetCardHeader extends StatelessWidget {
     super.key,
     required this.title,
     required this.cardCount,
+    this.titleSize = 20,  
+    this.countSize = 12,   
   });
 
   final String title;
   final int cardCount;
+  final double titleSize;
+  final double countSize;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +92,7 @@ class AppSetCardHeader extends StatelessWidget {
             maxLines: 1,
             style: TextStyle(
               color: AppItemCardStyle.primary,
-              fontSize: 20 * s,
+              fontSize: titleSize * s, // [DIUBAH]
               fontWeight: FontWeight.bold,
               fontFamily: 'serif',
             ),
@@ -99,7 +103,7 @@ class AppSetCardHeader extends StatelessWidget {
           padding: const EdgeInsets.only(right: 8),
           child: Text(
             '$cardCount kartu',
-            style: TextStyle(color: Colors.grey, fontSize: 12 * s),
+            style: TextStyle(color: Colors.grey, fontSize: countSize * s), // [DIUBAH]
           ),
         ),
       ],

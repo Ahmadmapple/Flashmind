@@ -7,7 +7,7 @@ import '../utils/formatter.dart';
 // Antarmuka set untuk layar:
 // Berkas (filter Perlu Diulas),
 // Beranda (Ulas Kembali),
-// Statistik (Riwayat Belajar) dan layar Riwayat Belajar.
+// Statistik (Riwayat Belajar, Wawasan Belajar) dan layar Riwayat Belajar.
 class StudyHistoryCard extends StatelessWidget {
   const StudyHistoryCard({
     super.key,
@@ -16,11 +16,19 @@ class StudyHistoryCard extends StatelessWidget {
     required this.lastStudiedLabel,
     required this.accuracy,
     required this.onViewDetail,
+    this.timeCaption = 'Terakhir dipelajari',
+    this.compact = false, 
   });
 
   final String title;
   final int cardCount;
+
+  // Nilai untuk teks waktu atau durasi
   final String lastStudiedLabel;
+  final String timeCaption;
+
+  // Versi lebih kecil agar muat di dalam kotak lain (Wawasan Belajar).
+  final bool compact;
 
   final double? accuracy;
   final VoidCallback onViewDetail;
@@ -40,21 +48,34 @@ class StudyHistoryCard extends StatelessWidget {
         ? Colors.grey
         : (rounded <= 60 ? _badColor : _goodColor);
 
+    final double bodySize = (compact ? 12 : 13) * s;
+
     return AppItemCard(
-      header: AppSetCardHeader(title: title, cardCount: cardCount),
+      // padding dan jarak dikecilkan pada mode compact
+      padding: compact
+          ? const EdgeInsets.fromLTRB(14, 10, 6, 6)
+          : AppItemCardStyle.padding,
+      headerGap: compact ? 4 : 6,
+      footerGap: compact ? 2 : 6,
+      header: AppSetCardHeader(
+        title: title,
+        cardCount: cardCount,
+        titleSize: compact ? 16 : 20,
+        countSize: compact ? 11 : 12,
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Terakhir dipelajari : $lastStudiedLabel',
-            style: TextStyle(color: Colors.grey, fontSize: 13 * s, height: 1.3),
+            '$timeCaption : $lastStudiedLabel', 
+            style: TextStyle(color: Colors.grey, fontSize: bodySize, height: 1.3),
           ),
           const SizedBox(height: 2),
           Text(
             'Tingkat kebenaran: $accuracyText',
             style: TextStyle(
               color: accuracyColor,
-              fontSize: 13 * s,
+              fontSize: bodySize,
               fontWeight: FontWeight.w500,
               height: 1.3,
             ),

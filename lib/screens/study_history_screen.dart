@@ -111,6 +111,7 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
                             return StudyHistoryCard(
                               title: e.title,
                               cardCount: e.cardCount,
+                              timeCaption: 'Waktu diselesaikan',
                               lastStudiedLabel: Formatter.relativeTime(e.finishedAt),
                               accuracy: e.session.accuracy,
                               onViewDetail: () => _openSessionResult(e),

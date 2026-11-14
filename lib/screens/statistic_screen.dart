@@ -42,13 +42,13 @@ class _StatisticScreenState extends State<StatisticScreen> {
 
   Widget _buildInsightSetCard(
       BuildContext context, FlashMindRepository repo, FlashcardSet set) {
-    final latest = repo.getLatestCompletedSessionForSet(set.id);
+    final Duration? avgDuration = repo.getAverageDurationForSet(set.id);
     return StudyHistoryCard(
+      compact: true,
       title: set.title,
       cardCount: set.cardCount,
-      lastStudiedLabel: latest == null
-          ? 'Belum pernah'
-          : Formatter.relativeTime(latest.finishedAt ?? latest.startedAt),
+      timeCaption: 'Durasi pengerjaan',
+      lastStudiedLabel: avgDuration == null ? '-' : Formatter.duration(avgDuration),
       accuracy: repo.getAverageAccuracyForSet(set.id),
       onViewDetail: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -56,6 +56,12 @@ class _StatisticScreenState extends State<StatisticScreen> {
       ),
     );
   }
+
+  // Garis pemisah antar komponen Wawasan Belajar.
+  static const Widget _insightDivider = Padding(
+    padding: EdgeInsets.symmetric(vertical: 14),
+    child: Divider(color: Color(0xFFE8E4DB), height: 1),
+  );
 
   Widget _buildContent(BuildContext context) {
     final repo     = FlashMindRepository.instance;
@@ -91,6 +97,9 @@ class _StatisticScreenState extends State<StatisticScreen> {
           ..sort((a, b) => _endOf(b).compareTo(_endOf(a))))
         .take(3)
         .toList();
+
+    // Set terburuk hanya tampil bila berbeda dari set terbaik.
+    final bool showWorst = worst != null && worst.id != best?.id;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -218,7 +227,7 @@ class _StatisticScreenState extends State<StatisticScreen> {
                     ),
                     const SizedBox(height: 6),
                   ],
-                  _PerformRow(label: 'Total set aktif', value: '$totalSets set'),
+                  _PerformRow(label: 'Total set', value: '$totalSets set'),
                 ],
               ),
             ),
@@ -229,38 +238,45 @@ class _StatisticScreenState extends State<StatisticScreen> {
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color(0xFFE8E4DB), width: 1.5),
               ),
-              child: _InsightRow(
-                label: 'Konsistensi tertinggi',
-                value: '$highestStreak hari',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _InsightRow(
+                    label: 'Konsistensi tertinggi',
+                    value: '$highestStreak hari',
+                  ),
+                  if (best != null) ...[
+                    _insightDivider,
+                    const _InsightLabel('Set yang paling dikuasai'),
+                    const SizedBox(height: 10),
+                    _buildInsightSetCard(context, repo, best),
+                  ],
+                  if (showWorst) ...[
+                    _insightDivider,
+                    const _InsightLabel('Set yang paling perlu diperhatikan'),
+                    const SizedBox(height: 10),
+                    _buildInsightSetCard(context, repo, worst),
+                  ],
+                  if (best == null) ...[
+                    _insightDivider,
+                    const Text(
+                      'Belum ada wawasan belajar. Selesaikan sesi belajar untuk melihat set yang paling dikuasai dan perlu diperhatikan.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (best != null) ...[
-              const SizedBox(height: 14),
-              const _InsightLabel('Set yang paling dikuasai'),
-              const SizedBox(height: 8),
-              _buildInsightSetCard(context, repo, best),
-            ],
-            // Set terburuk hanya tampil bila berbeda dari set terbaik.
-            if (worst != null && worst.id != best?.id) ...[
-              const SizedBox(height: 14),
-              const _InsightLabel('Set yang paling perlu diperhatikan'),
-              const SizedBox(height: 8),
-              _buildInsightSetCard(context, repo, worst),
-            ],
-            if (best == null) ...[
-              const SizedBox(height: 12),
-              const AppEmptyCard(
-                icon: Icons.insights_rounded,
-                title: 'Belum ada wawasan belajar.',
-                subtitle: 'Selesaikan sesi belajar untuk melihat set\nyang paling dikuasai dan perlu diperhatikan.',
-              ),
-            ],
             const SizedBox(height: 25),
 
             // Riwayat Belajar
@@ -287,9 +303,9 @@ class _StatisticScreenState extends State<StatisticScreen> {
                   child: StudyHistoryCard(
                     title: set?.title ?? session.setTitle ?? 'Set yang dihapus',
                     cardCount: set?.cardCount ?? session.totalCardCount,
+                    timeCaption: 'Waktu diselesaikan',
                     lastStudiedLabel: Formatter.relativeTime(_endOf(session)),
                     accuracy: session.accuracy,
-                    // [DIUBAH] mengarah ke layar sesi belajar akhir pada sesi ini.
                     onViewDetail: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => StudySessionEndScreen(
@@ -391,11 +407,11 @@ class _InsightRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         Text(
           value,
           style: const TextStyle(
-              fontSize: 13,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFF192A3A)),
         ),
@@ -404,7 +420,7 @@ class _InsightRow extends StatelessWidget {
   }
 }
 
-// Label kecil di atas kartu set pada Wawasan Belajar.
+// Label kecil di atas kartu set pada Wawasan Belajar
 class _InsightLabel extends StatelessWidget {
   const _InsightLabel(this.text);
 
@@ -412,16 +428,9 @@ class _InsightLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey.shade600,
-        ),
-      ),
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 14, color: Colors.grey),
     );
   }
 }

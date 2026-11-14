@@ -111,6 +111,16 @@ class FlashMindRepository extends ChangeNotifier {
         sessions.length;
   }
 
+  // Rata-rata durasi pengerjaan seluruh sesi selesai milik set.
+  // null bila set belum pernah diselesaikan.
+  Duration? getAverageDurationForSet(String setId) {
+    final sessions = getCompletedStudySessionsForSet(setId);
+    if (sessions.isEmpty) return null;
+    final int total = sessions.fold<int>(
+        0, (sum, s) => sum + s.totalDuration.inMicroseconds);
+    return Duration(microseconds: total ~/ sessions.length);
+  }
+
   StudySession? getInProgressStudySessionForSet(String setId) {
     for (final s in _studySessions.reversed) {
       if (s.setId == setId && s.status == StudySessionStatus.inProgress) {
@@ -684,11 +694,26 @@ class FlashMindRepository extends ChangeNotifier {
     return ranked.length < 2 ? null : ranked.last;
   }
 
+    // Waktu sebuah sesi terakhir kali dihentikan/aktif.
+  static DateTime sessionStoppedAt(StudySession s) {
+    if (s.lastPausedAt != null) return s.lastPausedAt!;
+    if (s.cardResults.isNotEmpty) return s.cardResults.last.evaluatedAt;
+    return s.currentCardFrontShownAt ?? s.startedAt;
+  }
+
+  // Seluruh sesi terhenti dari yang paling baru dihentikan.
+  List<StudySession> get inProgressSessions {
+    final list = _studySessions
+        .where((s) => s.status == StudySessionStatus.inProgress)
+        .toList()
+      ..sort((a, b) => sessionStoppedAt(b).compareTo(sessionStoppedAt(a)));
+    return List.unmodifiable(list);
+  }
+
+  // Sesi terhenti yang paling baru dihentikan.
   StudySession? get latestInProgressSession {
-    for (final s in _studySessions.reversed) {
-      if (s.status == StudySessionStatus.inProgress) return s;
-    }
-    return null;
+    final list = inProgressSessions;
+    return list.isEmpty ? null : list.first;
   }
 
   FlashcardSet? get recommendedSet {
