@@ -29,7 +29,7 @@ class FlashMindApp extends StatelessWidget {
       title: 'Flash Mind',
       theme: ThemeData(
         scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary), 
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
         fontFamily: 'sans-serif',
       ),
       home: const SplashScreen(),

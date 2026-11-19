@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import '../utils/formatter.dart';
 import '../utils/responsive_scale.dart';
-import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 
@@ -16,13 +15,16 @@ import '../widgets/app_empty_card.dart';
 import 'study_session_end_screen.dart';
 
 class _HistoryEntry {
-  const _HistoryEntry(this.session, this.set, this.finishedAt);
+  const _HistoryEntry(
+    this.session,
+    this.title,
+    this.cardCount,
+    this.finishedAt,
+  );
   final StudySession session;
-  final FlashcardSet? set;
+  final String title;
+  final int cardCount;
   final DateTime finishedAt;
-
-  String get title => set?.title ?? session.setTitle ?? 'Set yang dihapus';
-  int get cardCount => set?.cardCount ?? session.totalCardCount;
 }
 
 class StudyHistoryScreen extends StatefulWidget {
@@ -43,7 +45,8 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
       for (final session in sessions)
         _HistoryEntry(
           session,
-          _repository.getSetById(session.setId),
+          _repository.titleForSession(session),
+          _repository.cardCountForSession(session),
           session.finishedAt ?? session.startedAt,
         ),
     ];
@@ -68,7 +71,11 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppTopBar(title: 'Riwayat Belajar', centerTitle: false, onBack: _goBack),
+      appBar: AppTopBar(
+        title: 'Riwayat Belajar',
+        centerTitle: false,
+        onBack: _goBack,
+      ),
       body: SafeArea(
         bottom: false,
         child: AppContentFrame(
@@ -92,27 +99,30 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
                         ? Align(
                             alignment: Alignment.topCenter,
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
                               child: AppEmptyCard(
                                 icon: Icons.history_rounded,
                                 title: _range.emptyTitle,
-                                subtitle:
-                                    'Selesaikan sesi belajar untuk melihat riwayatnya di sini.',
+                                subtitle: 'Selesaikan sesi belajar untuk melihat riwayatnya di sini.',
                               ),
                             ),
                           )
                         : ListView.separated(
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                             itemCount: entries.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 14),
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 14),
                             itemBuilder: (context, i) {
                               final e = entries[i];
                               return StudyHistoryCard(
                                 title: e.title,
                                 cardCount: e.cardCount,
                                 timeCaption: 'Waktu diselesaikan',
-                                lastStudiedLabel:
-                                    Formatter.relativeTime(e.finishedAt),
+                                lastStudiedLabel: Formatter.relativeTime(
+                                  e.finishedAt,
+                                ),
                                 accuracy: e.session.accuracy,
                                 onViewDetail: () => _openSessionResult(e),
                               );

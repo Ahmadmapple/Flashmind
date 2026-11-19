@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../repositories/flash_mind_repository.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_scale.dart';
+import '../services/card_form_rules.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_input_footer.dart';
 import '../widgets/app_text_field.dart';
@@ -18,7 +19,7 @@ class AddCardScreen extends StatefulWidget {
 }
 
 class _AddCardScreenState extends State<AddCardScreen> {
-  static const int _cardMaxLength = 999;
+  static const int _cardMaxLength = CardFormRules.maxLength;
 
   static const double _inputBoxHeightFactor = 0.45;
   static const double _inputBoxMinHeight = 280;
@@ -81,32 +82,29 @@ class _AddCardScreenState extends State<AddCardScreen> {
   Future<void> _tryCreateCard() async {
     FocusScope.of(context).unfocus();
 
-    final frontEmpty = _frontController.text.trim().isEmpty;
-    final backEmpty = _backController.text.trim().isEmpty;
-
-    if (frontEmpty && backEmpty) {
-      setState(() {
-        _isBackSide = false;
-        _showFrontError = true;
-        _showBackError = true;
-      });
-      return;
-    }
-
-    if (frontEmpty) {
-      setState(() {
-        _isBackSide = false;
-        _showFrontError = true;
-      });
-      return;
-    }
-
-    if (backEmpty) {
-      setState(() {
-        _isBackSide = true;
-        _showBackError = true;
-      });
-      return;
+    switch (CardFormRules.evaluate(
+        _frontController.text, _backController.text)) {
+      case CardFormIssue.both:
+        setState(() {
+          _isBackSide = false;
+          _showFrontError = true;
+          _showBackError = true;
+        });
+        return;
+      case CardFormIssue.frontOnly:
+        setState(() {
+          _isBackSide = false;
+          _showFrontError = true;
+        });
+        return;
+      case CardFormIssue.backOnly:
+        setState(() {
+          _isBackSide = true;
+          _showBackError = true;
+        });
+        return;
+      case CardFormIssue.none:
+        break;
     }
 
     if (_isSaving) return;
@@ -147,13 +145,13 @@ class _AddCardScreenState extends State<AddCardScreen> {
     final double s = context.scale;
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
-    final extraBottomPadding =
-        keyboardInset.clamp(0.0, double.infinity).toDouble();
+    final extraBottomPadding = keyboardInset
+        .clamp(0.0, double.infinity)
+        .toDouble();
 
-    final double inputBoxHeight =
-        (media.size.height * _inputBoxHeightFactor)
-            .clamp(_inputBoxMinHeight, _inputBoxMaxHeight * s)
-            .toDouble();
+    final double inputBoxHeight = (media.size.height * _inputBoxHeightFactor)
+        .clamp(_inputBoxMinHeight, _inputBoxMaxHeight * s)
+        .toDouble();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -166,7 +164,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
     );
   }
 
-  Widget _buildContent(double s, double extraBottomPadding, double inputBoxHeight) {
+  Widget _buildContent(
+    double s,
+    double extraBottomPadding,
+    double inputBoxHeight,
+  ) {
     final isBack = _isBackSide;
     final controller = _activeController;
 
@@ -241,7 +243,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
           padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: TextStyle(fontSize: AppFont.body * s, fontWeight: FontWeight.w700),
+          textStyle: TextStyle(
+            fontSize: AppFont.body * s,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         icon: Icon(Icons.swap_horiz, size: 24 * s),
         label: const Text('Balikkan Kartu'),
@@ -250,12 +255,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
   }
 
   // Pesan eror untuk sisi yang tampil (null bila tidak ada eror)
-  String? _footerError(bool isBack) {
-    final bool showError = isBack ? _showBackError : _showFrontError;
-    if (!showError) return null;
-    final bool bothEmpty = _frontController.text.trim().isEmpty &&
-        _backController.text.trim().isEmpty;
-    if (bothEmpty) return 'Sisi depan dan belakang perlu diisi.';
-    return isBack ? 'Sisi belakang perlu diisi.' : 'Sisi depan perlu diisi.';
-  }
+  String? _footerError(bool isBack) => CardFormRules.footerError(
+        isBack: isBack,
+        showError: isBack ? _showBackError : _showFrontError,
+        front: _frontController.text,
+        back: _backController.text,
+  );
 }
