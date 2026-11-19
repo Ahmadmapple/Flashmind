@@ -22,7 +22,6 @@ class FlashMindRepository extends ChangeNotifier {
   final List<FlashcardSet> _sets = [];
   final List<StudySession> _studySessions = [];
   bool _isLoading = false;
-  int _nextSetNumber = 6;
   int _nextCardNumber = 100;
   int _nextSessionNumber = 20;
 
@@ -165,13 +164,20 @@ class FlashMindRepository extends ChangeNotifier {
     required String title,
     required String description,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      throw StateError('Pengguna belum masuk.');
+    }
+
+    final docRef = _setsCollection(uid).doc();
     final set = FlashcardSet(
-      id: 'set-${_nextSetNumber++}',
+      id: docRef.id,
       title: title.trim(),
       description: description.trim(),
       createdAt: DateTime.now(),
     );
+
+    await docRef.set(set.toMap());
     _sets.add(set);
     notifyListeners();
     return set;
@@ -182,19 +188,56 @@ class FlashMindRepository extends ChangeNotifier {
     required String title,
     required String description,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
     final int i = _sets.indexWhere((s) => s.id == id);
     if (i == -1) return;
+
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+
+    final String trimmedTitle = title.trim();
+    final String trimmedDescription = description.trim();
+
+    await _setsCollection(uid).doc(id).update({
+      'title': trimmedTitle,
+      'description': trimmedDescription,
+    });
+
     _sets[i] = _sets[i].copyWith(
-      title: title.trim(),
-      description: description.trim(),
+      title: trimmedTitle,
+      description: trimmedDescription,
     );
     notifyListeners();
   }
 
   Future<void> deleteSet(String id) async {
-    await Future<void>.delayed(const Duration(milliseconds: 250));
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+
     final String? title = getSetById(id)?.title;
+    final setRef = _setsCollection(uid).doc(id);
+    final cardsSnapshot = await setRef.collection('cards').get();
+    final batch = _firestore.batch();
+
+    for (final cardDoc in cardsSnapshot.docs) {
+      batch.delete(cardDoc.reference);
+    }
+    batch.delete(setRef);
+
+    for (final session in _studySessions) {
+      if (session.setId != id) continue;
+      final sessionRef = _sessionsCollection(uid).doc(session.id);
+      if (session.status == StudySessionStatus.inProgress) {
+        batch.delete(sessionRef);
+      } else {
+        batch.set(
+          sessionRef,
+          {'setTitle': title},
+          SetOptions(merge: true),
+        );
+      }
+    }
+
+    await batch.commit();
 
     _sets.removeWhere((s) => s.id == id);
     _studySessions.removeWhere(
