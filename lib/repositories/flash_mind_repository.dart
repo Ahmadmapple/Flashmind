@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,7 +23,6 @@ class FlashMindRepository extends ChangeNotifier {
   final List<FlashcardSet> _sets = [];
   final List<StudySession> _studySessions = [];
   bool _isLoading = false;
-  int _nextSessionNumber = 20;
 
   bool get isLoading => _isLoading;
 
@@ -40,6 +40,31 @@ class FlashMindRepository extends ChangeNotifier {
 
   CollectionReference<_JsonMap> _sessionsCollection(String uid) =>
       _firestore.collection('users').doc(uid).collection('study_sessions');
+
+  Future<void> _saveSessionToFirestore(StudySession session) async {
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await _sessionsCollection(uid).doc(session.id).set(session.toMap());
+    } catch (e) {
+      debugPrint('Gagal menyimpan sesi belajar ke Firestore: $e');
+    }
+  }
+
+  Future<void> _updateSetLastStudiedAt(
+      String setId,
+      DateTime studiedAt,
+      ) async {
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await _setsCollection(uid).doc(setId).update({
+        'lastStudiedAt': Timestamp.fromDate(studiedAt),
+      });
+    } catch (e) {
+      debugPrint('Gagal memperbarui waktu belajar set ke Firestore: $e');
+    }
+  }
 
   Future<void> loadUserData([String? uid]) async {
     final String? targetUid = uid ?? _auth.currentUser?.uid;
@@ -336,19 +361,25 @@ class FlashMindRepository extends ChangeNotifier {
   }
 
   Future<StudySession?> startStudySession(String setId) async {
-    await Future<void>.delayed(const Duration(milliseconds: 150));
     final set = getSetById(setId);
     if (set == null || set.cards.isEmpty) return null;
     final existing = getInProgressStudySessionForSet(setId);
     if (existing != null) return existing;
+
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return null;
+
+    final docRef = _sessionsCollection(uid).doc();
     final cardOrder = set.cards.map((c) => c.id).toList()..shuffle(Random());
     final session = StudySession(
-      id: 'session-${_nextSessionNumber++}',
+      id: docRef.id,
       setId: setId,
       startedAt: DateTime.now(),
       status: StudySessionStatus.inProgress,
       cardOrder: cardOrder,
     );
+
+    await docRef.set(session.toMap());
     _studySessions.add(session);
     notifyListeners();
     return session;
@@ -363,11 +394,13 @@ class FlashMindRepository extends ChangeNotifier {
         s.currentCardFrontShownAt != null) {
       return false;
     }
-    _studySessions[i] = s.copyWith(
+    final updated = s.copyWith(
       currentCardFrontShownAt: DateTime.now(),
       clearLastPausedAt: true,
     );
+    _studySessions[i] = updated;
     notifyListeners();
+    unawaited(_saveSessionToFirestore(updated));
     return true;
   }
 
@@ -382,13 +415,15 @@ class FlashMindRepository extends ChangeNotifier {
       final Duration seg = now.difference(s.currentCardFrontShownAt!);
       if (!seg.isNegative) elapsed += seg;
     }
-    _studySessions[i] = s.copyWith(
+    final updated = s.copyWith(
       currentCardFrontShownAt: null,
       currentCardElapsedDuration: elapsed,
       lastPausedAt: now,
       clearCurrentCardFrontShownAt: true,
     );
+    _studySessions[i] = updated;
     notifyListeners();
+    unawaited(_saveSessionToFirestore(updated));
     return true;
   }
 
@@ -400,8 +435,10 @@ class FlashMindRepository extends ChangeNotifier {
         s.currentCardFrontShownAt == null) {
       return false;
     }
-    _studySessions[i] = s.copyWith(currentCardAnswerRevealedAt: DateTime.now());
+    final updated = s.copyWith(currentCardAnswerRevealedAt: DateTime.now());
+    _studySessions[i] = updated;
     notifyListeners();
+    unawaited(_saveSessionToFirestore(updated));
     return true;
   }
 
@@ -467,9 +504,13 @@ class FlashMindRepository extends ChangeNotifier {
 
     if (done) {
       final int si = _sets.indexWhere((st) => st.id == s.setId);
-      if (si != -1) _sets[si] = _sets[si].copyWith(lastStudiedAt: now);
+      if (si != -1) {
+        _sets[si] = _sets[si].copyWith(lastStudiedAt: now);
+        unawaited(_updateSetLastStudiedAt(s.setId, now));
+      }
     }
     notifyListeners();
+    unawaited(_saveSessionToFirestore(updated));
     return updated;
   }
 
