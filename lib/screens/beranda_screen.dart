@@ -151,7 +151,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                   Text(
                     noSets
                         ? 'Buat set di halaman Berkas untuk mulai belajar'
-                        : 'Set akan muncul di sini ketika sudah waktunya untuk diulas',
+                        : 'Set yang perlu diulas akan muncul di sini',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.65),
                       fontSize: AppFont.small * s,
