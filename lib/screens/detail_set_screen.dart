@@ -16,6 +16,7 @@ import '../widgets/confirm_delete_dialog.dart';
 import '../utils/responsive_scale.dart';
 import '../widgets/app_item_card.dart';
 import '../widgets/app_button.dart';
+import '../widgets/word_ellipsis_text.dart';
 
 enum _AddCardMode { manual, ai }
 
@@ -41,7 +42,6 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     height: 1.25,
   );
 
-  static const String _ellipsis = ' ...';
   static const double _bodyToActionsGap = 12;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
@@ -50,36 +50,6 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
   bool _notificationShown = false;
 
   final Set<String> _backVisibleCardIds = <String>{};
-
-  static String _truncateToFitWords(
-    String text,
-    TextStyle style,
-    double maxWidth,
-    TextScaler textScaler, {
-    int maxLines = 1,
-  }) {
-    bool fits(String value) {
-      final painter = TextPainter(
-        text: TextSpan(text: value, style: style),
-        maxLines: maxLines,
-        textDirection: TextDirection.ltr,
-        textScaler: textScaler,
-      )..layout(maxWidth: maxWidth);
-      final bool exceeded = painter.didExceedMaxLines;
-      painter.dispose();
-      return !exceeded;
-    }
-
-    if (fits(text)) return text;
-
-    final words = text.trim().split(RegExp(r'\s+'));
-    for (int count = words.length - 1; count >= 1; count--) {
-      final candidate = '${words.sublist(0, count).join(' ')}$_ellipsis';
-      if (fits(candidate)) return candidate;
-    }
-
-    return text;
-  }
 
   @override
   void initState() {
@@ -137,7 +107,9 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
   Future<void> _openAddCard() async {
     if (_isDeleting) return;
     final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => AddCardScreen(setId: widget.setId)),
+      MaterialPageRoute<bool>(
+        builder: (_) => AddCardScreen(setId: widget.setId),
+      ),
     );
     if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -180,7 +152,11 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
               constraints: BoxConstraints(maxWidth: 560 * s),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                    24, 20, 24, 28 + (bottomPadding > 0 ? 0 : 8)),
+                  24,
+                  20,
+                  24,
+                  28 + (bottomPadding > 0 ? 0 : 8),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +196,8 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                       icon: Icons.edit_outlined,
                       size: AppButtonSize.large,
                       expand: true,
-                      onPressed: () => Navigator.of(ctx).pop(_AddCardMode.manual),
+                      onPressed: () =>
+                          Navigator.of(ctx).pop(_AddCardMode.manual),
                     ),
                     const SizedBox(height: 12),
                     AppButton(
@@ -259,7 +236,9 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
             builder: (_) => AiCardReviewScreen(
-                setId: widget.setId, fileName: 'dokumen.pdf'),
+              setId: widget.setId,
+              fileName: 'dokumen.pdf',
+            ),
           ),
         );
     }
@@ -267,7 +246,9 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
 
   Future<void> _openStudySessionStart() async {
     if (_isDeleting) return;
-    final inProgressSession = _repository.getInProgressStudySessionForSet(widget.setId);
+    final inProgressSession = _repository.getInProgressStudySessionForSet(
+      widget.setId,
+    );
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => inProgressSession == null
@@ -343,12 +324,17 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                set.description.isEmpty ? 'Tidak ada deskripsi set.' : set.description,
+                set.description.isEmpty
+                    ? 'Tidak ada deskripsi set.'
+                    : set.description,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.justify,
                 style: TextStyle(
-                    fontSize: AppFont.small * s, color: AppColors.muted, height: 1.25),
+                  fontSize: AppFont.small * s,
+                  color: AppColors.muted,
+                  height: 1.25,
+                ),
               ),
               const SizedBox(height: 28),
               Row(
@@ -365,11 +351,15 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: AppButton(
-                      label: _repository.getInProgressStudySessionForSet(set.id) != null
+                      label:
+                          _repository.getInProgressStudySessionForSet(set.id) !=
+                              null
                           ? 'Lanjut Belajar'
                           : 'Mulai Belajar',
                       expand: true,
-                      onPressed: (!isEmpty && !_isDeleting) ? _openStudySessionStart : null,
+                      onPressed: (!isEmpty && !_isDeleting)
+                          ? _openStudySessionStart
+                          : null,
                     ),
                   ),
                 ],
@@ -403,10 +393,13 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     final bool isBackVisible = _backVisibleCardIds.contains(card.id);
     final String text = isBackVisible ? card.backText : card.frontText;
     final String sideLabel = isBackVisible ? 'Sisi Belakang' : 'Sisi Depan';
-    final String flipTooltip = isBackVisible ? 'Tampilkan sisi depan' : 'Balikkan kartu';
+    final String flipTooltip = isBackVisible
+        ? 'Tampilkan sisi depan'
+        : 'Balikkan kartu';
 
     final TextStyle bodyStyle = _cardBodyStyle(s);
-    final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style.merge(bodyStyle);
+    final TextStyle effectiveBodyStyle = DefaultTextStyle.of(context).style
+        .merge(bodyStyle);
     final TextScaler textScaler = MediaQuery.textScalerOf(context);
 
     return AppItemCard(
@@ -427,9 +420,10 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
         builder: (context, constraints) {
           final double lineHeight =
               effectiveBodyStyle.fontSize! * (effectiveBodyStyle.height ?? 1.0);
-          final int availableLines =
-              (constraints.maxHeight / lineHeight).floor().clamp(1, 10);
-          final String displayText = _truncateToFitWords(
+          final int availableLines = (constraints.maxHeight / lineHeight)
+              .floor()
+              .clamp(1, 10);
+          final String displayText = WordEllipsisText.truncate(
             text,
             effectiveBodyStyle,
             constraints.maxWidth,
@@ -462,13 +456,18 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
               },
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.muted,
-                padding: EdgeInsets.symmetric(horizontal: 2 * s, vertical: 2 * s),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 2 * s,
+                  vertical: 2 * s,
+                ),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               icon: Icon(Icons.swap_horiz, size: 24 * s),
-              label: Text('Balikkan Kartu',
-                  style: TextStyle(fontSize: AppFont.small * s)),
+              label: Text(
+                'Balikkan Kartu',
+                style: TextStyle(fontSize: AppFont.small * s),
+              ),
             ),
           ),
           AppDetailLink(onPressed: () => _openDetailCard(card)),
@@ -498,14 +497,21 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               'Belum ada kartu dalam set ini.',
-              style: TextStyle(fontSize: AppFont.body * s, color: AppColors.muted),
+              style: TextStyle(
+                fontSize: AppFont.body * s,
+                color: AppColors.muted,
+              ),
             ),
           ),
           const Spacer(),
           Text(
             'Tekan tombol Tambah Kartu di atas untuk menambahkan kartu ke dalam set.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: AppFont.small * s, color: AppColors.muted, height: 1.35),
+            style: TextStyle(
+              fontSize: AppFont.small * s,
+              color: AppColors.muted,
+              height: 1.35,
+            ),
           ),
         ],
       ),

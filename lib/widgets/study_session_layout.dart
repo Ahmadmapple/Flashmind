@@ -16,7 +16,6 @@ import 'app_button.dart';
 class StudySessionStyle {
   const StudySessionStyle._();
   static const Color primary = AppColors.primary;
-  static const Color accent = AppColors.accent;
   static const Color header = AppColors.accentSoft;
   static const Color background = AppColors.background;
 }
