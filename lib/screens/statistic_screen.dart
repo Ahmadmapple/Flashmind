@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../utils/app_colors.dart';
 import '../utils/formatter.dart';
+import '../utils/responsive_scale.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../services/study_statistics.dart';
 
 import 'detail_set_screen.dart';
 import 'study_history_screen.dart';
 import 'study_session_end_screen.dart';
+
 import '../widgets/app_empty_card.dart';
 import '../widgets/app_section_header.dart';
 import '../widgets/app_stat_box.dart';
 import '../widgets/history_range_filter.dart';
-import '../utils/responsive_scale.dart';
 import '../widgets/study_history_card.dart';
 
 class StatisticScreen extends StatefulWidget {
@@ -40,15 +42,19 @@ class _StatisticScreenState extends State<StatisticScreen> {
   }
 
   Widget _buildInsightSetCard(
-      BuildContext context, FlashMindRepository repo, FlashcardSet set) {
+    BuildContext context,
+    FlashMindRepository repo,
+    FlashcardSet set,
+  ) {
     final Duration? avgDuration = repo.getAverageDurationForSet(set.id);
     return StudyHistoryCard(
       compact: true,
       title: set.title,
       cardCount: set.cardCount,
       timeCaption: 'Durasi pengerjaan',
-      lastStudiedLabel:
-          avgDuration == null ? '-' : Formatter.duration(avgDuration),
+      lastStudiedLabel: avgDuration == null
+          ? '-'
+          : Formatter.duration(avgDuration),
       accuracy: repo.getAverageAccuracyForSet(set.id),
       onViewDetail: () => Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => DetailSetScreen(setId: set.id)),
@@ -68,35 +74,30 @@ class _StatisticScreenState extends State<StatisticScreen> {
     final sessions = _filteredSessions(repo);
     final sets = repo.sets;
 
-    final int totalSessions = sessions.length;
-    final int totalCards = sessions.fold(0, (s, x) => s + x.completedCardCount);
-    final Duration totalDur =
-        sessions.fold(Duration.zero, (d, x) => d + x.totalDuration);
-    final double accuracy = sessions.isEmpty
-        ? 0
-        : sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
+    final SessionSummary summary = StudyStatistics.summarize(sessions);
+    final int totalSessions = summary.sessionCount;
+    final int totalCards = summary.cardCount;
+    final Duration totalDur = summary.totalDuration;
+    final double accuracy = summary.accuracy;
     final int totalSets = sets.length;
 
-    // Data performa dihitung dari sesi pada rentang yang dipilih.
-    final int totalCorrect = sessions.fold<int>(0, (s, x) => s + x.correctCount);
-    final int totalWrong = sessions.fold<int>(0, (s, x) => s + x.wrongCount);
-    final int totalAnswered = totalCorrect + totalWrong;
-    final int correctPct =
-        totalAnswered == 0 ? 0 : (totalCorrect / totalAnswered * 100).round();
-    final int wrongPct = totalAnswered == 0 ? 0 : 100 - correctPct;
-    final double correctFraction =
-        totalAnswered == 0 ? 0 : totalCorrect / totalAnswered;
+    final int totalCorrect = summary.correctCount;
+    final int totalWrong = summary.wrongCount;
+    final int totalAnswered = summary.answeredCount;
+    final int correctPct = summary.correctPercent;
+    final int wrongPct = summary.wrongPercent;
+    final double correctFraction = summary.correctFraction;
 
     final int highestStreak = repo.highestStreak;
     final FlashcardSet? best = repo.bestMasteredSet;
     final FlashcardSet? worst = repo.worstSet;
 
     // Riwayat Belajar menampilkan sesi terbaru dahulu, maksimal 3.
-    final List<StudySession> recentSessions = (repo.allCompletedSessions
-            .toList()
-          ..sort((a, b) => _endOf(b).compareTo(_endOf(a))))
-        .take(3)
-        .toList();
+    final List<StudySession> recentSessions =
+        (repo.allCompletedSessions.toList()
+              ..sort((a, b) => _endOf(b).compareTo(_endOf(a))))
+            .take(3)
+            .toList();
 
     // Set terburuk hanya tampil bila berbeda dari set terbaik.
     final bool showWorst = worst != null && worst.id != best?.id;
@@ -179,13 +180,16 @@ class _StatisticScreenState extends State<StatisticScreen> {
                                 : Row(
                                     children: [
                                       Container(
-                                        width: constraints.maxWidth *
+                                        width:
+                                            constraints.maxWidth *
                                             correctFraction,
                                         color: AppColors.success,
                                       ),
                                       Expanded(
-                                          child: Container(
-                                              color: AppColors.danger)),
+                                        child: Container(
+                                          color: AppColors.danger,
+                                        ),
+                                      ),
                                     ],
                                   ),
                           ),
@@ -211,19 +215,13 @@ class _StatisticScreenState extends State<StatisticScreen> {
                     if (sessions.isNotEmpty) ...[
                       _PerformRow(
                         label: 'Rata-rata durasi per sesi',
-                        value: Formatter.duration(Duration(
-                            microseconds:
-                                totalDur.inMicroseconds ~/ sessions.length)),
+                        value: Formatter.duration(summary.averageDurationPerSession),
                       ),
                       const SizedBox(height: 6),
                       _PerformRow(
                         label: 'Rata-rata durasi per kartu',
-                        value: Formatter.duration(totalCards == 0
-                            ? Duration.zero
-                            : Duration(
-                                microseconds:
-                                    totalDur.inMicroseconds ~/ totalCards)),
-                      ),
+                        value: Formatter.duration(summary.averageDurationPerCard),
+                        ),
                       const SizedBox(height: 6),
                     ],
                     _PerformRow(label: 'Total set', value: '$totalSets set'),
@@ -284,7 +282,8 @@ class _StatisticScreenState extends State<StatisticScreen> {
                 actionLabel: 'Lihat semua →',
                 onAction: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                      builder: (_) => const StudyHistoryScreen()),
+                    builder: (_) => const StudyHistoryScreen(),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -292,17 +291,15 @@ class _StatisticScreenState extends State<StatisticScreen> {
                 const AppEmptyCard(
                   icon: Icons.menu_book_rounded,
                   title: 'Belum ada sesi yang selesai.',
-                  subtitle:
-                      'Selesaikan sesi belajar agar\nriwayatnya muncul di sini.',
+                  subtitle: 'Selesaikan sesi belajar agar\nriwayatnya muncul di sini.',
                 )
               else
                 ...recentSessions.map((session) {
-                  final set = repo.getSetById(session.setId);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: StudyHistoryCard(
-                      title: set?.title ?? session.setTitle ?? 'Set yang dihapus',
-                      cardCount: set?.cardCount ?? session.totalCardCount,
+                      title: repo.titleForSession(session),
+                      cardCount: repo.cardCountForSession(session),
                       timeCaption: 'Waktu diselesaikan',
                       lastStudiedLabel: Formatter.relativeTime(_endOf(session)),
                       accuracy: session.accuracy,
@@ -343,16 +340,22 @@ class _PerformRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Flexible(
-          child: Text(label,
-              style: TextStyle(fontSize: AppFont.body * s, color: AppColors.muted)),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: AppFont.body * s,
+              color: AppColors.muted,
+            ),
+          ),
         ),
         const SizedBox(width: 8),
         Text(
           value,
           style: TextStyle(
-              fontSize: AppFont.body * s,
-              fontWeight: FontWeight.w600,
-              color: valueColor),
+            fontSize: AppFont.body * s,
+            fontWeight: FontWeight.w600,
+            color: valueColor,
+          ),
         ),
       ],
     );
@@ -371,14 +374,20 @@ class _InsightRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: TextStyle(fontSize: AppFont.bodyLarge * s, color: AppColors.muted)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: AppFont.bodyLarge * s,
+            color: AppColors.muted,
+          ),
+        ),
         Text(
           value,
           style: TextStyle(
-              fontSize: AppFont.subtitle * s,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary),
+            fontSize: AppFont.subtitle * s,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
         ),
       ],
     );
@@ -395,7 +404,10 @@ class _InsightLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: TextStyle(fontSize: AppFont.bodyLarge * context.scale, color: AppColors.muted),
+      style: TextStyle(
+        fontSize: AppFont.bodyLarge * context.scale,
+        color: AppColors.muted,
+      ),
     );
   }
 }

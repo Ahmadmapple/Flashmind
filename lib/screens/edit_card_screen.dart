@@ -4,6 +4,7 @@ import '../models/flashcard.dart';
 import '../repositories/flash_mind_repository.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_scale.dart';
+import '../services/card_form_rules.dart';
 
 import '../widgets/app_top_bar.dart';
 import '../widgets/confirm_delete_dialog.dart';
@@ -23,7 +24,7 @@ class EditCardScreen extends StatefulWidget {
 }
 
 class _EditCardScreenState extends State<EditCardScreen> {
-  static const int _cardMaxLength = 999;
+  static const int _cardMaxLength = CardFormRules.maxLength;
   static const double _inputBoxHeight = 360;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
@@ -85,30 +86,29 @@ class _EditCardScreenState extends State<EditCardScreen> {
     if (_isSaving || _isDeleting) return;
     FocusScope.of(context).unfocus();
 
-    final bool frontEmpty = _frontController.text.trim().isEmpty;
-    final bool backEmpty = _backController.text.trim().isEmpty;
-
-    if (frontEmpty && backEmpty) {
-      setState(() {
-        _isBackSide = false;
-        _showFrontError = true;
-        _showBackError = true;
-      });
-      return;
-    }
-    if (frontEmpty) {
-      setState(() {
-        _isBackSide = false;
-        _showFrontError = true;
-      });
-      return;
-    }
-    if (backEmpty) {
-      setState(() {
-        _isBackSide = true;
-        _showBackError = true;
-      });
-      return;
+    switch (CardFormRules.evaluate(
+        _frontController.text, _backController.text)) {
+      case CardFormIssue.both:
+        setState(() {
+          _isBackSide = false;
+          _showFrontError = true;
+          _showBackError = true;
+        });
+        return;
+      case CardFormIssue.frontOnly:
+        setState(() {
+          _isBackSide = false;
+          _showFrontError = true;
+        });
+        return;
+      case CardFormIssue.backOnly:
+        setState(() {
+          _isBackSide = true;
+          _showBackError = true;
+        });
+        return;
+      case CardFormIssue.none:
+        break;
     }
 
     setState(() => _isSaving = true);
@@ -227,7 +227,10 @@ class _EditCardScreenState extends State<EditCardScreen> {
           padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: TextStyle(fontSize: AppFont.body * s, fontWeight: FontWeight.w700),
+          textStyle: TextStyle(
+            fontSize: AppFont.body * s,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         icon: Icon(Icons.swap_horiz, size: 24 * s),
         label: const Text('Balikkan Kartu'),
@@ -244,7 +247,10 @@ class _EditCardScreenState extends State<EditCardScreen> {
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x18000000), blurRadius: 2, offset: Offset(0, 1)),
+            color: Color(0x18000000),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
         ],
       ),
       child: TextField(
@@ -257,7 +263,10 @@ class _EditCardScreenState extends State<EditCardScreen> {
         textAlignVertical: TextAlignVertical.top,
         textAlign: TextAlign.justify,
         style: TextStyle(
-            fontSize: AppFont.bodyLarge * s, color: AppColors.primary, height: 1.45),
+          fontSize: AppFont.bodyLarge * s,
+          color: AppColors.primary,
+          height: 1.45,
+        ),
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           counterText: '',
@@ -266,7 +275,10 @@ class _EditCardScreenState extends State<EditCardScreen> {
               ? 'Masukkan isi dari sisi belakang kartu.'
               : 'Masukkan isi dari sisi depan kartu.',
           hintStyle: TextStyle(
-              fontSize: AppFont.bodyLarge * s, color: AppColors.hint, height: 1.45),
+            fontSize: AppFont.bodyLarge * s,
+            color: AppColors.hint,
+            height: 1.45,
+          ),
         ),
       ),
     );
@@ -293,12 +305,10 @@ class _EditCardScreenState extends State<EditCardScreen> {
   }
 
   // Pesan error footer untuk sisi yang sedang tampil (null bila tidak ada error).
-  String? _footerError() {
-    final bool showError = _isBackSide ? _showBackError : _showFrontError;
-    if (!showError) return null;
-    final bool bothEmpty = _frontController.text.trim().isEmpty &&
-        _backController.text.trim().isEmpty;
-    if (bothEmpty) return 'Sisi depan dan belakang perlu diisi.';
-    return _isBackSide ? 'Sisi belakang perlu diisi.' : 'Sisi depan perlu diisi.';
-  }
+  String? _footerError() => CardFormRules.footerError(
+        isBack: _isBackSide,
+        showError: _isBackSide ? _showBackError : _showFrontError,
+        front: _frontController.text,
+        back: _backController.text,
+  );
 }

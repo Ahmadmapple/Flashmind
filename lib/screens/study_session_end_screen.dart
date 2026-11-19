@@ -52,7 +52,7 @@ class StudySessionEndScreen extends StatelessWidget {
 
         // Nama serta deskripsi set
         final String title =
-            set?.title ?? currentSession.setTitle ?? 'Set yang dihapus';
+            set?.title ?? currentSession.setTitle ?? FlashMindRepository.deletedSetTitle;
         final String description = set == null
             ? 'Set ini sudah dihapus.'
             : (set.description.isEmpty
