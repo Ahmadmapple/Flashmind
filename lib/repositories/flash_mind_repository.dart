@@ -22,7 +22,6 @@ class FlashMindRepository extends ChangeNotifier {
   final List<FlashcardSet> _sets = [];
   final List<StudySession> _studySessions = [];
   bool _isLoading = false;
-  int _nextCardNumber = 100;
   int _nextSessionNumber = 20;
 
   bool get isLoading => _isLoading;
@@ -35,6 +34,9 @@ class FlashMindRepository extends ChangeNotifier {
 
   CollectionReference<_JsonMap> _setsCollection(String uid) =>
       _firestore.collection('users').doc(uid).collection('sets');
+
+  CollectionReference<_JsonMap> _cardsCollection(String uid, String setId) =>
+      _setsCollection(uid).doc(setId).collection('cards');
 
   CollectionReference<_JsonMap> _sessionsCollection(String uid) =>
       _firestore.collection('users').doc(uid).collection('study_sessions');
@@ -256,16 +258,22 @@ class FlashMindRepository extends ChangeNotifier {
     required String frontText,
     required String backText,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
     final int i = _sets.indexWhere((s) => s.id == setId);
     if (i == -1) return null;
+
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return null;
+
+    final docRef = _cardsCollection(uid, setId).doc();
     final card = Flashcard(
-      id: 'card-${_nextCardNumber++}',
+      id: docRef.id,
       setId: setId,
       frontText: frontText.trim(),
       backText: backText.trim(),
       createdAt: DateTime.now(),
     );
+
+    await docRef.set(card.toMap());
     _sets[i] = _sets[i].copyWith(cards: [..._sets[i].cards, card]);
     notifyListeners();
     return card;
@@ -277,18 +285,29 @@ class FlashMindRepository extends ChangeNotifier {
     required String frontText,
     required String backText,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
     final int si = _sets.indexWhere((s) => s.id == setId);
     if (si == -1) return false;
     final int ci = _sets[si].cards.indexWhere((c) => c.id == id);
     if (ci == -1) return false;
+
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
+
+    final String trimmedFront = frontText.trim();
+    final String trimmedBack = backText.trim();
+
+    await _cardsCollection(uid, setId).doc(id).update({
+      'frontText': trimmedFront,
+      'backText': trimmedBack,
+    });
+
     final old = _sets[si].cards[ci];
     final updated = List<Flashcard>.from(_sets[si].cards)
       ..[ci] = Flashcard(
         id: old.id,
         setId: old.setId,
-        frontText: frontText.trim(),
-        backText: backText.trim(),
+        frontText: trimmedFront,
+        backText: trimmedBack,
         createdAt: old.createdAt,
       );
     _sets[si] = _sets[si].copyWith(cards: updated);
@@ -297,10 +316,16 @@ class FlashMindRepository extends ChangeNotifier {
   }
 
   Future<bool> deleteFlashcard(String cardId) async {
-    await Future<void>.delayed(const Duration(milliseconds: 250));
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
+
     for (int i = 0; i < _sets.length; i++) {
       final int ci = _sets[i].cards.indexWhere((c) => c.id == cardId);
       if (ci == -1) continue;
+
+      final String setId = _sets[i].id;
+      await _cardsCollection(uid, setId).doc(cardId).delete();
+
       _sets[i] = _sets[i].copyWith(
         cards: List<Flashcard>.from(_sets[i].cards)..removeAt(ci),
       );
