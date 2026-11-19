@@ -1,10 +1,10 @@
 import 'dart:math';
-
 import 'package:flutter/foundation.dart';
 
 import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import '../models/study_session.dart';
+import '../services/study_statistics.dart';
 
 StudySession _makeSession({
   required String id,
@@ -14,14 +14,16 @@ StudySession _makeSession({
   required Duration totalDuration,
   required int correctCount,
 }) {
-  final int wrong       = cardIds.length - correctCount;
-  final double accuracy = cardIds.isEmpty ? 0.0 : correctCount / cardIds.length * 100;
+  final int wrong = cardIds.length - correctCount;
+  final double accuracy = cardIds.isEmpty
+      ? 0.0
+      : correctCount / cardIds.length * 100;
   final Duration perCard = cardIds.isEmpty
       ? Duration.zero
       : Duration(microseconds: totalDuration.inMicroseconds ~/ cardIds.length);
 
   final results = List<StudyCardResult>.generate(cardIds.length, (i) {
-    final front  = startedAt.add(perCard * i);
+    final front = startedAt.add(perCard * i);
     final reveal = front.add(const Duration(seconds: 3));
     final evalAt = reveal.add(const Duration(seconds: 2));
     return StudyCardResult(
@@ -58,10 +60,10 @@ class FlashMindRepository extends ChangeNotifier {
 
   static final FlashMindRepository instance = FlashMindRepository._internal();
 
-  final List<FlashcardSet> _sets          = [];
+  final List<FlashcardSet> _sets = [];
   final List<StudySession> _studySessions = [];
-  int _nextSetNumber     = 6;
-  int _nextCardNumber    = 100;
+  int _nextSetNumber = 6;
+  int _nextCardNumber = 100;
   int _nextSessionNumber = 20;
 
   List<FlashcardSet> get sets => List.unmodifiable(_sets);
@@ -71,18 +73,22 @@ class FlashMindRepository extends ChangeNotifier {
   );
 
   List<StudySession> getCompletedStudySessionsForSet(String setId) =>
-      List.unmodifiable(_studySessions.where(
-        (s) => s.setId == setId && s.status == StudySessionStatus.completed,
-      ));
-  
+      List.unmodifiable(
+        _studySessions.where(
+          (s) => s.setId == setId && s.status == StudySessionStatus.completed,
+        ),
+      );
+
   // Sesi selesai terbaru milik set berdasarkan waktu selesai.
   StudySession? getLatestCompletedSessionForSet(String setId) {
     StudySession? latest;
     for (final s in _studySessions) {
-      if (s.setId != setId || s.status != StudySessionStatus.completed) continue;
+      if (s.setId != setId || s.status != StudySessionStatus.completed)
+        continue;
       if (latest == null ||
-          (s.finishedAt ?? s.startedAt)
-              .isAfter(latest.finishedAt ?? latest.startedAt)) {
+          (s.finishedAt ?? s.startedAt).isAfter(
+            latest.finishedAt ?? latest.startedAt,
+          )) {
         latest = s;
       }
     }
@@ -94,8 +100,7 @@ class FlashMindRepository extends ChangeNotifier {
   double? getAverageAccuracyForSet(String setId) {
     final sessions = getCompletedStudySessionsForSet(setId);
     if (sessions.isEmpty) return null;
-    return sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
-        sessions.length;
+    return StudyStatistics.averageAccuracy(sessions);
   }
 
   // Rata-rata durasi pengerjaan seluruh sesi selesai milik set.
@@ -104,7 +109,9 @@ class FlashMindRepository extends ChangeNotifier {
     final sessions = getCompletedStudySessionsForSet(setId);
     if (sessions.isEmpty) return null;
     final int total = sessions.fold<int>(
-        0, (sum, s) => sum + s.totalDuration.inMicroseconds);
+      0,
+      (sum, s) => sum + s.totalDuration.inMicroseconds,
+    );
     return Duration(microseconds: total ~/ sessions.length);
   }
 
@@ -122,144 +129,338 @@ class FlashMindRepository extends ChangeNotifier {
 
   FlashcardSet? getSetById(String id) =>
       _sets.where((s) => s.id == id).firstOrNull;
+  
+  // Teks pengganti bila set sudah dihapus dan sesi tidak menyimpan namanya.
+  static const String deletedSetTitle = 'Set yang dihapus';
+
+  // Nama set untuk sebuah sesi
+  String titleForSession(StudySession session) =>
+      getSetById(session.setId)?.title ?? session.setTitle ?? deletedSetTitle;
+
+  // Jumlah kartu set untuk sebuah sesi.
+  int cardCountForSession(StudySession session) =>
+      getSetById(session.setId)?.cardCount ?? session.totalCardCount;
 
   void _initDummyData() {
     final DateTime now = DateTime.now();
 
     const String s1 = 'set-1';
     final List<Flashcard> cards1 = [
-      Flashcard(id: 'c1-1', setId: s1, createdAt: now,
-          frontText: 'Apa fungsi utama membran sel?',
-          backText: 'Mengatur zat yang masuk dan keluar sel serta menjaga keseimbangan internal.'),
-      Flashcard(id: 'c1-2', setId: s1, createdAt: now,
-          frontText: 'Apa itu mitokondria?',
-          backText: 'Organel penghasil energi (ATP) melalui respirasi seluler; disebut "pembangkit listrik sel".'),
-      Flashcard(id: 'c1-3', setId: s1, createdAt: now,
-          frontText: 'Jelaskan fotosintesis secara singkat.',
-          backText: 'Proses tumbuhan mengubah cahaya matahari, air, dan CO₂ menjadi glukosa dan oksigen.'),
-      Flashcard(id: 'c1-4', setId: s1, createdAt: now,
-          frontText: 'Apa perbedaan sel prokariotik dan eukariotik?',
-          backText: 'Prokariotik tidak memiliki nukleus bermembran; eukariotik memiliki nukleus yang diselubungi membran inti.'),
-      Flashcard(id: 'c1-5', setId: s1, createdAt: now,
-          frontText: 'Apa fungsi ribosom?',
-          backText: 'Mensintesis protein dengan menerjemahkan mRNA menjadi rantai asam amino.'),
+      Flashcard(
+        id: 'c1-1',
+        setId: s1,
+        createdAt: now,
+        frontText: 'Apa fungsi utama membran sel?',
+        backText: 'Mengatur zat yang masuk dan keluar sel serta menjaga keseimbangan internal.',
+      ),
+      Flashcard(
+        id: 'c1-2',
+        setId: s1,
+        createdAt: now,
+        frontText: 'Apa itu mitokondria?',
+        backText: 'Organel penghasil energi (ATP) melalui respirasi seluler; disebut "pembangkit listrik sel".',
+      ),
+      Flashcard(
+        id: 'c1-3',
+        setId: s1,
+        createdAt: now,
+        frontText: 'Jelaskan fotosintesis secara singkat.',
+        backText: 'Proses tumbuhan mengubah cahaya matahari, air, dan CO₂ menjadi glukosa dan oksigen.',
+      ),
+      Flashcard(
+        id: 'c1-4',
+        setId: s1,
+        createdAt: now,
+        frontText: 'Apa perbedaan sel prokariotik dan eukariotik?',
+        backText: 'Prokariotik tidak memiliki nukleus bermembran; eukariotik memiliki nukleus yang diselubungi membran inti.',
+      ),
+      Flashcard(
+        id: 'c1-5',
+        setId: s1,
+        createdAt: now,
+        frontText: 'Apa fungsi ribosom?',
+        backText: 'Mensintesis protein dengan menerjemahkan mRNA menjadi rantai asam amino.',
+      ),
     ];
 
     const String s2 = 'set-2';
     final List<Flashcard> cards2 = [
-      Flashcard(id: 'c2-1', setId: s2, createdAt: now,
-          frontText: 'ありがとう (Arigatou) artinya?', backText: 'Terima kasih'),
-      Flashcard(id: 'c2-2', setId: s2, createdAt: now,
-          frontText: 'おはよう (Ohayou) artinya?', backText: 'Selamat pagi'),
-      Flashcard(id: 'c2-3', setId: s2, createdAt: now,
-          frontText: 'こんにちは (Konnichiwa) artinya?', backText: 'Selamat siang / Halo'),
-      Flashcard(id: 'c2-4', setId: s2, createdAt: now,
-          frontText: 'さようなら (Sayounara) artinya?', backText: 'Selamat tinggal'),
-      Flashcard(id: 'c2-5', setId: s2, createdAt: now,
-          frontText: 'すみません (Sumimasen) artinya?', backText: 'Permisi / Maaf'),
+      Flashcard(
+        id: 'c2-1',
+        setId: s2,
+        createdAt: now,
+        frontText: 'ありがとう (Arigatou) artinya?',
+        backText: 'Terima kasih',
+      ),
+      Flashcard(
+        id: 'c2-2',
+        setId: s2,
+        createdAt: now,
+        frontText: 'おはよう (Ohayou) artinya?',
+        backText: 'Selamat pagi',
+      ),
+      Flashcard(
+        id: 'c2-3',
+        setId: s2,
+        createdAt: now,
+        frontText: 'こんにちは (Konnichiwa) artinya?',
+        backText: 'Selamat siang / Halo',
+      ),
+      Flashcard(
+        id: 'c2-4',
+        setId: s2,
+        createdAt: now,
+        frontText: 'さようなら (Sayounara) artinya?',
+        backText: 'Selamat tinggal',
+      ),
+      Flashcard(
+        id: 'c2-5',
+        setId: s2,
+        createdAt: now,
+        frontText: 'すみません (Sumimasen) artinya?',
+        backText: 'Permisi / Maaf',
+      ),
     ];
 
     const String s3 = 'set-3';
     final List<Flashcard> cards3 = [
-      Flashcard(id: 'c3-1', setId: s3, createdAt: now,
-          frontText: 'Apa itu isomer?',
-          backText: 'Senyawa dengan rumus molekul sama tetapi struktur atau susunan atom berbeda.'),
-      Flashcard(id: 'c3-2', setId: s3, createdAt: now,
-          frontText: 'Apa itu alkana?',
-          backText: 'Hidrokarbon jenuh dengan ikatan tunggal C–C; rumus umum CₙH₂ₙ₊₂.'),
-      Flashcard(id: 'c3-3', setId: s3, createdAt: now,
-          frontText: 'Perbedaan alkena dan alkuna?',
-          backText: 'Alkena: ikatan rangkap dua (C=C). Alkuna: ikatan rangkap tiga (C≡C).'),
-      Flashcard(id: 'c3-4', setId: s3, createdAt: now,
-          frontText: 'Apa itu gugus fungsi?',
-          backText: 'Atom/kelompok atom pada molekul organik yang menentukan sifat kimianya.'),
-      Flashcard(id: 'c3-5', setId: s3, createdAt: now,
-          frontText: 'Apa itu reaksi substitusi?',
-          backText: 'Reaksi penggantian satu atom/gugus dalam molekul dengan atom/gugus lain.'),
+      Flashcard(
+        id: 'c3-1',
+        setId: s3,
+        createdAt: now,
+        frontText: 'Apa itu isomer?',
+        backText: 'Senyawa dengan rumus molekul sama tetapi struktur atau susunan atom berbeda.',
+      ),
+      Flashcard(
+        id: 'c3-2',
+        setId: s3,
+        createdAt: now,
+        frontText: 'Apa itu alkana?',
+        backText:
+            'Hidrokarbon jenuh dengan ikatan tunggal C–C; rumus umum CₙH₂ₙ₊₂.',
+      ),
+      Flashcard(
+        id: 'c3-3',
+        setId: s3,
+        createdAt: now,
+        frontText: 'Perbedaan alkena dan alkuna?',
+        backText: 'Alkena: ikatan rangkap dua (C=C). Alkuna: ikatan rangkap tiga (C≡C).',
+      ),
+      Flashcard(
+        id: 'c3-4',
+        setId: s3,
+        createdAt: now,
+        frontText: 'Apa itu gugus fungsi?',
+        backText: 'Atom/kelompok atom pada molekul organik yang menentukan sifat kimianya.',
+      ),
+      Flashcard(
+        id: 'c3-5',
+        setId: s3,
+        createdAt: now,
+        frontText: 'Apa itu reaksi substitusi?',
+        backText: 'Reaksi penggantian satu atom/gugus dalam molekul dengan atom/gugus lain.',
+      ),
     ];
 
     const String s4 = 'set-4';
     final List<Flashcard> cards4 = [
-      Flashcard(id: 'c4-1', setId: s4, createdAt: now,
-          frontText: 'Berapa hasil dari 7 × 8?', backText: '56'),
-      Flashcard(id: 'c4-2', setId: s4, createdAt: now,
-          frontText: 'Apa rumus luas lingkaran?',
-          backText: 'L = π × r² (di mana r adalah jari-jari)'),
-      Flashcard(id: 'c4-3', setId: s4, createdAt: now,
-          frontText: 'Apa itu bilangan prima?',
-          backText: 'Bilangan asli lebih dari 1 yang hanya habis dibagi 1 dan dirinya sendiri.'),
-      Flashcard(id: 'c4-4', setId: s4, createdAt: now,
-          frontText: 'Apa rumus Teorema Pythagoras?',
-          backText: 'a² + b² = c², di mana c adalah sisi miring segitiga siku-siku.'),
-      Flashcard(id: 'c4-5', setId: s4, createdAt: now,
-          frontText: 'Apa itu FPB?',
-          backText: 'Faktor Persekutuan Terbesar: bilangan terbesar yang habis membagi dua bilangan.'),
+      Flashcard(
+        id: 'c4-1',
+        setId: s4,
+        createdAt: now,
+        frontText: 'Berapa hasil dari 7 × 8?',
+        backText: '56',
+      ),
+      Flashcard(
+        id: 'c4-2',
+        setId: s4,
+        createdAt: now,
+        frontText: 'Apa rumus luas lingkaran?',
+        backText: 'L = π × r² (di mana r adalah jari-jari)',
+      ),
+      Flashcard(
+        id: 'c4-3',
+        setId: s4,
+        createdAt: now,
+        frontText: 'Apa itu bilangan prima?',
+        backText: 'Bilangan asli lebih dari 1 yang hanya habis dibagi 1 dan dirinya sendiri.',
+      ),
+      Flashcard(
+        id: 'c4-4',
+        setId: s4,
+        createdAt: now,
+        frontText: 'Apa rumus Teorema Pythagoras?',
+        backText:
+            'a² + b² = c², di mana c adalah sisi miring segitiga siku-siku.',
+      ),
+      Flashcard(
+        id: 'c4-5',
+        setId: s4,
+        createdAt: now,
+        frontText: 'Apa itu FPB?',
+        backText: 'Faktor Persekutuan Terbesar: bilangan terbesar yang habis membagi dua bilangan.',
+      ),
     ];
 
     const String s5 = 'set-5';
     final List<Flashcard> cards5 = [
-      Flashcard(id: 'c5-1', setId: s5, createdAt: now,
-          frontText: 'Kapan Indonesia merdeka?', backText: '17 Agustus 1945'),
-      Flashcard(id: 'c5-2', setId: s5, createdAt: now,
-          frontText: 'Siapa proklamator kemerdekaan Indonesia?',
-          backText: 'Soekarno dan Mohammad Hatta'),
-      Flashcard(id: 'c5-3', setId: s5, createdAt: now,
-          frontText: 'Apa isi Sumpah Pemuda 1928?',
-          backText: 'Satu bangsa (Indonesia), satu tanah air (Indonesia), satu bahasa (Indonesia).'),
-      Flashcard(id: 'c5-4', setId: s5, createdAt: now,
-          frontText: 'Apa nama operasi militer yang membebaskan Irian Barat?',
-          backText: 'Operasi Trikora (Tri Komando Rakyat), 1961–1962.'),
-      Flashcard(id: 'c5-5', setId: s5, createdAt: now,
-          frontText: 'Siapa presiden pertama Republik Indonesia?',
-          backText: 'Ir. Soekarno, menjabat 1945–1967.'),
+      Flashcard(
+        id: 'c5-1',
+        setId: s5,
+        createdAt: now,
+        frontText: 'Kapan Indonesia merdeka?',
+        backText: '17 Agustus 1945',
+      ),
+      Flashcard(
+        id: 'c5-2',
+        setId: s5,
+        createdAt: now,
+        frontText: 'Siapa proklamator kemerdekaan Indonesia?',
+        backText: 'Soekarno dan Mohammad Hatta',
+      ),
+      Flashcard(
+        id: 'c5-3',
+        setId: s5,
+        createdAt: now,
+        frontText: 'Apa isi Sumpah Pemuda 1928?',
+        backText: 'Satu bangsa (Indonesia), satu tanah air (Indonesia), satu bahasa (Indonesia).',
+      ),
+      Flashcard(
+        id: 'c5-4',
+        setId: s5,
+        createdAt: now,
+        frontText: 'Apa nama operasi militer yang membebaskan Irian Barat?',
+        backText: 'Operasi Trikora (Tri Komando Rakyat), 1961–1962.',
+      ),
+      Flashcard(
+        id: 'c5-5',
+        setId: s5,
+        createdAt: now,
+        frontText: 'Siapa presiden pertama Republik Indonesia?',
+        backText: 'Ir. Soekarno, menjabat 1945–1967.',
+      ),
     ];
 
     _sets.addAll([
-      FlashcardSet(id: s1, title: 'Biologi Sel',
-          description: 'Konsep dasar biologi sel dan organel-organelnya.',
-          createdAt: now.subtract(const Duration(days: 12)), cards: cards1),
-      FlashcardSet(id: s2, title: 'Bahasa Jepang',
-          description: 'Kosakata dasar dan sapaan sehari-hari bahasa Jepang.',
-          createdAt: now.subtract(const Duration(days: 9)), cards: cards2),
-      FlashcardSet(id: s3, title: 'Kimia Organik',
-          description: 'Alkana, alkena, alkuna, isomer, dan gugus fungsi.',
-          createdAt: now.subtract(const Duration(days: 7)), cards: cards3),
-      FlashcardSet(id: s4, title: 'Matematika Dasar',
-          description: 'Operasi dasar, rumus geometri, dan teori bilangan.',
-          createdAt: now.subtract(const Duration(days: 5)), cards: cards4),
-      FlashcardSet(id: s5, title: 'Sejarah Indonesia',
-          description: 'Peristiwa penting dalam sejarah kemerdekaan Indonesia.',
-          createdAt: now.subtract(const Duration(days: 3)), cards: cards5),
+      FlashcardSet(
+        id: s1,
+        title: 'Biologi Sel',
+        description: 'Konsep dasar biologi sel dan organel-organelnya.',
+        createdAt: now.subtract(const Duration(days: 12)),
+        cards: cards1,
+      ),
+      FlashcardSet(
+        id: s2,
+        title: 'Bahasa Jepang',
+        description: 'Kosakata dasar dan sapaan sehari-hari bahasa Jepang.',
+        createdAt: now.subtract(const Duration(days: 9)),
+        cards: cards2,
+      ),
+      FlashcardSet(
+        id: s3,
+        title: 'Kimia Organik',
+        description: 'Alkana, alkena, alkuna, isomer, dan gugus fungsi.',
+        createdAt: now.subtract(const Duration(days: 7)),
+        cards: cards3,
+      ),
+      FlashcardSet(
+        id: s4,
+        title: 'Matematika Dasar',
+        description: 'Operasi dasar, rumus geometri, dan teori bilangan.',
+        createdAt: now.subtract(const Duration(days: 5)),
+        cards: cards4,
+      ),
+      FlashcardSet(
+        id: s5,
+        title: 'Sejarah Indonesia',
+        description: 'Peristiwa penting dalam sejarah kemerdekaan Indonesia.',
+        createdAt: now.subtract(const Duration(days: 3)),
+        cards: cards5,
+      ),
     ]);
 
     DateTime d(int daysAgo) => now.subtract(Duration(days: daysAgo));
 
-    _addSession(_makeSession(id: 'ses-1', setId: s1,
+    _addSession(
+      _makeSession(
+        id: 'ses-1',
+        setId: s1,
         cardIds: cards1.map((c) => c.id).toList(),
-        startedAt: d(5), totalDuration: const Duration(minutes: 5), correctCount: 4));
-    _addSession(_makeSession(id: 'ses-2', setId: s1,
+        startedAt: d(5),
+        totalDuration: const Duration(minutes: 5),
+        correctCount: 4,
+      ),
+    );
+    _addSession(
+      _makeSession(
+        id: 'ses-2',
+        setId: s1,
         cardIds: cards1.map((c) => c.id).toList(),
-        startedAt: d(2), totalDuration: const Duration(minutes: 4), correctCount: 5));
-    _addSession(_makeSession(id: 'ses-3', setId: s1,
+        startedAt: d(2),
+        totalDuration: const Duration(minutes: 4),
+        correctCount: 5,
+      ),
+    );
+    _addSession(
+      _makeSession(
+        id: 'ses-3',
+        setId: s1,
         cardIds: cards1.map((c) => c.id).toList(),
         startedAt: d(0).subtract(const Duration(hours: 3)),
-        totalDuration: const Duration(minutes: 3, seconds: 30), correctCount: 5));
-    _addSession(_makeSession(id: 'ses-4', setId: s2,
+        totalDuration: const Duration(minutes: 3, seconds: 30),
+        correctCount: 5,
+      ),
+    );
+    _addSession(
+      _makeSession(
+        id: 'ses-4',
+        setId: s2,
         cardIds: cards2.map((c) => c.id).toList(),
-        startedAt: d(4), totalDuration: const Duration(minutes: 3), correctCount: 3));
-    _addSession(_makeSession(id: 'ses-5', setId: s2,
+        startedAt: d(4),
+        totalDuration: const Duration(minutes: 3),
+        correctCount: 3,
+      ),
+    );
+    _addSession(
+      _makeSession(
+        id: 'ses-5',
+        setId: s2,
         cardIds: cards2.map((c) => c.id).toList(),
-        startedAt: d(1), totalDuration: const Duration(minutes: 2, seconds: 45), correctCount: 4));
-    _addSession(_makeSession(id: 'ses-6', setId: s3,
+        startedAt: d(1),
+        totalDuration: const Duration(minutes: 2, seconds: 45),
+        correctCount: 4,
+      ),
+    );
+    _addSession(
+      _makeSession(
+        id: 'ses-6',
+        setId: s3,
         cardIds: cards3.map((c) => c.id).toList(),
-        startedAt: d(6), totalDuration: const Duration(minutes: 4, seconds: 15), correctCount: 2));
-    _addSession(_makeSession(id: 'ses-7', setId: s3,
+        startedAt: d(6),
+        totalDuration: const Duration(minutes: 4, seconds: 15),
+        correctCount: 2,
+      ),
+    );
+    _addSession(
+      _makeSession(
+        id: 'ses-7',
+        setId: s3,
         cardIds: cards3.map((c) => c.id).toList(),
-        startedAt: d(3), totalDuration: const Duration(minutes: 3), correctCount: 3));
-    _addSession(_makeSession(id: 'ses-8', setId: s4,
+        startedAt: d(3),
+        totalDuration: const Duration(minutes: 3),
+        correctCount: 3,
+      ),
+    );
+    _addSession(
+      _makeSession(
+        id: 'ses-8',
+        setId: s4,
         cardIds: cards4.map((c) => c.id).toList(),
         startedAt: d(2).subtract(const Duration(hours: 5)),
-        totalDuration: const Duration(minutes: 2, seconds: 50), correctCount: 5));
+        totalDuration: const Duration(minutes: 2, seconds: 50),
+        correctCount: 5,
+      ),
+    );
   }
 
   void _addSession(StudySession session) {
@@ -300,7 +501,9 @@ class FlashMindRepository extends ChangeNotifier {
     final int i = _sets.indexWhere((s) => s.id == id);
     if (i == -1) return;
     _sets[i] = _sets[i].copyWith(
-        title: title.trim(), description: description.trim());
+      title: title.trim(),
+      description: description.trim(),
+    );
     notifyListeners();
   }
 
@@ -355,14 +558,15 @@ class FlashMindRepository extends ChangeNotifier {
     if (si == -1) return false;
     final int ci = _sets[si].cards.indexWhere((c) => c.id == id);
     if (ci == -1) return false;
-    final old     = _sets[si].cards[ci];
+    final old = _sets[si].cards[ci];
     final updated = List<Flashcard>.from(_sets[si].cards)
       ..[ci] = Flashcard(
-          id: old.id,
-          setId: old.setId,
-          frontText: frontText.trim(),
-          backText: backText.trim(),
-          createdAt: old.createdAt);
+        id: old.id,
+        setId: old.setId,
+        frontText: frontText.trim(),
+        backText: backText.trim(),
+        createdAt: old.createdAt,
+      );
     _sets[si] = _sets[si].copyWith(cards: updated);
     notifyListeners();
     return true;
@@ -411,7 +615,9 @@ class FlashMindRepository extends ChangeNotifier {
       return false;
     }
     _studySessions[i] = s.copyWith(
-        currentCardFrontShownAt: DateTime.now(), clearLastPausedAt: true);
+      currentCardFrontShownAt: DateTime.now(),
+      clearLastPausedAt: true,
+    );
     notifyListeners();
     return true;
   }
@@ -422,7 +628,7 @@ class FlashMindRepository extends ChangeNotifier {
     final s = _studySessions[i];
     if (s.status != StudySessionStatus.inProgress) return false;
     final DateTime now = DateTime.now();
-    Duration elapsed   = s.currentCardElapsedDuration;
+    Duration elapsed = s.currentCardElapsedDuration;
     if (s.currentCardFrontShownAt != null) {
       final Duration seg = now.difference(s.currentCardFrontShownAt!);
       if (!seg.isNegative) elapsed += seg;
@@ -465,10 +671,10 @@ class FlashMindRepository extends ChangeNotifier {
       return null;
     }
 
-    final DateTime now  = DateTime.now();
-    final Duration seg  = now.difference(s.currentCardFrontShownAt!);
+    final DateTime now = DateTime.now();
+    final Duration seg = now.difference(s.currentCardFrontShownAt!);
     final Duration safe = seg.isNegative ? Duration.zero : seg;
-    final Duration dur  = s.currentCardElapsedDuration + safe;
+    final Duration dur = s.currentCardElapsedDuration + safe;
     final StudyCardResult res = StudyCardResult(
       cardId: cardId,
       frontShownAt: s.currentCardFrontShownAt!,
@@ -478,17 +684,21 @@ class FlashMindRepository extends ChangeNotifier {
       duration: dur,
     );
     final results = [...s.cardResults, res];
-    final int next   = s.nextCardIndex + 1;
-    final bool done  = next >= s.cardOrder.length;
+    final int next = s.nextCardIndex + 1;
+    final bool done = next >= s.cardOrder.length;
     final Duration total = results.fold<Duration>(
-        Duration.zero, (a, r) => a + r.duration);
+      Duration.zero,
+      (a, r) => a + r.duration,
+    );
     final int correct = results.where((r) => r.isCorrect).length;
     final Duration avg = results.isEmpty
         ? Duration.zero
         : Duration(microseconds: total.inMicroseconds ~/ results.length);
 
     final updated = s.copyWith(
-      status: done ? StudySessionStatus.completed : StudySessionStatus.inProgress,
+      status: done
+          ? StudySessionStatus.completed
+          : StudySessionStatus.inProgress,
       finishedAt: done ? now : null,
       clearFinishedAt: !done,
       nextCardIndex: next,
@@ -516,7 +726,10 @@ class FlashMindRepository extends ChangeNotifier {
 
   int get currentStreak {
     final DateTime today = DateTime(
-        DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     int streak = 0;
     DateTime check = today;
     while (true) {
@@ -535,18 +748,19 @@ class FlashMindRepository extends ChangeNotifier {
 
   int get highestStreak {
     if (_studySessions.isEmpty) return 0;
-    final activeDays = _studySessions
-        .where((s) => s.status == StudySessionStatus.completed)
-        .map((s) {
-          final DateTime t = s.finishedAt ?? s.startedAt;
-          return DateTime(t.year, t.month, t.day);
-        })
-        .toSet()
-        .toList()
-      ..sort();
+    final activeDays =
+        _studySessions
+            .where((s) => s.status == StudySessionStatus.completed)
+            .map((s) {
+              final DateTime t = s.finishedAt ?? s.startedAt;
+              return DateTime(t.year, t.month, t.day);
+            })
+            .toSet()
+            .toList()
+          ..sort();
     if (activeDays.isEmpty) return 0;
     int best = 1;
-    int cur  = 1;
+    int cur = 1;
     for (int i = 1; i < activeDays.length; i++) {
       final diff = activeDays[i].difference(activeDays[i - 1]).inDays;
       if (diff == 1) {
@@ -562,28 +776,27 @@ class FlashMindRepository extends ChangeNotifier {
   // Filter 7 hari terakhir
   Iterable<StudySession> get _weeklySessions {
     final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
-    return _studySessions.where((s) =>
-        s.status == StudySessionStatus.completed &&
-        (s.finishedAt ?? s.startedAt).isAfter(cutoff));
+    return _studySessions.where(
+      (s) =>
+          s.status == StudySessionStatus.completed &&
+          (s.finishedAt ?? s.startedAt).isAfter(cutoff),
+    );
   }
 
   int get weeklyUniqueSets =>
       _weeklySessions.map((s) => s.setId).toSet().length;
 
   int get weeklyCardCount =>
-      _weeklySessions.fold<int>(0, (sum, s) => sum + s.completedCardCount);
+      StudyStatistics.totalCards(_weeklySessions);
 
-  Duration get weeklyDuration => _weeklySessions.fold<Duration>(
-      Duration.zero, (sum, s) => sum + s.totalDuration);
+  Duration get weeklyDuration => 
+    StudyStatistics.totalDuration(_weeklySessions);
 
-  double get weeklyAccuracy {
-    final List<StudySession> sessions = _weeklySessions.toList();
-    if (sessions.isEmpty) return 0;
-    return sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
-        sessions.length;
-  }
 
-  // Aturan Peringkat set untuk Wawasan Belajar 
+  double get weeklyAccuracy =>
+    StudyStatistics.averageAccuracy(_weeklySessions);
+
+  // Aturan Peringkat set untuk Wawasan Belajar
   // Skor = 50% rata-rata tingkat kebenaran + 50% kecepatan relatif
   // (rata-rata durasi penyelesaian tercepat = 1, terlama = 0, dinormalisasi
   // antar set yang pernah selesai dipelajari).
@@ -591,15 +804,15 @@ class FlashMindRepository extends ChangeNotifier {
   // dianggap seri, lalu tie-breaker memakai waktu terakhir dipelajari
   // Hasil terurut dari terbaik ke terburuk.
   List<FlashcardSet> _rankedSetsByPerformance() {
-    final entries = <({FlashcardSet set, double acc, int durMs, DateTime last})>[];
+    final entries =
+        <({FlashcardSet set, double acc, int durMs, DateTime last})>[];
 
     for (final set in _sets) {
       final sessions = getCompletedStudySessionsForSet(set.id);
       if (sessions.isEmpty) continue;
-      final double acc =
-          sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
-      final int durMs = sessions.fold<int>(
-              0, (s, x) => s + x.totalDuration.inMilliseconds) ~/
+      final double acc = StudyStatistics.averageAccuracy(sessions);
+      final int durMs =
+          sessions.fold<int>(0, (s, x) => s + x.totalDuration.inMilliseconds) ~/
           sessions.length;
       final StudySession latest = getLatestCompletedSessionForSet(set.id)!;
       entries.add((
@@ -615,13 +828,19 @@ class FlashMindRepository extends ChangeNotifier {
     final int maxDur = entries.map((e) => e.durMs).reduce(max);
 
     final scored = [
-      for (final e in entries) (
-        set: e.set,
-        score: ((e.acc.clamp(0, 100) / 100 * 0.5 +
-          (maxDur == minDur
-              ? 1.0
-              : (maxDur - e.durMs) / (maxDur - minDur)) * 0.5) * 100).round(),
-        last: e.last),
+      for (final e in entries)
+        (
+          set: e.set,
+          score:
+              ((e.acc.clamp(0, 100) / 100 * 0.5 +
+                          (maxDur == minDur
+                                  ? 1.0
+                                  : (maxDur - e.durMs) / (maxDur - minDur)) *
+                              0.5) *
+                      100)
+                  .round(),
+          last: e.last,
+        ),
     ];
 
     scored.sort((a, b) {
@@ -644,7 +863,7 @@ class FlashMindRepository extends ChangeNotifier {
     return ranked.length < 2 ? null : ranked.last;
   }
 
-    // Waktu sebuah sesi terakhir kali dihentikan/aktif.
+  // Waktu sebuah sesi terakhir kali dihentikan/aktif.
   static DateTime sessionStoppedAt(StudySession s) {
     if (s.lastPausedAt != null) return s.lastPausedAt!;
     if (s.cardResults.isNotEmpty) return s.cardResults.last.evaluatedAt;
@@ -653,10 +872,11 @@ class FlashMindRepository extends ChangeNotifier {
 
   // Seluruh sesi terhenti dari yang paling baru dihentikan.
   List<StudySession> get inProgressSessions {
-    final list = _studySessions
-        .where((s) => s.status == StudySessionStatus.inProgress)
-        .toList()
-      ..sort((a, b) => sessionStoppedAt(b).compareTo(sessionStoppedAt(a)));
+    final list =
+        _studySessions
+            .where((s) => s.status == StudySessionStatus.inProgress)
+            .toList()
+          ..sort((a, b) => sessionStoppedAt(b).compareTo(sessionStoppedAt(a)));
     return List.unmodifiable(list);
   }
 }
