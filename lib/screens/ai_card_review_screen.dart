@@ -83,58 +83,91 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
 
   int get _acceptedCount => _cards.where((c) => c.accepted).length;
 
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      ),
+    );
+  }
+
+  // Bila ada kartu yang gagal disimpan, proses penambahan berhenti
+  // Kartu dikeluarkan dari daftar sehingga tidak terduplikasi saat dicoba ulang
   Future<void> _saveAcceptedCards() async {
+    if (_isSaving) return;
+
     final accepted = _cards.where((c) => c.accepted).toList();
     if (accepted.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih minimal satu kartu untuk disimpan'),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
-        ),
-      );
+      _showMessage('Pilih minimal satu kartu untuk disimpan');
       return;
     }
 
     setState(() => _isSaving = true);
 
     final repo = FlashMindRepository.instance;
+    final List<_AiCard> savedCards = [];
+    bool failed = false;
+
     for (final card in accepted) {
-      await repo.addFlashcard(
-        setId: widget.setId,
-        frontText: card.front,
-        backText: card.back,
-      );
+      try {
+        // addFlashcard menulis ke Firestore lalu memperbarui data lokal
+        final created = await repo.addFlashcard(
+          setId: widget.setId,
+          frontText: card.front,
+          backText: card.back,
+        );
+        if (created == null) {
+          failed = true;
+          break;
+        }
+        savedCards.add(card);
+      } catch (e) {
+        debugPrint('Gagal menyimpan kartu AI: $e');
+        failed = true;
+        break;
+      }
     }
 
     if (!mounted) return;
-    setState(() => _isSaving = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${accepted.length} kartu berhasil ditambahkan ke set',
-        ),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      ),
-    );
+    setState(() {
+      _isSaving = false;
+      if (failed) _cards.removeWhere(savedCards.contains);
+    });
 
-    // Kembali ke detail set (2 halaman: review + pilih PDF)
+    if (failed) {
+      _showMessage(
+        savedCards.isEmpty
+            ? 'Kartu gagal disimpan. Periksa koneksi lalu coba lagi'
+            : '${savedCards.length} kartu tersimpan, sisanya gagal. '
+                'Silakan coba simpan lagi',
+      );
+      return;
+    }
+
+    _showMessage('${savedCards.length} kartu berhasil ditambahkan ke set');
+
+    // Kembali ke Detail Set
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppTopBar(
-        title: 'Tinjau Kartu AI',
-        centerTitle: false,
-        onBack: _isSaving ? null : () => Navigator.of(context).pop(),
+    // PopScope mencegah penutupan layar dengan tombol kembali saat menyimpan
+    return PopScope(
+      canPop: !_isSaving,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppTopBar(
+          title: 'Tinjau Kartu AI',
+          centerTitle: false,
+          onBack: _isSaving ? null : () => Navigator.of(context).pop(),
+        ),
+        body: _isLoading ? _buildLoadingState() : _buildReviewBody(),
+        bottomNavigationBar: _isLoading ? null : _buildBottomBar(),
       ),
-      body: _isLoading ? _buildLoadingState() : _buildReviewBody(),
-      bottomNavigationBar: _isLoading ? null : _buildBottomBar(),
     );
   }
 
@@ -195,7 +228,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'AI membuat ${_cards.length} kartu '
+                  'AI membuat ${_cards.length} kartu. '
                   'Centang kartu yang ingin disimpan ke set',
                   style: TextStyle(fontSize: AppFont.body * s, color: AppColors.muted),
                 ),
@@ -210,14 +243,16 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton.icon(
-                  onPressed: () {
-                    final allAccepted = _acceptedCount == _cards.length;
-                    setState(() {
-                      for (final c in _cards) {
-                        c.accepted = !allAccepted;
-                      }
-                    });
-                  },
+                  onPressed: _isSaving
+                      ? null
+                      : () {
+                          final allAccepted = _acceptedCount == _cards.length;
+                          setState(() {
+                            for (final c in _cards) {
+                              c.accepted = !allAccepted;
+                            }
+                          });
+                        },
                   icon: Icon(
                     _acceptedCount == _cards.length
                         ? Icons.deselect
@@ -276,11 +311,13 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          setState(() {
-            card.accepted = !card.accepted;
-          });
-        },
+        onTap: _isSaving
+            ? null
+            : () {
+                setState(() {
+                  card.accepted = !card.accepted;
+                });
+              },
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
           child: Row(
@@ -392,6 +429,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
 
     return SafeArea(
       child: AppContentFrame(
+        shrinkHeight: true,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
           child: AppButton(

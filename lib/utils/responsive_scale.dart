@@ -36,15 +36,22 @@ class AppFont {
 // Membatasi lebar konten agar tidak melebar berlebihan di tablet/monitor.
 // Batas lebar ikut dikali skala sehingga komponen terasa proporsional.
 class AppContentFrame extends StatelessWidget {
-  const AppContentFrame({super.key, required this.child, this.maxWidth = 640});
+  const AppContentFrame({
+    super.key,
+    required this.child,
+    this.maxWidth = 640,
+    this.shrinkHeight = false,
+  });
 
   final Widget child;
   final double maxWidth;
+  final bool shrinkHeight;
 
   @override
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
+      heightFactor: shrinkHeight ? 1 : null,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth * context.scale),
         child: child,

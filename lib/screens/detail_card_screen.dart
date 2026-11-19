@@ -7,6 +7,7 @@ import '../utils/responsive_scale.dart';
 import 'edit_card_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_top_bar.dart';
+import '../widgets/card_side_layout.dart';
 
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/app_button.dart';
@@ -155,106 +156,38 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
   Widget _buildContent(Flashcard card, double extraBottomPadding) {
     final double s = context.scale;
     final String text = _isBackSide ? card.backText : card.frontText;
-    final String sideLabel = _isBackSide ? 'Sisi Belakang' : 'Sisi Depan';
-    final String flipTooltip = _isBackSide
-        ? 'Tampilkan sisi depan'
-        : 'Balikkan kartu';
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 50 + extraBottomPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  sideLabel,
-                  style: TextStyle(
-                    fontSize: AppFont.title * s,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'serif',
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-              Tooltip(
-                message: flipTooltip,
-                child: TextButton.icon(
-                  onPressed: _toggleCardSide,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  icon: Icon(Icons.swap_horiz, size: 25 * s),
-                  label: Text(
-                    'Balikkan Kartu',
-                    style: TextStyle(fontSize: AppFont.bodyLarge * s, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: Border.all(color: AppColors.borderStrong, width: 1),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x18000000),
-                    blurRadius: 2,
-                    offset: Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Scrollbar(
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(right: 13),
-                  child: Text(
-                    text,
-                    textAlign: TextAlign.justify,
-                    style: TextStyle(
-                      fontSize: AppFont.bodyLarge * s,
-                      color: AppColors.primary,
-                      height: 1.45,
-                    ),
-                  ),
-                ),
+    return CardSideLayout(
+      sideLabel: _isBackSide ? 'Sisi Belakang' : 'Sisi Depan',
+      flipTooltip: _isBackSide ? 'Tampilkan sisi depan' : 'Balikkan kartu',
+      onFlip: _isDeleting ? null : _toggleCardSide,
+      bottomPadding: 50 + extraBottomPadding,
+      box: CardSideBox(
+        child: Scrollbar(
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(right: 13),
+            child: Text(
+              text,
+              textAlign: TextAlign.justify,
+              style: TextStyle(
+                fontSize: AppFont.bodyLarge * s,
+                color: AppColors.primary,
+                height: 1.45,
               ),
             ),
           ),
-
-          const SizedBox(height: 30),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                AppButton(
-                  label: 'Hapus Kartu',
-                  tone: AppButtonTone.danger,
-                  isLoading: _isDeleting,
-                  onPressed: _isDeleting ? null : () => _confirmDelete(card),
-                ),
-                AppButton(
-                  label: 'Edit Kartu',
-                  onPressed: _isDeleting ? null : () => _openEditCard(card),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
+      ),
+      leftAction: AppButton(
+        label: 'Hapus Kartu',
+        tone: AppButtonTone.danger,
+        isLoading: _isDeleting,
+        onPressed: _isDeleting ? null : () => _confirmDelete(card),
+      ),
+      rightAction: AppButton(
+        label: 'Edit Kartu',
+        onPressed: _isDeleting ? null : () => _openEditCard(card),
       ),
     );
   }

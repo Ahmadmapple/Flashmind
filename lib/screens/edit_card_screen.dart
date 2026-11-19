@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/flashcard.dart';
@@ -6,7 +7,9 @@ import '../utils/app_colors.dart';
 import '../utils/responsive_scale.dart';
 import '../services/card_form_rules.dart';
 
+import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_top_bar.dart';
+import '../widgets/card_side_layout.dart';
 import '../widgets/confirm_delete_dialog.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_input_footer.dart';
@@ -25,7 +28,6 @@ class EditCardScreen extends StatefulWidget {
 
 class _EditCardScreenState extends State<EditCardScreen> {
   static const int _cardMaxLength = CardFormRules.maxLength;
-  static const double _inputBoxHeight = 360;
 
   final FlashMindRepository _repository = FlashMindRepository.instance;
   late final TextEditingController _frontController;
@@ -160,9 +162,12 @@ class _EditCardScreenState extends State<EditCardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double s = context.scale;
-    final double keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final double extraBottomPadding = keyboardInset.clamp(0.0, double.infinity);
+    final MediaQueryData media = MediaQuery.of(context);
+    final bool busy = _isSaving || _isDeleting;
+
+    final double reserved = AppNavStyle.barHeight + media.padding.bottom;
+    final double bottomPadding =
+        math.max(reserved + 50, media.viewInsets.bottom + 20);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -170,27 +175,32 @@ class _EditCardScreenState extends State<EditCardScreen> {
       appBar: AppTopBar(
         title: 'Edit Kartu',
         backTooltip: 'Batalkan pengeditan',
-        onBack: (_isSaving || _isDeleting) ? null : _cancelEditing,
+        onBack: busy ? null : _cancelEditing,
       ),
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + extraBottomPadding),
-          child: AppContentFrame(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeadingRow(s),
-                const SizedBox(height: 8),
-                SizedBox(height: _inputBoxHeight, child: _buildInputArea(s)),
-                AppInputFooter(
-                  controller: _activeController,
-                  maxLength: _cardMaxLength,
-                  errorTextFor: (_) => _footerError(),
-                ),
-                const SizedBox(height: 15),
-                _buildActionRow(),
-              ],
+        child: AppContentFrame(
+          child: CardSideLayout(
+            sideLabel: _isBackSide ? 'Sisi Belakang' : 'Sisi Depan',
+            flipTooltip: _isBackSide ? 'Tampilkan sisi depan' : 'Balikkan kartu',
+            onFlip: busy ? null : _toggleCardSide,
+            bottomPadding: bottomPadding,
+            box: _buildInputBox(context.scale),
+            boxFooter: AppInputFooter(
+              controller: _activeController,
+              maxLength: _cardMaxLength,
+              errorTextFor: (_) => _footerError(),
+            ),
+            leftAction: AppButton(
+              label: 'Hapus Kartu',
+              tone: AppButtonTone.danger,
+              isLoading: _isDeleting,
+              onPressed: busy ? null : _confirmDelete,
+            ),
+            rightAction: AppButton(
+              label: 'Simpan',
+              isLoading: _isSaving,
+              onPressed: busy ? null : _saveChanges,
             ),
           ),
         ),
@@ -198,62 +208,10 @@ class _EditCardScreenState extends State<EditCardScreen> {
     );
   }
 
-  Widget _buildHeadingRow(double s) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Text(
-            _isBackSide ? 'Sisi Belakang' : 'Sisi Depan',
-            style: TextStyle(
-              fontSize: AppFont.title * s,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-        _buildFlipButton(s),
-      ],
-    );
-  }
-
-  Widget _buildFlipButton(double s) {
-    return Tooltip(
-      message: _isBackSide ? 'Tampilkan sisi depan' : 'Balikkan kartu',
-      child: TextButton.icon(
-        onPressed: (_isSaving || _isDeleting) ? null : _toggleCardSide,
-        style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 6 * s),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: TextStyle(
-            fontSize: AppFont.body * s,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        icon: Icon(Icons.swap_horiz, size: 24 * s),
-        label: const Text('Balikkan Kartu'),
-      ),
-    );
-  }
-
-  Widget _buildInputArea(double s) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.borderStrong, width: 1),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x18000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+  Widget _buildInputBox(double s) {
+    return CardSideBox(
       child: TextField(
+        key: ValueKey<bool>(_isBackSide),
         controller: _activeController,
         maxLength: _cardMaxLength,
         minLines: null,
@@ -268,7 +226,8 @@ class _EditCardScreenState extends State<EditCardScreen> {
           height: 1.45,
         ),
         decoration: InputDecoration(
-          contentPadding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+          isDense: true,
+          contentPadding: const EdgeInsets.only(right: 13),
           counterText: '',
           border: InputBorder.none,
           hintText: _isBackSide
@@ -281,26 +240,6 @@ class _EditCardScreenState extends State<EditCardScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildActionRow() {
-    final bool busy = _isSaving || _isDeleting;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        AppButton(
-          label: 'Hapus Kartu',
-          tone: AppButtonTone.danger,
-          isLoading: _isDeleting,
-          onPressed: busy ? null : _confirmDelete,
-        ),
-        AppButton(
-          label: 'Simpan',
-          isLoading: _isSaving,
-          onPressed: busy ? null : _saveChanges,
-        ),
-      ],
     );
   }
 
