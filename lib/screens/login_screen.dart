@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Masuk untuk melanjutkan belajarmu.',
+                    'Masuk untuk melanjutkan belajarmu',
                     style: TextStyle(fontSize: 14, color: Colors.black54),
                     textAlign: TextAlign.center,
                   ),

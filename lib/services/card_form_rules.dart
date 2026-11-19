@@ -26,7 +26,7 @@ class CardFormRules {
   }) {
     if (!showError) return null;
     final bool bothEmpty = front.trim().isEmpty && back.trim().isEmpty;
-    if (bothEmpty) return 'Sisi depan dan belakang perlu diisi.';
-    return isBack ? 'Sisi belakang perlu diisi.' : 'Sisi depan perlu diisi.';
+    if (bothEmpty) return 'Sisi depan dan belakang perlu diisi';
+    return isBack ? 'Sisi belakang perlu diisi' : 'Sisi depan perlu diisi';
   }
 }

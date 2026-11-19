@@ -60,7 +60,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
         _notificationShown = true;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Set berhasil dibuat.'),
+            content: Text('Set berhasil dibuat'),
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
           ),
@@ -75,7 +75,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     final bool? confirmed = await showConfirmDeleteDialog(
       context,
       title: 'Hapus Set',
-      message: 'Set dan kartu di dalamnya akan dihapus.',
+      message: 'Set dan kartu di dalamnya akan dihapus',
       itemName: set.title,
       confirmLabel: 'Hapus',
     );
@@ -96,7 +96,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     if (edited == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Set berhasil diperbarui.'),
+          content: Text('Set berhasil diperbarui'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
         ),
@@ -114,7 +114,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kartu berhasil dibuat.'),
+          content: Text('Kartu berhasil dibuat'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
         ),
@@ -183,7 +183,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Pilih cara yang ingin kamu gunakan untuk membuat kartu.',
+                      'Pilih cara yang ingin kamu gunakan untuk membuat kartu',
                       style: TextStyle(
                         fontSize: AppFont.body * s,
                         color: AppColors.muted,
@@ -210,8 +210,8 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Bantuan AI membaca dokumen PDF dan membuat kartu secara otomatis. '
-                      'Kamu bisa meninjau kartunya sebelum disimpan.',
+                      'Bantuan AI membaca dokumen PDF dan membuat kartu secara otomatis '
+                      'Kamu bisa meninjau kartunya sebelum disimpan',
                       style: TextStyle(
                         fontSize: AppFont.small * s,
                         color: AppColors.muted,
@@ -268,7 +268,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
         builder: (context, _) {
           final set = _repository.getSetById(widget.setId);
           if (set == null) {
-            return const Center(child: Text('Set tidak ditemukan.'));
+            return const Center(child: Text('Set tidak ditemukan'));
           }
           return _buildContent(set);
         },
@@ -325,7 +325,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
               const SizedBox(height: 8),
               Text(
                 set.description.isEmpty
-                    ? 'Tidak ada deskripsi set.'
+                    ? 'Tidak ada deskripsi set'
                     : set.description,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
@@ -496,7 +496,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Belum ada kartu dalam set ini.',
+              'Belum ada kartu dalam set ini',
               style: TextStyle(
                 fontSize: AppFont.body * s,
                 color: AppColors.muted,
@@ -505,7 +505,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
           ),
           const Spacer(),
           Text(
-            'Tekan tombol Tambah Kartu di atas untuk menambahkan kartu ke dalam set.',
+            'Tekan tombol Tambah Kartu di atas untuk menambahkan kartu ke dalam set',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: AppFont.small * s,

@@ -54,27 +54,27 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
         _AiCard(
           front: 'Apa fungsi utama membran sel?',
           back:
-              'Membran sel mengatur apa yang masuk dan keluar dari sel, menjaga lingkungan internal sel tetap stabil.',
+              'Membran sel mengatur apa yang masuk dan keluar dari sel, menjaga lingkungan internal sel tetap stabil',
         ),
         _AiCard(
           front: 'Apa itu mitokondria?',
           back:
-              'Mitokondria adalah organel penghasil energi sel dalam bentuk ATP melalui proses respirasi seluler.',
+              'Mitokondria adalah organel penghasil energi sel dalam bentuk ATP melalui proses respirasi seluler',
         ),
         _AiCard(
           front: 'Jelaskan proses fotosintesis secara singkat.',
           back:
-              'Fotosintesis adalah proses tumbuhan mengubah cahaya matahari, air, dan CO₂ menjadi glukosa dan oksigen.',
+              'Fotosintesis adalah proses tumbuhan mengubah cahaya matahari, air, dan CO₂ menjadi glukosa dan oksigen',
         ),
         _AiCard(
           front: 'Apa perbedaan sel prokariotik dan eukariotik?',
           back:
-              'Sel prokariotik tidak memiliki nukleus bermembran, sedangkan sel eukariotik memiliki nukleus yang terlindungi membran inti.',
+              'Sel prokariotik tidak memiliki nukleus bermembran, sedangkan sel eukariotik memiliki nukleus yang terlindungi membran inti',
         ),
         _AiCard(
           front: 'Apa fungsi ribosom dalam sel?',
           back:
-              'Ribosom berperan dalam sintesis protein dengan menerjemahkan informasi genetik dari mRNA menjadi rantai asam amino.',
+              'Ribosom berperan dalam sintesis protein dengan menerjemahkan informasi genetik dari mRNA menjadi rantai asam amino',
         ),
       ]);
       _isLoading = false;
@@ -88,7 +88,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
     if (accepted.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pilih minimal satu kartu untuk disimpan.'),
+          content: Text('Pilih minimal satu kartu untuk disimpan'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
         ),
@@ -113,7 +113,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '${accepted.length} kartu berhasil ditambahkan ke set.',
+          '${accepted.length} kartu berhasil ditambahkan ke set',
         ),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -195,8 +195,8 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'AI membuat ${_cards.length} kartu. '
-                  'Centang kartu yang ingin disimpan ke set.',
+                  'AI membuat ${_cards.length} kartu '
+                  'Centang kartu yang ingin disimpan ke set',
                   style: TextStyle(fontSize: AppFont.body * s, color: AppColors.muted),
                 ),
               ],

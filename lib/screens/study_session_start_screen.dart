@@ -32,7 +32,7 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
         if (set == null) {
           return const Scaffold(
             backgroundColor: StudySessionStyle.background,
-            body: Center(child: Text('Set tidak ditemukan.')),
+            body: Center(child: Text('Set tidak ditemukan')),
           );
         }
 
@@ -45,11 +45,11 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
         return StudySessionScaffold(
           greeting: 'Halo',
           message:
-              'Silakan tekan tombol Mulai untuk melaksanakan sesi belajar.',
+              'Silakan tekan tombol Mulai untuk melaksanakan sesi belajar',
           card: StudySessionSummaryCard(
             title: set.title,
             description: set.description.isEmpty
-                ? 'Tidak ada deskripsi set.'
+                ? 'Tidak ada deskripsi set'
                 : set.description,
             historyRows: [
               (
@@ -96,7 +96,7 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
       if (session == null) {
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('Sesi belajar tidak dapat dimulai.'),
+            content: Text('Sesi belajar tidak dapat dimulai'),
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
           ),

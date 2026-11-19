@@ -43,7 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (errorMessage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Profil berhasil diperbarui.'),
+          content: Text('Profil berhasil diperbarui'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
         ),

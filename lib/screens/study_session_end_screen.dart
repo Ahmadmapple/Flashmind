@@ -46,7 +46,7 @@ class StudySessionEndScreen extends StatelessWidget {
         if (currentSession == null) {
           return const Scaffold(
             backgroundColor: StudySessionStyle.background,
-            body: Center(child: Text('Data sesi belajar tidak ditemukan.')),
+            body: Center(child: Text('Data sesi belajar tidak ditemukan')),
           );
         }
 
@@ -54,9 +54,9 @@ class StudySessionEndScreen extends StatelessWidget {
         final String title =
             set?.title ?? currentSession.setTitle ?? FlashMindRepository.deletedSetTitle;
         final String description = set == null
-            ? 'Set ini sudah dihapus.'
+            ? 'Set ini sudah dihapus'
             : (set.description.isEmpty
-                ? 'Tidak ada deskripsi set.'
+                ? 'Tidak ada deskripsi set'
                 : set.description);
 
         // Sesi selesai milik setId ini tetap tersedia walau set sudah dihapus.
@@ -73,7 +73,7 @@ class StudySessionEndScreen extends StatelessWidget {
           child: StudySessionScaffold(
             greeting: 'Selamat',
             message:
-                'Sesi belajar sudah selesai! Terima kasih karena telah belajar.',
+                'Sesi belajar sudah selesai! Terima kasih karena telah belajar',
             onBack: () => _goBack(context, setExists: setExists),
             card: StudySessionSummaryCard(
               title: title,

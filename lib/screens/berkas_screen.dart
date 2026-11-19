@@ -212,10 +212,10 @@ class BerkasScreenState extends State<BerkasScreen> {
           message =
               'Tidak ada sesi belajar yang terhenti.\nSemua sesi sudah selesai!';
         case BerkasFilter.perluDiulas:
-          message = 'Tidak ada set yang perlu diulas saat ini.';
+          message = 'Tidak ada set yang perlu diulas saat ini';
         case BerkasFilter.semua:
           message =
-              'Belum ada set flashcard.\nTekan "+ Tambah Set" untuk mulai.';
+              'Belum ada set flashcard.\nTekan "+ Tambah Set" untuk mulai';
       }
     }
 
@@ -250,7 +250,7 @@ class BerkasScreenState extends State<BerkasScreen> {
     if (deleted == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Set berhasil dihapus.'),
+          content: Text('Set berhasil dihapus'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 80),
         ),

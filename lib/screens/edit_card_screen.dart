@@ -131,7 +131,7 @@ class _EditCardScreenState extends State<EditCardScreen> {
     final bool? confirmed = await showConfirmDeleteDialog(
       context,
       title: 'Hapus Kartu',
-      message: 'Kartu ini akan dihapus dari set dan tidak dapat dikembalikan.',
+      message: 'Kartu ini akan dihapus dari set dan tidak dapat dikembalikan',
       confirmLabel: 'Hapus',
     );
 
@@ -147,7 +147,7 @@ class _EditCardScreenState extends State<EditCardScreen> {
       setState(() => _isDeleting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kartu tidak ditemukan.'),
+          content: Text('Kartu tidak ditemukan'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
         ),
@@ -272,8 +272,8 @@ class _EditCardScreenState extends State<EditCardScreen> {
           counterText: '',
           border: InputBorder.none,
           hintText: _isBackSide
-              ? 'Masukkan isi dari sisi belakang kartu.'
-              : 'Masukkan isi dari sisi depan kartu.',
+              ? 'Masukkan isi dari sisi belakang kartu'
+              : 'Masukkan isi dari sisi depan kartu',
           hintStyle: TextStyle(
             fontSize: AppFont.bodyLarge * s,
             color: AppColors.hint,

@@ -78,11 +78,11 @@ class _StudySessionContinueScreenState
         return StudySessionScaffold(
           greeting: 'Halo',
           message:
-              'Silakan tekan tombol Lanjut untuk melanjutkan sesi belajar yang terhenti.',
+              'Silakan tekan tombol Lanjut untuk melanjutkan sesi belajar yang terhenti',
           card: StudySessionSummaryCard(
             title: set.title,
             description: set.description.isEmpty
-                ? 'Tidak ada deskripsi set.'
+                ? 'Tidak ada deskripsi set'
                 : set.description,
             historyRows: [
               (

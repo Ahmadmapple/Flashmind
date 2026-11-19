@@ -125,8 +125,11 @@ class _BerandaScreenState extends State<BerandaScreen> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.check_circle_outline,
-                color: AppColors.accent, size: 32 * s),
+            Icon(
+              noSets ? Icons.close : Icons.check_circle_outline,
+              color: AppColors.accent,
+              size: 32 * s,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -134,8 +137,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
                 children: [
                   Text(
                     noSets
-                        ? 'Belum ada set flashcard.'
-                        : 'Tidak ada set yang perlu diulas.',
+                        ? 'Belum ada set flashcard'
+                        : 'Tidak ada set yang perlu diulas',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: AppFont.title * s,
@@ -147,8 +150,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
                   const SizedBox(height: 6),
                   Text(
                     noSets
-                        ? 'Buat set di halaman Berkas untuk mulai belajar.'
-                        : 'Set akan muncul di sini ketika sudah waktunya untuk diulas.',
+                        ? 'Buat set di halaman Berkas untuk mulai belajar'
+                        : 'Set akan muncul di sini ketika sudah waktunya untuk diulas',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.65),
                       fontSize: AppFont.small * s,
@@ -194,7 +197,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
       if (otherStopped > 0) ...[
         const SizedBox(height: 4),
         Text(
-          'Masih ada $otherStopped sesi terhenti lainnya.',
+          'Masih ada $otherStopped sesi terhenti lainnya',
           style: TextStyle(
             color: AppColors.accent.withValues(alpha: 0.9),
             fontSize: AppFont.caption * s,
@@ -362,10 +365,10 @@ class _BerandaScreenState extends State<BerandaScreen> {
                   const SizedBox(height: 12),
                   if (reviewSets.isEmpty)
                     const AppEmptyCard(
-                      icon: Icons.check_circle_outline,
-                      title: 'Tidak ada set yang perlu diulas hari ini.',
+                      icon: Icons.autorenew,
+                      title: 'Tidak ada set yang perlu diulas hari ini',
                       subtitle:
-                          'Set akan muncul di sini saat sudah waktunya diulas.',
+                          'Set yang perlu diulas akan muncul di sini',
                     )
                   else
                     ...reviewSets.map((set) {

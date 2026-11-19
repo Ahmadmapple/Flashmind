@@ -105,7 +105,7 @@ class _StudyHistoryScreenState extends State<StudyHistoryScreen> {
                               child: AppEmptyCard(
                                 icon: Icons.history_rounded,
                                 title: _range.emptyTitle,
-                                subtitle: 'Selesaikan sesi belajar untuk melihat riwayatnya di sini.',
+                                subtitle: 'Selesaikan sesi belajar untuk melihat riwayatnya di sini',
                               ),
                             ),
                           )

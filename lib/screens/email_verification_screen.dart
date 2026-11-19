@@ -42,7 +42,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       setState(() => _resentSuccess = true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Email verifikasi telah dikirim ulang.'),
+          content: Text('Email verifikasi telah dikirim ulang'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
         ),
@@ -135,7 +135,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       const TextSpan(
                           text:
                               '\n\nKlik link tersebut untuk mengaktifkan akun, '
-                              'lalu kembali ke sini dan masuk.'),
+                              'lalu kembali ke sini dan masuk'),
                     ],
                   ),
                 ),

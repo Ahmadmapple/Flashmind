@@ -128,7 +128,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Set tidak ditemukan sehingga kartu tidak dapat dibuat.',
+            'Set tidak ditemukan sehingga kartu tidak dapat dibuat',
           ),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
@@ -206,8 +206,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     maxLength: _cardMaxLength,
                     expands: true,
                     hintText: isBack
-                        ? 'Masukkan isi dari sisi belakang kartu.\nMinimal 1 karakter.'
-                        : 'Masukkan isi dari sisi depan kartu.\nMinimal 1 karakter.',
+                        ? 'Masukkan isi dari sisi belakang kartu.\nMinimal 1 karakter'
+                        : 'Masukkan isi dari sisi depan kartu.\nMinimal 1 karakter',
                   ),
                 ),
               ),

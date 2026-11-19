@@ -263,7 +263,7 @@ class _StatisticScreenState extends State<StatisticScreen> {
                     if (best == null) ...[
                       _insightDivider,
                       Text(
-                        'Belum ada wawasan belajar. Selesaikan sesi belajar untuk melihat set yang paling dikuasai dan perlu diperhatikan.',
+                        'Belum ada wawasan belajar. Selesaikan sesi belajar untuk melihat set yang paling dikuasai dan perlu diperhatikan',
                         style: TextStyle(
                           fontSize: AppFont.body * s,
                           color: AppColors.muted,
@@ -290,8 +290,8 @@ class _StatisticScreenState extends State<StatisticScreen> {
               if (recentSessions.isEmpty)
                 const AppEmptyCard(
                   icon: Icons.menu_book_rounded,
-                  title: 'Belum ada sesi yang selesai.',
-                  subtitle: 'Selesaikan sesi belajar agar\nriwayatnya muncul di sini.',
+                  title: 'Belum ada sesi yang selesai',
+                  subtitle: 'Selesaikan sesi belajar agar\nriwayatnya muncul di sini',
                 )
               else
                 ...recentSessions.map((session) {

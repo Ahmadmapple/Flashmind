@@ -225,7 +225,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(context),
         body: const Center(
-          child: Text('Sesi belajar tidak dapat ditampilkan.'),
+          child: Text('Sesi belajar tidak dapat ditampilkan'),
         ),
       );
     }
@@ -440,7 +440,7 @@ class _StudySessionScreenState extends State<StudySessionScreen>
             )
           : Center(
               child: Text(
-                'Pikirkan jawabannya, lalu ketuk kartu untuk membalik.',
+                'Pikirkan jawabannya, lalu ketuk kartu untuk membalik',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: AppFont.small * s, color: AppColors.muted),
               ),

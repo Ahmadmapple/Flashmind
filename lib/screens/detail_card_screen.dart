@@ -45,7 +45,7 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
     final bool? confirmed = await showConfirmDeleteDialog(
       context,
       title: 'Hapus Kartu',
-      message: 'Kartu ini akan dihapus dari set dan tidak dapat dikembalikan.',
+      message: 'Kartu ini akan dihapus dari set dan tidak dapat dikembalikan',
       confirmLabel: 'Hapus',
     );
 
@@ -65,7 +65,7 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kartu tidak ditemukan.'),
+          content: Text('Kartu tidak ditemukan'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
         ),
@@ -95,7 +95,7 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
     if (result == EditCardResult.saved) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kartu berhasil diperbarui.'),
+          content: Text('Kartu berhasil diperbarui'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
         ),
@@ -129,7 +129,7 @@ class _DetailCardScreenState extends State<DetailCardScreen> {
             );
 
             if (card == null) {
-              return const Center(child: Text('Kartu tidak ditemukan.'));
+              return const Center(child: Text('Kartu tidak ditemukan'));
             }
 
             return AppContentFrame(child: _buildContent(card, extraBottomPadding));

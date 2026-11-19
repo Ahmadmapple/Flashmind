@@ -42,7 +42,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _emailSent = true);
     } else {
       setState(() =>
-          _emailError = 'Email tidak ditemukan atau terjadi kesalahan. Coba lagi.');
+          _emailError = 'Email tidak ditemukan atau terjadi kesalahan. Coba lagi');
     }
   }
 
@@ -96,8 +96,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _emailSent
-                      ? 'Kami telah mengirim link reset kata sandi ke ${_emailController.text.trim()}. Periksa inbox atau folder spam kamu.'
-                      : 'Masukkan email akunmu. Kami akan kirimkan link untuk mengatur ulang kata sandi.',
+                      ? 'Kami telah mengirim link reset kata sandi ke ${_emailController.text.trim()}. Periksa inbox atau folder spam kamu'
+                      : 'Masukkan email akunmu. Kami akan kirimkan link untuk mengatur ulang kata sandi',
                   style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.5),
                   textAlign: TextAlign.center,
                 ),

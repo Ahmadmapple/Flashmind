@@ -34,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: user == null
-          ? const Center(child: Text('Tidak ada data pengguna.'))
+          ? const Center(child: Text('Tidak ada data pengguna'))
           : SafeArea(
               top: false,
               child: ListView(
