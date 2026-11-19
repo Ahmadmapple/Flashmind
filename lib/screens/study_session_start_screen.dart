@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../utils/formatter.dart';
-import '../models/study_session.dart';
 import '../repositories/flash_mind_repository.dart';
 
 import 'study_session_screen.dart';
@@ -21,21 +20,6 @@ class StudySessionStartScreen extends StatefulWidget {
 class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
   bool _isStarting = false;
 
-  static Duration _averageDuration(List<StudySession> sessions) {
-    if (sessions.isEmpty) return Duration.zero;
-    final int total = sessions.fold<int>(
-      0,
-      (sum, s) => sum + s.totalDuration.inMicroseconds,
-    );
-    return Duration(microseconds: total ~/ sessions.length);
-  }
-
-  static double _averageAccuracy(List<StudySession> sessions) {
-    if (sessions.isEmpty) return 0;
-    return sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
-        sessions.length;
-  }
-
   @override
   Widget build(BuildContext context) {
     final repository = FlashMindRepository.instance;
@@ -53,7 +37,10 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
         }
 
         final completed = repository.getCompletedStudySessionsForSet(set.id);
-        final bool hasHistory = completed.isNotEmpty;
+        final Duration? avgDuration =
+            repository.getAverageDurationForSet(set.id);
+        final double? avgAccuracy =
+            repository.getAverageAccuracyForSet(set.id);
 
         return StudySessionScaffold(
           greeting: 'Halo',
@@ -67,11 +54,11 @@ class _StudySessionStartScreenState extends State<StudySessionStartScreen> {
             historyRows: [
               (
                 'Durasi pengerjaan',
-                hasHistory ? Formatter.duration(_averageDuration(completed)) : '-',
+                avgDuration == null ? '-' : Formatter.duration(avgDuration),
               ),
               (
                 'Tingkat kebenaran',
-                hasHistory ? Formatter.percent(_averageAccuracy(completed)) : '-',
+                avgAccuracy == null ? '-' : Formatter.percent(avgAccuracy),
               ),
               (
                 'Waktu terakhir dipelajari',

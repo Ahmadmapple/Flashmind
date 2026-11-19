@@ -70,19 +70,6 @@ class FlashMindRepository extends ChangeNotifier {
     _studySessions.where((s) => s.status == StudySessionStatus.completed),
   );
 
-  List<StudySession> getSessionsOnDay(DateTime day) {
-    final start = DateTime(day.year, day.month, day.day);
-    final end   = start.add(const Duration(days: 1));
-    return _studySessions.where((s) {
-      if (s.status != StudySessionStatus.completed) return false;
-      final t = s.finishedAt ?? s.startedAt;
-      return !t.isBefore(start) && t.isBefore(end);
-    }).toList();
-  }
-
-  List<StudySession> getStudySessionsForSet(String setId) =>
-      List.unmodifiable(_studySessions.where((s) => s.setId == setId));
-
   List<StudySession> getCompletedStudySessionsForSet(String setId) =>
       List.unmodifiable(_studySessions.where(
         (s) => s.setId == setId && s.status == StudySessionStatus.completed,
@@ -527,14 +514,6 @@ class FlashMindRepository extends ChangeNotifier {
     return updated;
   }
 
-  List<StudySession> getSessionsInRange(DateTime from, DateTime to) {
-    return _studySessions.where((s) {
-      if (s.status != StudySessionStatus.completed) return false;
-      final DateTime t = s.finishedAt ?? s.startedAt;
-      return !t.isBefore(from) && t.isBefore(to);
-    }).toList();
-  }
-
   int get currentStreak {
     final DateTime today = DateTime(
         DateTime.now().year, DateTime.now().month, DateTime.now().day);
@@ -580,57 +559,28 @@ class FlashMindRepository extends ChangeNotifier {
     return best;
   }
 
-  int get weeklyUniqueSets {
+  // Filter 7 hari terakhir
+  Iterable<StudySession> get _weeklySessions {
     final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
-    return _studySessions
-        .where((s) =>
-            s.status == StudySessionStatus.completed &&
-            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
-        .map((s) => s.setId)
-        .toSet()
-        .length;
+    return _studySessions.where((s) =>
+        s.status == StudySessionStatus.completed &&
+        (s.finishedAt ?? s.startedAt).isAfter(cutoff));
   }
 
-  int get weeklyCardCount {
-    final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
-    return _studySessions
-        .where((s) =>
-            s.status == StudySessionStatus.completed &&
-            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
-        .fold<int>(0, (sum, s) => sum + s.completedCardCount);
-  }
+  int get weeklyUniqueSets =>
+      _weeklySessions.map((s) => s.setId).toSet().length;
 
-  Duration get weeklyDuration {
-    final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
-    return _studySessions
-        .where((s) =>
-            s.status == StudySessionStatus.completed &&
-            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
-        .fold<Duration>(Duration.zero, (sum, s) => sum + s.totalDuration);
-  }
+  int get weeklyCardCount =>
+      _weeklySessions.fold<int>(0, (sum, s) => sum + s.completedCardCount);
+
+  Duration get weeklyDuration => _weeklySessions.fold<Duration>(
+      Duration.zero, (sum, s) => sum + s.totalDuration);
 
   double get weeklyAccuracy {
-    final DateTime cutoff = DateTime.now().subtract(const Duration(days: 7));
-    final List<StudySession> sessions = _studySessions
-        .where((s) =>
-            s.status == StudySessionStatus.completed &&
-            (s.finishedAt ?? s.startedAt).isAfter(cutoff))
-        .toList();
+    final List<StudySession> sessions = _weeklySessions.toList();
     if (sessions.isEmpty) return 0;
     return sessions.fold<double>(0, (sum, s) => sum + s.accuracy) /
         sessions.length;
-  }
-
-  double bestMasteredAccuracy(String setId) {
-    final sessions = getCompletedStudySessionsForSet(setId);
-    if (sessions.isEmpty) return 0;
-    return sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
-  }
-
-  double worstSetAccuracy(String setId) {
-    final sessions = getCompletedStudySessionsForSet(setId);
-    if (sessions.isEmpty) return 0;
-    return sessions.fold<double>(0, (s, x) => s + x.accuracy) / sessions.length;
   }
 
   // Aturan Peringkat set untuk Wawasan Belajar 
@@ -708,61 +658,5 @@ class FlashMindRepository extends ChangeNotifier {
         .toList()
       ..sort((a, b) => sessionStoppedAt(b).compareTo(sessionStoppedAt(a)));
     return List.unmodifiable(list);
-  }
-
-  // Sesi terhenti yang paling baru dihentikan.
-  StudySession? get latestInProgressSession {
-    final list = inProgressSessions;
-    return list.isEmpty ? null : list.first;
-  }
-
-  FlashcardSet? get recommendedSet {
-    final inProg = latestInProgressSession;
-    if (inProg != null) return getSetById(inProg.setId);
-
-    FlashcardSet? pick;
-    double worstScore = double.infinity;
-    for (final set in _sets) {
-      final sessions = getCompletedStudySessionsForSet(set.id);
-      final DateTime lastStudied = set.lastStudiedAt ?? DateTime(1970);
-      final double acc = sessions.isEmpty
-          ? 0
-          : sessions.fold<double>(0, (s, x) => s + x.accuracy) /
-              sessions.length;
-      final double daysSince =
-          DateTime.now().difference(lastStudied).inHours / 24.0;
-      final double score = acc - daysSince;
-      if (score < worstScore) {
-        worstScore = score;
-        pick = set;
-      }
-    }
-    return pick;
-  }
-
-  List<FlashcardSet> reviewSets({int limit = 3}) {
-    final scored = <MapEntry<FlashcardSet, double>>[];
-    for (final set in _sets) {
-      final sessions = getCompletedStudySessionsForSet(set.id);
-      final DateTime lastStudied = set.lastStudiedAt ?? DateTime(1970);
-      final double acc = sessions.isEmpty
-          ? 0
-          : sessions.fold<double>(0, (s, x) => s + x.accuracy) /
-              sessions.length;
-      final double daysSince =
-          DateTime.now().difference(lastStudied).inHours / 24.0;
-      scored.add(MapEntry(set, acc - daysSince));
-    }
-    scored.sort((a, b) => a.value.compareTo(b.value));
-    return scored.take(limit).map((e) => e.key).toList();
-  }
-
-  List<FlashcardSet> recentStudiedSets({int limit = 3}) {
-    final list = _sets
-        .where((s) => getCompletedStudySessionsForSet(s.id).isNotEmpty) // DIUBAH
-        .toList()
-      ..sort((a, b) => (b.lastStudiedAt ?? DateTime(1970))
-          .compareTo(a.lastStudiedAt ?? DateTime(1970)));
-    return list.take(limit).toList();
   }
 }

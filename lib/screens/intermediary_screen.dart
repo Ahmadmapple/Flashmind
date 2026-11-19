@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/app_bottom_nav.dart';
+import '../utils/app_colors.dart';
 import 'beranda_screen.dart';
 import 'berkas_screen.dart';
 import 'statistic_screen.dart';
@@ -31,7 +32,7 @@ class _IntermediaryScreenState extends State<IntermediaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6),
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: false,
       body: IndexedStack(
         index: _selectedTab.index,
