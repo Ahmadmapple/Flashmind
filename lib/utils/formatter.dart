@@ -39,4 +39,22 @@ class Formatter {
     if (value.isNaN) return '0%';
     return '${value.clamp(0, 100).round()}%';
   }
+
+  // Ukuran file: "512 B", "12,4 KB", "1,2 MB", "10 MB"
+  // Dipakai layar Tambah Kartu dengan AI dan pesan validasi ukuran file.
+  static String fileSize(int bytes) {
+    if (bytes < 1024) return '${bytes < 0 ? 0 : bytes} B';
+    final double kb = bytes / 1024;
+    if (kb < 1024) return '${_oneDecimal(kb)} KB';
+    return '${_oneDecimal(kb / 1024)} MB';
+  }
+
+  // Satu angka desimal dengan koma, ",0" dihilangkan.
+  static String _oneDecimal(double value) {
+    final String fixed = value.toStringAsFixed(1);
+    final String trimmed = fixed.endsWith('.0')
+        ? fixed.substring(0, fixed.length - 2)
+        : fixed;
+    return trimmed.replaceAll('.', ',');
+  }
 }
