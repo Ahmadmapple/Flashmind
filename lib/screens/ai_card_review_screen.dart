@@ -1,31 +1,39 @@
 import 'package:flutter/material.dart';
 
+import '../models/ai_source_file.dart';
 import '../repositories/flash_mind_repository.dart';
+import '../services/ai_card_generator.dart';
+import '../services/gemini_card_generator.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_scale.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_top_bar.dart';
 
-/// Model sementara untuk kartu yang dibuat AI dari PDF.
+/// Model sementara untuk kartu yang dibuat AI
 class _AiCard {
   _AiCard({required this.front, required this.back});
+
+  factory _AiCard.fromGenerated(GeneratedCard card) =>
+      _AiCard(front: card.frontText, back: card.backText);
 
   final String front;
   final String back;
   bool accepted = true;
 }
 
-/// Halaman untuk meninjau kartu yang dibuat AI dari dokumen PDF.
+/// Halaman untuk meninjau kartu yang dibuat AI dari dokumen sumber.
 /// Pengguna dapat menerima atau menolak tiap kartu sebelum disimpan ke set.
 class AiCardReviewScreen extends StatefulWidget {
   const AiCardReviewScreen({
     super.key,
     required this.setId,
-    required this.fileName,
+    required this.sourceFile,
+    this.generator = const GeminiCardGenerator(),
   });
 
   final String setId;
-  final String fileName;
+  final AiSourceFile sourceFile;
+  final AiCardGenerator generator;
 
   @override
   State<AiCardReviewScreen> createState() => _AiCardReviewScreenState();
@@ -35,50 +43,52 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
 
-  // Kartu dummy hasil "AI" — dalam produksi ini diganti dengan respons API
+  // Pesan bila pembuatan kartu gagal atau tidak menghasilkan kartu
+  String? _generationError;
+
+  // Kartu hasil AI yang ditinjau pengguna
   final List<_AiCard> _cards = [];
 
   @override
   void initState() {
     super.initState();
-    _simulateAiGeneration();
+    _generateCards();
   }
 
-  /// Simulasi delay pemrosesan AI lalu isi kartu dummy.
-  Future<void> _simulateAiGeneration() async {
-    await Future<void>.delayed(const Duration(seconds: 2));
+  // Kartu diperoleh dari AiCardGenerator
+  Future<void> _generateCards() async {
+    String? error;
+    List<GeneratedCard> generated = const [];
+    try {
+      generated = await widget.generator.generateCards(widget.sourceFile);
+      if (generated.isEmpty) {
+        error = 'AI tidak menemukan materi yang dapat dijadikan kartu '
+            'dari dokumen ini';
+      }
+    } on AiCardGenerationException catch (e) {
+      error = e.message;
+    } catch (e) {
+      debugPrint('Gagal membuat kartu dengan AI: $e');
+      error = 'Kartu gagal dibuat. Periksa koneksi lalu coba lagi';
+    }
+
     if (!mounted) return;
 
     setState(() {
-      _cards.addAll([
-        _AiCard(
-          front: 'Apa fungsi utama membran sel?',
-          back:
-              'Membran sel mengatur apa yang masuk dan keluar dari sel, menjaga lingkungan internal sel tetap stabil',
-        ),
-        _AiCard(
-          front: 'Apa itu mitokondria?',
-          back:
-              'Mitokondria adalah organel penghasil energi sel dalam bentuk ATP melalui proses respirasi seluler',
-        ),
-        _AiCard(
-          front: 'Jelaskan proses fotosintesis secara singkat.',
-          back:
-              'Fotosintesis adalah proses tumbuhan mengubah cahaya matahari, air, dan CO₂ menjadi glukosa dan oksigen',
-        ),
-        _AiCard(
-          front: 'Apa perbedaan sel prokariotik dan eukariotik?',
-          back:
-              'Sel prokariotik tidak memiliki nukleus bermembran, sedangkan sel eukariotik memiliki nukleus yang terlindungi membran inti',
-        ),
-        _AiCard(
-          front: 'Apa fungsi ribosom dalam sel?',
-          back:
-              'Ribosom berperan dalam sintesis protein dengan menerjemahkan informasi genetik dari mRNA menjadi rantai asam amino',
-        ),
-      ]);
+      _cards.addAll(generated.map(_AiCard.fromGenerated));
+      _generationError = error;
       _isLoading = false;
     });
+  }
+
+  // Mengulang pembuatan kartu setelah gagal
+  void _retryGeneration() {
+    setState(() {
+      _isLoading = true;
+      _generationError = null;
+      _cards.clear();
+    });
+    _generateCards();
   }
 
   int get _acceptedCount => _cards.where((c) => c.accepted).length;
@@ -149,12 +159,16 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
 
     _showMessage('${savedCards.length} kartu berhasil ditambahkan ke set');
 
-    // Kembali ke Detail Set
-    Navigator.of(context).pop();
+    // Mengembalikan true agar layar Tambah Kartu (AI) ikut ditutup
+    // dan pengguna kembali ke Detail Set
+    Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Bilah bawah hanya tampil bila kartu berhasil dibuat
+    final bool showBottomBar = !_isLoading && _generationError == null;
+
     // PopScope mencegah penutupan layar dengan tombol kembali saat menyimpan
     return PopScope(
       canPop: !_isSaving,
@@ -165,8 +179,12 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
           centerTitle: false,
           onBack: _isSaving ? null : () => Navigator.of(context).pop(),
         ),
-        body: _isLoading ? _buildLoadingState() : _buildReviewBody(),
-        bottomNavigationBar: _isLoading ? null : _buildBottomBar(),
+        body: _isLoading
+            ? _buildLoadingState()
+            : _generationError != null
+            ? _buildErrorState(_generationError!)
+            : _buildReviewBody(),
+        bottomNavigationBar: showBottomBar ? _buildBottomBar() : null,
       ),
     );
   }
@@ -194,9 +212,50 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
     );
   }
 
+  // Gagal/tanpa hasil
+  Widget _buildErrorState(String message) {
+    final double s = context.scale;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: AppContentFrame(
+          shrinkHeight: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 48 * s, color: AppColors.danger),
+              const SizedBox(height: 16),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: AppFont.button * s,
+                  color: AppColors.muted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              AppButton(
+                label: 'Coba Lagi',
+                size: AppButtonSize.large,
+                onPressed: _retryGeneration,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Body ─────────────────────────────────────────────────────────────────
   Widget _buildReviewBody() {
     final double s = context.scale;
+    // Ikon mengikuti format dokumen sumber
+    final IconData fileIcon = switch (widget.sourceFile.type) {
+      AiSourceFileType.pdf => Icons.picture_as_pdf,
+      AiSourceFileType.docx => Icons.description,
+    };
+
     return AppContentFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,11 +269,11 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
                 // Nama file
                 Row(
                   children: [
-                    Icon(Icons.picture_as_pdf, color: AppColors.link, size: 18 * s),
+                    Icon(fileIcon, color: AppColors.link, size: 18 * s),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        widget.fileName,
+                        widget.sourceFile.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

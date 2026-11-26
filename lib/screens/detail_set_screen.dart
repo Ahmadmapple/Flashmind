@@ -9,7 +9,7 @@ import 'edit_set_screen.dart';
 import 'detail_card_screen.dart';
 import 'study_session_continue_screen.dart';
 import 'study_session_start_screen.dart';
-import 'ai_card_review_screen.dart';
+import 'ai_add_card_screen.dart';
 
 import '../widgets/app_top_bar.dart';
 import '../widgets/confirm_delete_dialog.dart';
@@ -122,6 +122,16 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
     }
   }
 
+  // Membuka layar Tambah Kartu dengan AI.
+  Future<void> _openAiAddCard() async {
+    if (_isDeleting) return;
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => AiAddCardScreen(setId: widget.setId),
+      ),
+    );
+  }
+
   Future<void> _openDetailCard(Flashcard card) async {
     if (_isDeleting) return;
     await Navigator.of(context).push<void>(
@@ -210,8 +220,9 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Bantuan AI membaca dokumen PDF dan membuat kartu secara otomatis '
-                      'Kamu bisa meninjau kartunya sebelum disimpan',
+                      'Bantuan AI membaca dokumen PDF atau DOCX dan membuat '
+                      'kartu secara otomatis. Kamu bisa meninjau kartunya '
+                      'sebelum disimpan',
                       style: TextStyle(
                         fontSize: AppFont.small * s,
                         color: AppColors.muted,
@@ -233,14 +244,7 @@ class _DetailSetScreenState extends State<DetailSetScreen> {
       case _AddCardMode.manual:
         await _openAddCard();
       case _AddCardMode.ai:
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (_) => AiCardReviewScreen(
-              setId: widget.setId,
-              fileName: 'dokumen.pdf',
-            ),
-          ),
-        );
+        await _openAiAddCard();
     }
   }
 
