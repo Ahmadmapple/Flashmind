@@ -11,8 +11,7 @@ import '../services/ai_source_file_rules.dart';
 enum AiSourcePickStatus { accepted, rejected, cancelled }
 
 class AiSourceFileProvider extends ChangeNotifier {
-  AiSourceFileProvider({AiSourceFilePicker picker = const AiSourceFilePicker()})
-    : _picker = picker;
+  AiSourceFileProvider({this._picker = const AiSourceFilePicker()});
 
   final AiSourceFilePicker _picker;
 

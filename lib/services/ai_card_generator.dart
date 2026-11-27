@@ -24,9 +24,15 @@ class GeneratedCard {
 
 // Kesalahan yang pesannya aman ditampilkan kepada pengguna.
 class AiCardGenerationException implements Exception {
-  const AiCardGenerationException(this.message);
+  const AiCardGenerationException(
+    this.message, {
+    this.retryable = true,
+  });
 
   final String message;
+
+  // Kuota harian yang habis tidak boleh langsung dicoba ulang dari layar ini.
+  final bool retryable;
 
   @override
   String toString() => message;

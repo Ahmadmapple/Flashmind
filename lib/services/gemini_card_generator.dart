@@ -15,10 +15,10 @@ import 'docx_text_extractor.dart';
 class GeminiCardGenerator extends AiCardGenerator {
   const GeminiCardGenerator();
 
-  static const String _modelName = 'gemini-3.8-flash';
+  static const String _modelName = 'gemini-3.5-flash-lite';
   static const int _maxCards = 20;
   static const int _maxTextChars = 120000;
-  static const Duration _timeout = Duration(seconds: 600);
+  static const Duration _timeout = Duration(minutes: 5);
 
   static const String _systemInstruction =
       'Kamu membuat flashcard belajar dari dokumen yang diberikan. '
@@ -46,6 +46,12 @@ class GeminiCardGenerator extends AiCardGenerator {
         model: _modelName,
         systemInstruction: Content.system(_systemInstruction),
         generationConfig: GenerationConfig(
+          // Model menggunakan tingkat MINIMAL sebagai default
+          // agar request tetap ringan untuk tugas penyusunan flashcard.
+          thinkingConfig: ThinkingConfig.withThinkingLevel(
+            ThinkingLevel.minimal,
+          ),
+          maxOutputTokens: 4096,
           responseMimeType: 'application/json',
           responseSchema: Schema.object(
             properties: {
@@ -59,7 +65,6 @@ class GeminiCardGenerator extends AiCardGenerator {
               ),
             },
           ),
-          temperature: 0.4,
         ),
       );
       final GenerateContentResponse response =
@@ -67,18 +72,39 @@ class GeminiCardGenerator extends AiCardGenerator {
       raw = response.text;
     } on TimeoutException {
       throw const AiCardGenerationException(
-        'Pemrosesan terlalu lama. Coba lagi atau gunakan dokumen yang lebih pendek',
+        'Gemini belum memberikan respons setelah 4 menit. Periksa AI Monitoring '
+        'terlebih dahulu. Jangan langsung mengirim permintaan baru karena request '
+        'sebelumnya mungkin masih diproses di server.',
+        retryable: false,
+      );
+    } on QuotaExceeded catch (e, stackTrace) {
+      debugPrint('Firebase AI quota error: ${e.message}');
+      debugPrintStack(stackTrace: stackTrace);
+      final bool quotaExhausted = _isDailyQuotaExceeded(e.message);
+      throw AiCardGenerationException(
+        _messageForText(e.message),
+        retryable: !quotaExhausted &&
+            !_isPermanentConfigurationError(e.message),
       );
     } on FirebaseAIException catch (e, stackTrace) {
-      debugPrint('Firebase AI Logic error: ${e.message}');
+      debugPrint('Firebase AI Logic error (${e.runtimeType}): ${e.message}');
       debugPrintStack(stackTrace: stackTrace);
-      throw AiCardGenerationException(_messageForText(e.message));
+      throw AiCardGenerationException(
+        _messageForText(e.message),
+        retryable: !_isDailyQuotaExceeded(e.message) &&
+            !_isPermanentConfigurationError(e.message),
+      );
     } catch (e, stackTrace) {
       // Beberapa kegagalan App Check atau jaringan dapat muncul sebagai
       // exception platform, bukan FirebaseAIException.
       debugPrint('Gemini request failed: $e');
       debugPrintStack(stackTrace: stackTrace);
-      throw AiCardGenerationException(_messageForText(e.toString()));
+      final String message = e.toString();
+      throw AiCardGenerationException(
+        _messageForText(message),
+        retryable: !_isDailyQuotaExceeded(message) &&
+            !_isPermanentConfigurationError(message),
+      );
     }
 
     return _parse(raw);
@@ -145,34 +171,89 @@ class GeminiCardGenerator extends AiCardGenerator {
     return cards;
   }
 
+  static bool _isDailyQuotaExceeded(String message) {
+    final String m = message.toLowerCase();
+    return m.contains('generate_content_free_tier_requests') ||
+        m.contains('requests per day limit exceeded') ||
+        (m.contains('requests per day') && m.contains('limit exceeded'));
+  }
+
+  static bool _isPermanentConfigurationError(String message) {
+    final String m = message.toLowerCase();
+    return m.contains('app check') ||
+        m.contains('appcheck') ||
+        m.contains('attestation') ||
+        m.contains('invalid app check') ||
+        m.contains('model not found') ||
+        m.contains('unknown model') ||
+        m.contains('api has not been used') ||
+        m.contains('not enabled') ||
+        m.contains('permission denied') ||
+        m.contains('permission_denied') ||
+        m.contains('service_api_not_enabled') ||
+        m.contains('invalid_api_key') ||
+        m.contains('403') ||
+        m.contains('401');
+  }
+
   static String _messageForText(String message) {
     final String m = message.toLowerCase();
+
     if (m.contains('app check') ||
         m.contains('appcheck') ||
         m.contains('attestation') ||
         m.contains('invalid app check')) {
-      return 'Akses AI ditolak oleh Firebase App Check. Pastikan App Check '
-          'diinisialisasi dan token perangkat pengembangan sudah didaftarkan';
+      return 'Akses AI ditolak oleh Firebase App Check. Periksa registrasi '
+          'aplikasi dan token perangkat pengembangan.';
     }
-    if (m.contains('quota') ||
-        m.contains('429') ||
-        m.contains('rate') ||
-        m.contains('resource_exhausted')) {
-      return 'Batas penggunaan AI gratis sedang tercapai. Coba lagi beberapa saat lagi';
+
+    if (_isDailyQuotaExceeded(message)) {
+      return 'Kuota harian Gemini untuk model ini telah tercapai. Jangan '
+          'mencoba ulang sekarang. Periksa batas dan waktu reset di Google AI Studio.';
     }
+
+    // RESOURCE_EXHAUSTED berarti kapasitas model sedang penuh,
+    // bukan selalu kuota harian proyek yang habis.
+    if (m.contains('overloaded') ||
+        m.contains('high demand') ||
+        m.contains('deadline_exceeded') ||
+        m.contains('deadline exceeded') ||
+        m.contains('unavailable') ||
+        m.contains('503') ||
+        m.contains('internal')) {
+      return 'Layanan Gemini sedang padat atau melewati batas waktu pemrosesan. '
+          'Tunggu beberapa saat, gunakan dokumen yang lebih ringkas, lalu coba sekali lagi.';
+    }
+
+    if (m.contains('resource_exhausted') || m.contains('429')) {
+      return 'Permintaan Gemini sedang dibatasi atau kapasitas model sedang penuh. ' 
+          'Periksa AI Monitoring dan Rate Limits sebelum mencoba lagi.';
+    }
+
     if (m.contains('not found') ||
         m.contains('404') ||
         m.contains('model not found') ||
         m.contains('unknown model')) {
-      return 'Model AI tidak tersedia. Periksa pengaturan model aplikasi';
+      return 'Model AI tidak tersedia. Periksa nama model dan dukungannya di Firebase AI Logic.';
     }
+
     if (m.contains('api has not been used') ||
         m.contains('not enabled') ||
         m.contains('permission') ||
-        m.contains('403')) {
-      return 'Akses Firebase AI Logic ditolak. Periksa status aktivasi layanan '
-          'AI Logic dan konfigurasi Firebase App Check';
+        m.contains('invalid_api_key') ||
+        m.contains('403') ||
+        m.contains('401')) {
+      return 'Akses Firebase AI Logic ditolak. Periksa aktivasi API dan konfigurasi App Check.';
     }
-    return 'Layanan AI tidak dapat dihubungi. Periksa koneksi lalu coba lagi';
+
+    if (m.contains('socketexception') ||
+        m.contains('failed host lookup') ||
+        m.contains('network is unreachable') ||
+        m.contains('connection reset') ||
+        m.contains('connection refused')) {
+      return 'Koneksi ke layanan AI gagal. Periksa koneksi internet lalu coba lagi.';
+    }
+
+    return 'Permintaan ke Gemini gagal. Periksa detail error pada AI Monitoring sebelum mencoba lagi.';
   }
 }
