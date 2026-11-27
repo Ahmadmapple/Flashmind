@@ -11,7 +11,6 @@ import '../widgets/app_top_bar.dart';
 import '../widgets/card_side_layout.dart';
 import 'ai_card_review_screen.dart';
 
-
 // Layar Tambah Kartu khusus pembuatan kartu dengan bantuan AI.
 class AiAddCardScreen extends StatefulWidget {
   const AiAddCardScreen({super.key, required this.setId});
@@ -71,7 +70,8 @@ class _AiAddCardScreenState extends State<AiAddCardScreen> {
     setState(() => _isOpeningReview = true);
     final bool? saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => AiCardReviewScreen(setId: widget.setId, sourceFile: file),
+        builder: (_) =>
+            AiCardReviewScreen(setId: widget.setId, sourceFile: file),
       ),
     );
     if (!mounted) return;
@@ -127,16 +127,6 @@ class _AiAddCardScreenState extends State<AiAddCardScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
-                  ),
-                ),
-                Icon(Icons.auto_awesome, size: 18 * s, color: AppColors.link),
-                SizedBox(width: 4 * s),
-                Text(
-                  'Bantuan AI',
-                  style: TextStyle(
-                    fontSize: AppFont.small * s,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.link,
                   ),
                 ),
               ],
@@ -237,7 +227,7 @@ class _AiAddCardScreenState extends State<AiAddCardScreen> {
         Text(
           'Silakan masukkan satu file '
           '${AiSourceFileRules.allowedExtensionsLabel} berisi materi yang '
-          'ingin dipelajari. AI akan menyusun kartu dari isi teks dokumen',
+          'ingin dipelajari. AI akan menyusun kartu dari isi dokumen sumber',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: AppFont.body * s,
@@ -350,9 +340,12 @@ class _AiAddCardScreenState extends State<AiAddCardScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Tekan Lepas File untuk mengganti dokumen',
+          'Tekan "Lepas File" untuk mengganti dokumen',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: AppFont.caption * s, color: AppColors.hint),
+          style: TextStyle(
+            fontSize: AppFont.caption * s,
+            color: AppColors.hint,
+          ),
         ),
       ],
     );
