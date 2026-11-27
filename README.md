@@ -2,6 +2,10 @@
 
 Aplikasi pembelajaran berbasis flashcard yang dapat digunakan sebagai media bantu untuk melatih daya ingat pengguna secara aktif.
 
+Aplikasi ini dibuat oleh
+Achmad Caesar Ramadhan (241401011) - Ahmadmapple
+Muhammad Aryadefa (241401050) - aryadefa1166
+Jonaldy Bensharon Simamora (241401074) - JonaldyBensharon
 ---
 
 ## Daftar Isi
