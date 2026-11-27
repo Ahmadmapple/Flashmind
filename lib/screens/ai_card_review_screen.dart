@@ -45,6 +45,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
 
   // Pesan bila pembuatan kartu gagal atau tidak menghasilkan kartu
   String? _generationError;
+  bool _canRetryGeneration = true;
 
   // Kartu hasil AI yang ditinjau pengguna
   final List<_AiCard> _cards = [];
@@ -58,6 +59,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
   // Kartu diperoleh dari AiCardGenerator
   Future<void> _generateCards() async {
     String? error;
+    bool canRetry = true;
     List<GeneratedCard> generated = const [];
     try {
       generated = await widget.generator.generateCards(widget.sourceFile);
@@ -67,6 +69,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
       }
     } on AiCardGenerationException catch (e) {
       error = e.message;
+      canRetry = e.retryable;
     } catch (e) {
       debugPrint('Gagal membuat kartu dengan AI: $e');
       error = 'Kartu gagal dibuat. Periksa koneksi lalu coba lagi';
@@ -77,6 +80,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
     setState(() {
       _cards.addAll(generated.map(_AiCard.fromGenerated));
       _generationError = error;
+      _canRetryGeneration = canRetry;
       _isLoading = false;
     });
   }
@@ -86,6 +90,7 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
     setState(() {
       _isLoading = true;
       _generationError = null;
+      _canRetryGeneration = true;
       _cards.clear();
     });
     _generateCards();
@@ -234,12 +239,24 @@ class _AiCardReviewScreenState extends State<AiCardReviewScreen> {
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
-              AppButton(
-                label: 'Coba Lagi',
-                size: AppButtonSize.large,
-                onPressed: _retryGeneration,
-              ),
+              if (_canRetryGeneration) ...[
+                const SizedBox(height: 24),
+                AppButton(
+                  label: 'Coba Lagi',
+                  size: AppButtonSize.large,
+                  onPressed: _retryGeneration,
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Kembali ke layar sebelumnya dan periksa penyebab kegagalan sebelum mengirim permintaan baru.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: AppFont.caption * s,
+                    color: AppColors.hint,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
